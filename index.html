@@ -46,6 +46,26 @@
       </div>
     </section>
 
+
+    <section class="searchCard card" aria-label="Address search / 地址搜索">
+      <div class="searchIntro">
+        <div class="searchIcon" aria-hidden="true">⌕</div>
+        <div>
+          <h2>Find an address and see full site history / 搜索地址并查看完整工地记录</h2>
+          <p>See every work date, hoarding date, delivery and billing record. / 查看所有工作日期、围板、送货和开单记录。</p>
+        </div>
+      </div>
+      <form id="addressSearchForm" class="addressSearchForm">
+        <label class="field searchField">
+          <span>Address or job name / 地址或工作名称</span>
+          <input id="addressSearchInput" type="search" autocomplete="off" placeholder="Example: 10 Collyer Quay / 例如：10 Collyer Quay">
+        </label>
+        <button id="addressSearchBtn" class="btn btnPrimary" type="submit" disabled>
+          Search History<br><small>搜索记录</small>
+        </button>
+      </form>
+    </section>
+
     <section class="toolbar card" aria-label="Calendar controls / 日历控制">
       <div class="toolbarGroup">
         <button id="prevMonthBtn" class="iconBtn" type="button" aria-label="Previous month / 上个月">‹</button>
@@ -61,6 +81,10 @@
 
     <section class="mainGrid">
       <div class="calendarPanel card">
+        <div class="dragHelp" role="note">
+          <strong>Move a job: drag its coloured bar to another date.</strong>
+          <span>移动工作：把彩色工作条拖到另一个日期。手机请长按后拖动。</span>
+        </div>
         <div class="weekdayRow" aria-hidden="true">
           <div>Sun<br><small>日</small></div>
           <div>Mon<br><small>一</small></div>
@@ -119,20 +143,25 @@
 
           <div class="formSection">
             <h3>1. Date and time / 日期和时间</h3>
-            <div class="formGrid formGrid3">
+            <div class="formGrid formGrid4">
               <label class="field">
-                <span>Date / 日期</span>
+                <span>Start date / 开始日期</span>
                 <input id="dateInput" type="date" required>
               </label>
+              <label class="field">
+                <span>End date / 结束日期</span>
+                <input id="endDateInput" type="date" required>
+              </label>
               <label class="field timeField">
-                <span>Start / 开始</span>
+                <span>Start time / 开始时间</span>
                 <input id="startTimeInput" type="time" value="08:00">
               </label>
               <label class="field timeField">
-                <span>End / 结束</span>
+                <span>End time / 结束时间</span>
                 <input id="endTimeInput" type="time" value="10:00">
               </label>
             </div>
+            <p class="helpText dateHelp">For a job lasting several days, choose both dates. Changing the start date keeps the same number of days. / 多日工作请选择开始和结束日期。更改开始日期时会保留相同天数。</p>
             <label class="checkLine">
               <input id="allDayInput" type="checkbox">
               <span>All-day job / 全天工作</span>
@@ -157,8 +186,63 @@
             </label>
           </div>
 
+
+          <div class="formSection trackingSection">
+            <h3>3. Site tracking / 工地记录</h3>
+            <div class="trackingGrid">
+              <fieldset class="trackingBox">
+                <legend>Hoarding / 围板</legend>
+                <label class="checkLine trackingCheck">
+                  <input id="hoardingDoneInput" type="checkbox">
+                  <span>Hoarding done / 围板已完成</span>
+                </label>
+                <label class="field">
+                  <span>Hoarding done date / 围板完成日期</span>
+                  <input id="hoardingDoneDateInput" type="date" disabled>
+                </label>
+                <label class="checkLine trackingCheck">
+                  <input id="hoardingRemoveInput" type="checkbox">
+                  <span>Hoarding needs removal / 围板需要拆除</span>
+                </label>
+                <label class="field">
+                  <span>Planned removal date / 计划拆除日期</span>
+                  <input id="hoardingRemoveDateInput" type="date" disabled>
+                </label>
+              </fieldset>
+
+              <fieldset class="trackingBox">
+                <legend>Material delivery / 材料送货</legend>
+                <label class="checkLine trackingCheck">
+                  <input id="deliverySentInput" type="checkbox">
+                  <span>Materials delivered / 材料已送到</span>
+                </label>
+                <label class="field">
+                  <span>Delivery date / 送货日期</span>
+                  <input id="deliveryDateInput" type="date" disabled>
+                </label>
+                <label class="field fullField">
+                  <span>Materials delivered / 送货材料</span>
+                  <textarea id="deliveryMaterialsInput" rows="3" disabled placeholder="Example: gypsum board, metal frame / 例如：石膏板、铁架"></textarea>
+                </label>
+              </fieldset>
+
+              <fieldset class="trackingBox billingBox">
+                <legend>Billing / 开单</legend>
+                <label class="checkLine trackingCheck">
+                  <input id="billedInput" type="checkbox">
+                  <span>Job already billed / 工作已开单</span>
+                </label>
+                <label class="field">
+                  <span>Billed date / 开单日期</span>
+                  <input id="billedDateInput" type="date" disabled>
+                </label>
+                <p class="helpText">Leave unticked when this job is not billed yet. / 尚未开单时不要勾选。</p>
+              </fieldset>
+            </div>
+          </div>
+
           <details class="formSection optionalSection" open>
-            <summary>3. Work instructions / 工作指示</summary>
+            <summary>4. Work instructions / 工作指示</summary>
             <div class="formGrid">
               <label class="field">
                 <span>Remove / 拆除</span>
@@ -180,7 +264,7 @@
           </details>
 
           <div class="formSection">
-            <h3>4. People / 人员</h3>
+            <h3>5. People / 人员</h3>
             <div class="peopleGrid">
               <fieldset class="peopleBox">
                 <legend>Foremen / 头手</legend>
@@ -195,12 +279,12 @@
           </div>
 
           <div class="formSection">
-            <h3>5. Google Calendar colour / 谷歌日历颜色</h3>
+            <h3>6. Google Calendar colour / 谷歌日历颜色</h3>
             <div id="colourPicker" class="colourPicker" role="radiogroup" aria-label="Choose job colour / 选择工作颜色"></div>
           </div>
 
           <details class="formSection optionalSection">
-            <summary>6. Extra notes / 其他备注</summary>
+            <summary>7. Extra notes / 其他备注</summary>
             <label class="field fullField">
               <span>Notes / 备注</span>
               <textarea id="notesInput" rows="4" placeholder="Any extra information / 其他资料"></textarea>
@@ -218,6 +302,34 @@
           </div>
         </footer>
       </form>
+    </section>
+  </div>
+
+
+  <div id="searchModal" class="modalBackdrop" hidden>
+    <section class="modal historyModal" role="dialog" aria-modal="true" aria-labelledby="searchModalTitle">
+      <header class="modalHead">
+        <div>
+          <p class="eyebrow">Site records / 工地记录</p>
+          <h2 id="searchModalTitle">Address History / 地址历史</h2>
+        </div>
+        <button id="closeSearchBtn" class="iconBtn" type="button" aria-label="Close / 关闭">×</button>
+      </header>
+      <div class="modalBody historyBody">
+        <form id="historySearchForm" class="historySearchBar">
+          <label class="field searchField">
+            <span>Search another address / 搜索其他地址</span>
+            <input id="historySearchInput" type="search" autocomplete="off" placeholder="Type address / 输入地址">
+          </label>
+          <button id="historySearchBtn" class="btn btnPrimary" type="submit">Search / 搜索</button>
+        </form>
+        <div id="historySearchStatus" class="historySearchStatus" role="status" aria-live="polite"></div>
+        <div id="historySearchResults" class="historySearchResults"></div>
+      </div>
+      <footer class="modalFoot">
+        <div></div>
+        <button id="doneSearchBtn" class="btn btnPrimary" type="button">Done / 完成</button>
+      </footer>
     </section>
   </div>
 

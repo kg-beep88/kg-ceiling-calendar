@@ -51,6 +51,14 @@ let selectedDate = dateKey(new Date());
 let autoRefreshTimer = null;
 let toastTimer = null;
 let currentModalEvent = null;
+let lastAddressSearch = "";
+let searchRequestNumber = 0;
+let lastFormStartDate = "";
+let nativeDragData = null;
+let touchDragState = null;
+let touchDragGhost = null;
+let touchDragTarget = null;
+let suppressChipClickUntil = 0;
 
 window.addEventListener("DOMContentLoaded", init);
 
@@ -70,13 +78,18 @@ function cacheElements() {
     "connectionBadge", "connectBtn", "refreshBtn", "welcomeCard", "prevMonthBtn",
     "todayBtn", "nextMonthBtn", "monthTitle", "openGoogleBtn", "settingsBtn",
     "calendarGrid", "selectedDateTitle", "addJobBtn", "syncMessage", "dayJobs",
-    "floatingAddBtn", "jobModal", "jobModalTitle", "closeModalBtn", "jobForm",
-    "eventId", "addressInput", "dateInput", "startTimeInput", "endTimeInput",
-    "allDayInput", "contactInput", "lockInput", "scopeInput", "removeInput",
-    "keepInput", "protectInput", "disposalInput", "foremenList", "workersList",
-    "colourPicker", "notesInput", "deleteJobBtn", "cancelBtn", "saveJobBtn",
-    "settingsModal", "closeSettingsBtn", "calendarIdText", "resetCacheBtn",
-    "doneSettingsBtn", "toast"
+    "floatingAddBtn", "addressSearchForm", "addressSearchInput", "addressSearchBtn",
+    "jobModal", "jobModalTitle", "closeModalBtn", "jobForm", "eventId", "addressInput",
+    "dateInput", "endDateInput", "startTimeInput", "endTimeInput", "allDayInput", "contactInput",
+    "lockInput", "scopeInput", "removeInput", "keepInput", "protectInput",
+    "disposalInput", "hoardingDoneInput", "hoardingDoneDateInput", "hoardingRemoveInput",
+    "hoardingRemoveDateInput", "deliverySentInput", "deliveryDateInput",
+    "deliveryMaterialsInput", "billedInput", "billedDateInput", "foremenList",
+    "workersList", "colourPicker", "notesInput", "deleteJobBtn", "cancelBtn",
+    "saveJobBtn", "searchModal", "closeSearchBtn", "historySearchForm",
+    "historySearchInput", "historySearchBtn", "historySearchStatus",
+    "historySearchResults", "doneSearchBtn", "settingsModal", "closeSettingsBtn",
+    "calendarIdText", "resetCacheBtn", "doneSettingsBtn", "toast"
   ];
   ids.forEach((id) => { el[id] = document.getElementById(id); });
 }
@@ -89,6 +102,19 @@ function bindEvents() {
   el.todayBtn.addEventListener("click", goToday);
   el.openGoogleBtn.addEventListener("click", () => window.open("https://calendar.google.com/calendar/u/0/r", "_blank", "noopener"));
   el.settingsBtn.addEventListener("click", openSettings);
+  el.addressSearchForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    startAddressSearch(el.addressSearchInput.value);
+  });
+  el.historySearchForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    startAddressSearch(el.historySearchInput.value);
+  });
+  el.closeSearchBtn.addEventListener("click", closeSearchModal);
+  el.doneSearchBtn.addEventListener("click", closeSearchModal);
+  el.searchModal.addEventListener("click", (event) => {
+    if (event.target === el.searchModal) closeSearchModal();
+  });
   el.addJobBtn.addEventListener("click", () => openJobModal());
   el.floatingAddBtn.addEventListener("click", () => openJobModal());
   el.closeModalBtn.addEventListener("click", closeJobModal);
@@ -96,7 +122,13 @@ function bindEvents() {
   el.jobForm.addEventListener("submit", saveJob);
   el.deleteJobBtn.addEventListener("click", deleteCurrentJob);
   el.allDayInput.addEventListener("change", updateTimeFieldState);
-  el.dateInput.addEventListener("change", updateAssignmentWarnings);
+  el.dateInput.addEventListener("change", handleStartDateChange);
+  el.endDateInput.addEventListener("change", handleEndDateChange);
+  [el.hoardingDoneInput, el.hoardingRemoveInput, el.deliverySentInput, el.billedInput]
+    .forEach((input) => input.addEventListener("change", () => updateTrackingFieldState(true)));
+  document.addEventListener("pointermove", handleTouchDragMove, { passive: false });
+  document.addEventListener("pointerup", handleTouchDragEnd, { passive: false });
+  document.addEventListener("pointercancel", cancelTouchDrag, { passive: false });
   el.settingsModal.addEventListener("click", (event) => {
     if (event.target === el.settingsModal) closeSettings();
   });
@@ -109,6 +141,7 @@ function bindEvents() {
   document.addEventListener("keydown", (event) => {
     if (event.key !== "Escape") return;
     if (!el.jobModal.hidden) closeJobModal();
+    else if (!el.searchModal.hidden) closeSearchModal();
     else if (!el.settingsModal.hidden) closeSettings();
   });
   document.addEventListener("visibilitychange", () => {
@@ -135,6 +168,13 @@ function initTokenClient() {
   const clientId = String(CONFIG.GOOGLE_CLIENT_ID || "").trim();
   if (!clientId || clientId.includes("PASTE_")) {
     setSyncMessage("Google Client ID is missing in config.js. / config.js 缺少谷歌客户端 ID。", true);
+    el.connectBtn.disabled = true;
+    return;
+  }
+
+  const calendarId = String(CONFIG.CALENDAR_ID || "").trim();
+  if (!calendarId || calendarId.includes("PASTE_KG_WORK")) {
+    setSyncMessage("Paste the shared KG Work Calendar ID into config.js first. / 请先把共享 KG Work 日历 ID 粘贴到 config.js。", true);
     el.connectBtn.disabled = true;
     return;
   }
@@ -188,6 +228,7 @@ function setConnectionState(state) {
   el.refreshBtn.disabled = !connected;
   el.addJobBtn.disabled = !connected;
   el.floatingAddBtn.disabled = !connected;
+  el.addressSearchBtn.disabled = !connected;
 
   el.connectionBadge.className = "statusBadge";
   if (connected) {
@@ -389,11 +430,11 @@ function renderCalendar() {
 
   for (let i = 0; i < 42; i += 1) {
     const key = dateKey(cursor);
-    const cell = document.createElement("button");
-    cell.type = "button";
+    const cell = document.createElement("div");
     cell.className = "dayCell";
     cell.dataset.date = key;
     cell.setAttribute("role", "gridcell");
+    cell.setAttribute("tabindex", "0");
     cell.setAttribute("aria-label", cursor.toLocaleDateString());
     if (cursor.getMonth() !== monthAnchor.getMonth()) cell.classList.add("outsideMonth");
     if (key === selectedDate) cell.classList.add("selected");
@@ -407,13 +448,26 @@ function renderCalendar() {
     const stack = document.createElement("div");
     stack.className = "eventStack";
     const dayEvents = eventsForDate(key);
-    dayEvents.slice(0, 4).forEach((event) => {
-      const chip = document.createElement("span");
+    dayEvents.slice(0, 4).forEach((calendarEvent) => {
+      const chip = document.createElement("button");
+      chip.type = "button";
       chip.className = "eventChip";
-      const colour = eventColour(event);
+      chip.dataset.eventId = calendarEvent.id || "";
+      chip.dataset.sourceDate = key;
+      chip.draggable = isConnected();
+      const colour = eventColour(calendarEvent);
       chip.style.background = colour.background;
       chip.style.color = colour.foreground;
-      chip.textContent = eventChipLabel(event);
+      chip.textContent = eventChipLabel(calendarEvent, key);
+      chip.title = "Click to edit. Drag to move. / 点击编辑，拖动更改日期。";
+      chip.addEventListener("click", (clickEvent) => {
+        clickEvent.stopPropagation();
+        if (Date.now() < suppressChipClickUntil) return;
+        openJobModal(calendarEvent);
+      });
+      chip.addEventListener("dragstart", (dragEvent) => beginNativeDrag(dragEvent, calendarEvent.id, key));
+      chip.addEventListener("dragend", finishNativeDrag);
+      chip.addEventListener("pointerdown", (pointerEvent) => beginTouchDrag(pointerEvent, calendarEvent.id, key, chip));
       stack.appendChild(chip);
     });
     if (dayEvents.length > 4) {
@@ -424,9 +478,218 @@ function renderCalendar() {
     }
     cell.appendChild(stack);
     cell.addEventListener("click", () => selectDate(key));
+    cell.addEventListener("keydown", (keyEvent) => {
+      if (keyEvent.key === "Enter" || keyEvent.key === " ") {
+        keyEvent.preventDefault();
+        selectDate(key);
+      }
+    });
+    cell.addEventListener("dragover", handleCalendarDragOver);
+    cell.addEventListener("dragenter", handleCalendarDragEnter);
+    cell.addEventListener("dragleave", handleCalendarDragLeave);
+    cell.addEventListener("drop", handleCalendarDrop);
     el.calendarGrid.appendChild(cell);
     cursor.setDate(cursor.getDate() + 1);
   }
+}
+
+function beginNativeDrag(event, eventId, sourceDate) {
+  if (!isConnected() || !eventId) {
+    event.preventDefault();
+    return;
+  }
+  nativeDragData = { eventId, sourceDate };
+  event.currentTarget.classList.add("dragging");
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", JSON.stringify(nativeDragData));
+  }
+}
+
+function finishNativeDrag(event) {
+  event.currentTarget.classList.remove("dragging");
+  nativeDragData = null;
+  clearDragHighlights();
+}
+
+function handleCalendarDragOver(event) {
+  if (!nativeDragData) return;
+  event.preventDefault();
+  if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
+}
+
+function handleCalendarDragEnter(event) {
+  if (!nativeDragData) return;
+  event.preventDefault();
+  event.currentTarget.classList.add("dragOver");
+}
+
+function handleCalendarDragLeave(event) {
+  if (!event.currentTarget.contains(event.relatedTarget)) {
+    event.currentTarget.classList.remove("dragOver");
+  }
+}
+
+function handleCalendarDrop(event) {
+  event.preventDefault();
+  const cell = event.currentTarget;
+  cell.classList.remove("dragOver");
+  let data = nativeDragData;
+  if (!data && event.dataTransfer) {
+    try {
+      data = JSON.parse(event.dataTransfer.getData("text/plain"));
+    } catch {
+      data = null;
+    }
+  }
+  if (!data?.eventId || !cell.dataset.date) return;
+  moveEventByDrag(data.eventId, data.sourceDate, cell.dataset.date);
+}
+
+function beginTouchDrag(event, eventId, sourceDate, chip) {
+  if (event.pointerType === "mouse" || !isConnected() || !eventId) return;
+  cancelTouchDrag();
+  touchDragState = {
+    pointerId: event.pointerId,
+    eventId,
+    sourceDate,
+    chip,
+    startX: event.clientX,
+    startY: event.clientY,
+    active: false,
+    timer: window.setTimeout(() => activateTouchDrag(event.clientX, event.clientY), 420)
+  };
+}
+
+function activateTouchDrag(x, y) {
+  if (!touchDragState) return;
+  touchDragState.active = true;
+  touchDragState.chip.classList.add("dragging");
+  document.body.classList.add("touchDragging");
+  touchDragGhost = touchDragState.chip.cloneNode(true);
+  touchDragGhost.className = "eventChip touchDragGhost";
+  touchDragGhost.removeAttribute("draggable");
+  document.body.appendChild(touchDragGhost);
+  positionTouchGhost(x, y);
+  updateTouchDragTarget(x, y);
+  if (navigator.vibrate) navigator.vibrate(35);
+}
+
+function handleTouchDragMove(event) {
+  if (!touchDragState || event.pointerId !== touchDragState.pointerId) return;
+  const distance = Math.hypot(event.clientX - touchDragState.startX, event.clientY - touchDragState.startY);
+  if (!touchDragState.active) {
+    if (distance > 12) cancelTouchDrag();
+    return;
+  }
+  event.preventDefault();
+  positionTouchGhost(event.clientX, event.clientY);
+  updateTouchDragTarget(event.clientX, event.clientY);
+}
+
+function positionTouchGhost(x, y) {
+  if (!touchDragGhost) return;
+  touchDragGhost.style.left = `${x + 12}px`;
+  touchDragGhost.style.top = `${y + 12}px`;
+}
+
+function updateTouchDragTarget(x, y) {
+  const node = document.elementFromPoint(x, y);
+  const nextTarget = node?.closest?.(".dayCell") || null;
+  if (touchDragTarget === nextTarget) return;
+  if (touchDragTarget) touchDragTarget.classList.remove("dragOver");
+  touchDragTarget = nextTarget;
+  if (touchDragTarget) touchDragTarget.classList.add("dragOver");
+}
+
+function handleTouchDragEnd(event) {
+  if (!touchDragState || event.pointerId !== touchDragState.pointerId) return;
+  if (!touchDragState.active) {
+    cancelTouchDrag();
+    return;
+  }
+  event.preventDefault();
+  const { eventId, sourceDate } = touchDragState;
+  const targetDate = touchDragTarget?.dataset?.date || "";
+  suppressChipClickUntil = Date.now() + 700;
+  cancelTouchDrag();
+  if (targetDate) moveEventByDrag(eventId, sourceDate, targetDate);
+}
+
+function cancelTouchDrag() {
+  if (touchDragState?.timer) window.clearTimeout(touchDragState.timer);
+  if (touchDragState?.chip) touchDragState.chip.classList.remove("dragging");
+  if (touchDragGhost) touchDragGhost.remove();
+  if (touchDragTarget) touchDragTarget.classList.remove("dragOver");
+  touchDragState = null;
+  touchDragGhost = null;
+  touchDragTarget = null;
+  document.body.classList.remove("touchDragging");
+}
+
+function clearDragHighlights() {
+  document.querySelectorAll(".dayCell.dragOver").forEach((cell) => cell.classList.remove("dragOver"));
+}
+
+async function moveEventByDrag(eventId, sourceDate, targetDate) {
+  if (!isConnected()) {
+    disconnectForExpiredToken();
+    return;
+  }
+  const calendarEvent = events.find((item) => item.id === eventId);
+  if (!calendarEvent) {
+    showToast("Job could not be found. Refresh and try again. / 找不到工作，请刷新后再试。", true);
+    return;
+  }
+  if (!targetDate || sourceDate === targetDate) {
+    selectDate(targetDate || sourceDate);
+    return;
+  }
+
+  const range = eventDateRange(calendarEvent);
+  const grabbedOffset = Math.max(0, daysBetweenKeys(range.start, sourceDate));
+  const newStartDate = addDaysKey(targetDate, -grabbedOffset);
+  const shifted = shiftedEventTimes(calendarEvent, newStartDate);
+  const calendarId = encodeURIComponent(CONFIG.CALENDAR_ID || "primary");
+
+  setSyncMessage("Moving job in Google Calendar… / 正在谷歌日历移动工作……", false);
+  try {
+    await apiFetch(`/calendars/${calendarId}/events/${encodeURIComponent(eventId)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(shifted)
+    });
+    selectedDate = targetDate;
+    monthAnchor = startOfMonth(dateFromKey(targetDate));
+    showToast("Job moved to the new date. / 工作已移动到新日期。", false);
+    await refreshEvents(false);
+  } catch (error) {
+    showToast(`Move failed: ${error.message} / 移动失败：${error.message}`, true);
+    setSyncMessage("Move failed. Refresh and try again. / 移动失败，请刷新后再试。", true);
+  }
+}
+
+function shiftedEventTimes(event, newStartDate) {
+  const range = eventDateRange(event);
+  const daySpan = Math.max(0, daysBetweenKeys(range.start, range.end));
+  if (event.start?.date) {
+    return {
+      start: { date: newStartDate },
+      end: { date: addDaysKey(newStartDate, daySpan + 1) }
+    };
+  }
+
+  const originalStart = new Date(event.start?.dateTime);
+  const originalEnd = event.end?.dateTime ? new Date(event.end.dateTime) : new Date(originalStart.getTime() + 60 * 60 * 1000);
+  const durationMs = Math.max(60 * 1000, originalEnd.getTime() - originalStart.getTime());
+  const newStart = localDateTime(newStartDate, timeInputValue(originalStart));
+  newStart.setSeconds(originalStart.getSeconds(), originalStart.getMilliseconds());
+  const newEnd = new Date(newStart.getTime() + durationMs);
+  const start = { dateTime: newStart.toISOString() };
+  const end = { dateTime: newEnd.toISOString() };
+  if (event.start?.timeZone) start.timeZone = event.start.timeZone;
+  if (event.end?.timeZone) end.timeZone = event.end.timeZone;
+  return { start, end };
 }
 
 function renderDayJobs() {
@@ -457,7 +720,9 @@ function renderDayJobs() {
     title.textContent = data.address || event.summary || "Untitled job / 未命名工作";
     const meta = document.createElement("div");
     meta.className = "jobMeta";
+    const range = eventDateRange(event);
     const pieces = [eventTimeLabel(event)];
+    if (range.start !== range.end) pieces.unshift(`Dates / 日期: ${formatDateShort(range.start)}–${formatDateShort(range.end)}`);
     if (data.contact) pieces.push(`Contact / 联系: ${data.contact}`);
     if (data.foremen.length) pieces.push(`Foremen / 头手: ${data.foremen.join(", ")}`);
     if (data.workers.length) pieces.push(`Workers / 工人: ${data.workers.join(", ")}`);
@@ -473,6 +738,8 @@ function renderDayJobs() {
       scope.textContent = data.scope;
       info.appendChild(scope);
     }
+    const tags = buildTrackingTags(data);
+    if (tags.childElementCount) info.appendChild(tags);
 
     const actions = document.createElement("div");
     actions.className = "jobActions";
@@ -481,7 +748,7 @@ function renderDayJobs() {
     editBtn.className = "miniBtn";
     editBtn.title = "Edit / 编辑";
     editBtn.setAttribute("aria-label", "Edit / 编辑");
-    editBtn.textContent = "✎";
+    editBtn.innerHTML = "✎ <span>Edit<br><small>编辑</small></span>";
     editBtn.disabled = !isConnected();
     editBtn.addEventListener("click", () => openJobModal(event));
 
@@ -490,14 +757,314 @@ function renderDayJobs() {
     copyBtn.className = "miniBtn";
     copyBtn.title = "Copy / 复制";
     copyBtn.setAttribute("aria-label", "Copy / 复制");
-    copyBtn.textContent = "⧉";
+    copyBtn.innerHTML = "⧉ <span>Copy<br><small>复制</small></span>";
     copyBtn.disabled = !isConnected();
     copyBtn.addEventListener("click", () => openJobModal(event, true));
-    actions.append(editBtn, copyBtn);
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.type = "button";
+    deleteBtn.className = "miniBtn miniDeleteBtn";
+    deleteBtn.title = "Delete / 删除";
+    deleteBtn.setAttribute("aria-label", "Delete / 删除");
+    deleteBtn.innerHTML = "🗑 <span>Delete<br><small>删除</small></span>";
+    deleteBtn.disabled = !isConnected();
+    deleteBtn.addEventListener("click", () => deleteEventFromCard(event));
+    actions.append(editBtn, copyBtn, deleteBtn);
 
     card.append(strip, info, actions);
     el.dayJobs.appendChild(card);
   });
+}
+
+function buildTrackingTags(data) {
+  const wrap = document.createElement("div");
+  wrap.className = "statusTags";
+
+  const add = (text, className = "") => {
+    const tag = document.createElement("span");
+    tag.className = `statusTag ${className}`.trim();
+    tag.textContent = text;
+    wrap.appendChild(tag);
+  };
+
+  if (data.hoardingDone) {
+    add(`Hoarding done${data.hoardingDoneDate ? `: ${formatDateShort(data.hoardingDoneDate)}` : ""} / 围板已完成`, "good");
+  }
+  if (data.hoardingRemoveRequired) {
+    add(`Remove hoarding${data.hoardingRemoveDate ? `: ${formatDateShort(data.hoardingRemoveDate)}` : ""} / 拆围板`, "warn");
+  }
+  if (data.deliverySent) {
+    add(`Delivery${data.deliveryDate ? `: ${formatDateShort(data.deliveryDate)}` : ""} / 送货`, "good");
+  }
+  if (data.billed) {
+    add(`Billed${data.billedDate ? `: ${formatDateShort(data.billedDate)}` : ""} / 已开单`, "good");
+  } else {
+    add("Not billed / 未开单", "bad");
+  }
+  return wrap;
+}
+
+function startAddressSearch(rawTerm) {
+  const term = String(rawTerm || "").trim();
+  if (!isConnected()) {
+    showToast("Connect Google Calendar first. / 请先连接谷歌日历。", true);
+    return;
+  }
+  if (term.length < 2) {
+    showToast("Type at least 2 letters or numbers. / 请至少输入两个字或号码。", true);
+    return;
+  }
+  lastAddressSearch = term;
+  el.addressSearchInput.value = term;
+  el.historySearchInput.value = term;
+  openSearchModal();
+  searchAddressHistory(term);
+}
+
+function openSearchModal() {
+  el.searchModal.hidden = false;
+  document.body.style.overflow = "hidden";
+}
+
+function closeSearchModal() {
+  el.searchModal.hidden = true;
+  if (el.jobModal.hidden && el.settingsModal.hidden) document.body.style.overflow = "";
+}
+
+async function searchAddressHistory(term) {
+  const requestNumber = ++searchRequestNumber;
+  el.historySearchBtn.disabled = true;
+  el.historySearchStatus.classList.remove("error");
+  el.historySearchStatus.textContent = `Searching KG Work for “${term}”… / 正在 KG Work 搜索“${term}”……`;
+  el.historySearchResults.innerHTML = "";
+
+  try {
+    const foundEvents = await fetchAllAddressEvents(term);
+    if (requestNumber !== searchRequestNumber) return;
+    renderAddressHistory(foundEvents, term);
+  } catch (error) {
+    if (requestNumber !== searchRequestNumber) return;
+    el.historySearchStatus.classList.add("error");
+    el.historySearchStatus.textContent = `Search failed: ${error.message} / 搜索失败：${error.message}`;
+  } finally {
+    if (requestNumber === searchRequestNumber) el.historySearchBtn.disabled = false;
+  }
+}
+
+async function fetchAllAddressEvents(term) {
+  const calendarId = encodeURIComponent(CONFIG.CALENDAR_ID || "primary");
+  const startDate = String(CONFIG.HISTORY_START || "2026-01-01");
+  const endDate = String(CONFIG.HISTORY_END || "2051-01-01");
+  const timeMin = new Date(`${startDate}T00:00:00`).toISOString();
+  const timeMax = new Date(`${endDate}T00:00:00`).toISOString();
+  const all = [];
+  let pageToken = "";
+
+  do {
+    const params = new URLSearchParams({
+      timeMin,
+      timeMax,
+      singleEvents: "true",
+      orderBy: "startTime",
+      showDeleted: "false",
+      maxResults: "2500",
+      q: term
+    });
+    if (pageToken) params.set("pageToken", pageToken);
+    const data = await apiFetch(`/calendars/${calendarId}/events?${params.toString()}`);
+    all.push(...(Array.isArray(data?.items) ? data.items : []));
+    pageToken = data?.nextPageToken || "";
+  } while (pageToken && all.length < 10000);
+
+  const normalizedTerm = normalizeAddress(term);
+  return all.filter((event) => {
+    const data = parseEventData(event);
+    const addressText = normalizeAddress(`${data.address} ${event.summary || ""} ${event.location || ""}`);
+    return addressText.includes(normalizedTerm);
+  });
+}
+
+function renderAddressHistory(foundEvents, term) {
+  el.historySearchResults.innerHTML = "";
+  if (!foundEvents.length) {
+    el.historySearchStatus.textContent = `No matching address found for “${term}”. / 找不到“${term}”的地址记录。`;
+    const empty = document.createElement("div");
+    empty.className = "historyEmpty";
+    empty.innerHTML = "<strong>No address history / 没有地址记录</strong><br>Try a shorter part of the address. / 请尝试输入较短的地址。";
+    el.historySearchResults.appendChild(empty);
+    return;
+  }
+
+  const groups = new Map();
+  foundEvents.forEach((event) => {
+    const data = parseEventData(event);
+    const address = data.address || event.summary || event.location || "Untitled job / 未命名工作";
+    const key = normalizeAddress(address);
+    if (!groups.has(key)) groups.set(key, { address, events: [] });
+    groups.get(key).events.push(event);
+  });
+
+  const sortedGroups = Array.from(groups.values()).sort((a, b) => {
+    const newestA = Math.max(...a.events.map(eventStartMs));
+    const newestB = Math.max(...b.events.map(eventStartMs));
+    return newestB - newestA;
+  });
+
+  el.historySearchStatus.textContent = `${foundEvents.length} record(s), ${sortedGroups.length} address(es) found. / 找到 ${foundEvents.length} 条记录、${sortedGroups.length} 个地址。`;
+  sortedGroups.forEach((group) => el.historySearchResults.appendChild(buildHistoryGroup(group)));
+}
+
+function buildHistoryGroup(group) {
+  const sorted = [...group.events].sort((a, b) => eventStartMs(b) - eventStartMs(a));
+  const records = sorted.map((event) => ({ event, data: parseEventData(event) }));
+  const workDates = uniqueDateValues(records.flatMap(({ event }) => eventDateKeys(event)));
+  const hoardingDoneDates = uniqueDateValues(records.filter(({ data }) => data.hoardingDone).map(({ data, event }) => data.hoardingDoneDate || eventDateKey(event)));
+  const removalDates = uniqueDateValues(records.filter(({ data }) => data.hoardingRemoveRequired).map(({ data }) => data.hoardingRemoveDate).filter(Boolean));
+  const deliveries = records
+    .filter(({ data }) => data.deliverySent)
+    .map(({ data, event }) => ({ date: data.deliveryDate || eventDateKey(event), materials: data.deliveryMaterials }))
+    .sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  const billedDates = uniqueDateValues(records.filter(({ data }) => data.billed).map(({ data, event }) => data.billedDate || eventDateKey(event)));
+  const notBilledCount = records.filter(({ data }) => !data.billed).length;
+
+  const groupEl = document.createElement("section");
+  groupEl.className = "historyGroup";
+
+  const head = document.createElement("div");
+  head.className = "historyGroupHead";
+  const headText = document.createElement("div");
+  const title = document.createElement("h3");
+  title.textContent = group.address;
+  const subtitle = document.createElement("p");
+  subtitle.textContent = `${records.length} job record(s) / ${records.length} 条工作记录`;
+  headText.append(title, subtitle);
+  head.appendChild(headText);
+
+  const summary = document.createElement("div");
+  summary.className = "historySummaryGrid";
+  summary.append(
+    makeHistorySummary("Work dates / 工作日期", formatDateList(workDates)),
+    makeHistorySummary("Hoarding / 围板", [
+      `Done / 完成: ${formatDateList(hoardingDoneDates)}`,
+      `Remove / 拆除: ${formatDateList(removalDates)}`
+    ].join("\n")),
+    makeHistorySummary("Material deliveries / 材料送货", formatDeliveryList(deliveries)),
+    makeHistorySummary("Billing / 开单", [
+      `Billed dates / 已开单日期: ${formatDateList(billedDates)}`,
+      `Not billed jobs / 未开单工作: ${notBilledCount}`
+    ].join("\n"))
+  );
+
+  const list = document.createElement("div");
+  list.className = "historyEventList";
+  records.forEach(({ event, data }) => list.appendChild(buildHistoryEventRow(event, data)));
+
+  groupEl.append(head, summary, list);
+  return groupEl;
+}
+
+function makeHistorySummary(label, value) {
+  const item = document.createElement("div");
+  item.className = "historySummaryItem";
+  const strong = document.createElement("strong");
+  strong.textContent = label;
+  const span = document.createElement("span");
+  span.textContent = value || "None recorded / 没有记录";
+  item.append(strong, span);
+  return item;
+}
+
+function buildHistoryEventRow(event, data) {
+  const row = document.createElement("div");
+  row.className = "historyEventRow";
+
+  const dateWrap = document.createElement("div");
+  dateWrap.className = "historyEventDate";
+  dateWrap.textContent = formatEventDateRangeBilingual(event);
+  const time = document.createElement("small");
+  time.textContent = eventTimeLabel(event);
+  dateWrap.appendChild(time);
+
+  const details = document.createElement("div");
+  details.className = "historyEventDetails";
+  const tags = buildTrackingTags(data);
+  details.appendChild(tags);
+  const lines = [];
+  if (data.deliveryMaterials) lines.push(`Delivery materials / 送货材料: ${data.deliveryMaterials}`);
+  if (data.scope) lines.push(`Scope / 工作范围: ${data.scope}`);
+  if (data.foremen.length) lines.push(`Foremen / 头手: ${data.foremen.join(", ")}`);
+  if (data.workers.length) lines.push(`Workers / 工人: ${data.workers.join(", ")}`);
+  if (lines.length) {
+    const p = document.createElement("p");
+    p.textContent = lines.join(" • ");
+    details.appendChild(p);
+  }
+
+  const edit = document.createElement("button");
+  edit.type = "button";
+  edit.className = "btn btnSecondary historyEditBtn";
+  edit.textContent = "Edit / 编辑";
+  edit.addEventListener("click", () => editEventFromHistory(event));
+
+  row.append(dateWrap, details, edit);
+  return row;
+}
+
+async function editEventFromHistory(event) {
+  closeSearchModal();
+  const key = eventDateKey(event);
+  selectedDate = key;
+  monthAnchor = startOfMonth(dateFromKey(key));
+  renderAll();
+  showToast("Loading this job date… / 正在加载此工作日期……", false);
+  await refreshEvents(false);
+  const freshEvent = events.find((item) => item.id === event.id) || event;
+  openJobModal(freshEvent);
+}
+
+function normalizeAddress(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[^a-z0-9\u3400-\u9fff]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function uniqueDateValues(values) {
+  return Array.from(new Set(values.filter(Boolean))).sort((a, b) => String(b).localeCompare(String(a)));
+}
+
+function formatDateList(values) {
+  if (!values.length) return "None recorded / 没有记录";
+  const shown = values.slice(0, 12).map(formatDateBilingual);
+  if (values.length > 12) shown.push(`+${values.length - 12} more / 另外 ${values.length - 12} 条`);
+  return shown.join(", ");
+}
+
+function formatDeliveryList(deliveries) {
+  if (!deliveries.length) return "None recorded / 没有记录";
+  const shown = deliveries.slice(0, 12).map((entry) => {
+    const materials = entry.materials ? ` — ${entry.materials}` : "";
+    return `${formatDateBilingual(entry.date)}${materials}`;
+  });
+  if (deliveries.length > 12) shown.push(`+${deliveries.length - 12} more / 另外 ${deliveries.length - 12} 条`);
+  return shown.join("\n");
+}
+
+function formatDateShort(value) {
+  const date = dateFromKey(value);
+  if (Number.isNaN(date.getTime())) return value || "";
+  return date.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
+function formatDateBilingual(value) {
+  if (!value) return "Not set / 未设置";
+  const date = dateFromKey(value);
+  if (Number.isNaN(date.getTime())) return value;
+  const en = date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+  const zh = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+  return `${en} / ${zh}`;
 }
 
 function selectDate(key) {
@@ -537,7 +1104,7 @@ function visibleCalendarRange() {
 
 function eventsForDate(key) {
   return events
-    .filter((event) => eventDateKey(event) === key)
+    .filter((event) => eventIncludesDate(event, key))
     .sort(compareEvents);
 }
 
@@ -554,28 +1121,90 @@ function eventStartMs(event) {
   return Number.MAX_SAFE_INTEGER;
 }
 
-function eventDateKey(event) {
-  if (event.start?.date) return event.start.date;
-  if (event.start?.dateTime) return dateKey(new Date(event.start.dateTime));
-  return "";
+function eventDateRange(event) {
+  if (event.start?.date) {
+    const start = event.start.date;
+    const exclusiveEnd = event.end?.date || addDaysKey(start, 1);
+    let end = addDaysKey(exclusiveEnd, -1);
+    if (end < start) end = start;
+    return { start, end };
+  }
+  if (event.start?.dateTime) {
+    const startDateTime = new Date(event.start.dateTime);
+    const start = dateKey(startDateTime);
+    let end = start;
+    if (event.end?.dateTime) {
+      const endDateTime = new Date(event.end.dateTime);
+      end = dateKey(endDateTime);
+      const endsAtMidnight = endDateTime.getHours() === 0
+        && endDateTime.getMinutes() === 0
+        && endDateTime.getSeconds() === 0
+        && endDateTime.getMilliseconds() === 0;
+      if (endsAtMidnight && endDateTime > startDateTime && end > start) end = addDaysKey(end, -1);
+    }
+    return { start, end: end < start ? start : end };
+  }
+  return { start: "", end: "" };
 }
 
-function eventChipLabel(event) {
+function eventDateKeys(event) {
+  const range = eventDateRange(event);
+  if (!range.start) return [];
+  const keys = [];
+  const maxDays = 3660;
+  for (let key = range.start, count = 0; key <= range.end && count < maxDays; key = addDaysKey(key, 1), count += 1) {
+    keys.push(key);
+  }
+  return keys;
+}
+
+function eventIncludesDate(event, key) {
+  const range = eventDateRange(event);
+  return Boolean(range.start) && key >= range.start && key <= range.end;
+}
+
+function eventDateKey(event) {
+  return eventDateRange(event).start;
+}
+
+function eventChipLabel(event, shownDate = "") {
   const data = parseEventData(event);
   const title = data.address || event.summary || "Job / 工作";
-  if (event.start?.date) return title;
-  const time = new Date(event.start.dateTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
-  return `${time} ${title}`;
+  const range = eventDateRange(event);
+  const multiDay = range.start && range.start !== range.end;
+  if (event.start?.date) return multiDay ? `↔ ${title}` : title;
+  const startDate = new Date(event.start.dateTime);
+  const time = startDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+  if (multiDay && shownDate && shownDate !== range.start) return `↔ ${title}`;
+  return `${time} ${multiDay ? "↔ " : ""}${title}`;
 }
 
 function eventTimeLabel(event) {
-  if (event.start?.date) return "All day / 全天";
+  const range = eventDateRange(event);
+  const multiDay = range.start && range.start !== range.end;
+  if (event.start?.date) {
+    return multiDay
+      ? `${formatDateShort(range.start)}–${formatDateShort(range.end)} • All day / 全天`
+      : "All day / 全天";
+  }
   if (!event.start?.dateTime) return "Time not set / 未设时间";
-  const start = new Date(event.start.dateTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
-  const end = event.end?.dateTime
-    ? new Date(event.end.dateTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })
+  const startDateTime = new Date(event.start.dateTime);
+  const start = startDateTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+  const endDateTime = event.end?.dateTime ? new Date(event.end.dateTime) : null;
+  const end = endDateTime
+    ? endDateTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })
     : "";
+  if (multiDay && endDateTime) {
+    return `${formatDateShort(range.start)} ${start} – ${formatDateShort(range.end)} ${end}`;
+  }
   return end ? `${start}–${end}` : start;
+}
+
+function formatEventDateRangeBilingual(event) {
+  const range = eventDateRange(event);
+  if (!range.start) return "Not set / 未设置";
+  if (range.start === range.end) return formatDateBilingual(range.start);
+  return `${formatDateBilingual(range.start)} → ${formatDateBilingual(range.end)}`;
 }
 
 function eventColour(event) {
@@ -594,6 +1223,8 @@ function openJobModal(event = null, asCopy = false) {
   if (event) fillJobForm(event, asCopy);
   else {
     el.dateInput.value = selectedDate;
+    el.endDateInput.value = selectedDate;
+    lastFormStartDate = selectedDate;
     renderPeopleLists([], []);
     renderColourPicker("default");
   }
@@ -606,13 +1237,14 @@ function openJobModal(event = null, asCopy = false) {
   el.jobModal.hidden = false;
   document.body.style.overflow = "hidden";
   updateTimeFieldState();
+  updateTrackingFieldState(false);
   updateAssignmentWarnings();
   setTimeout(() => el.addressInput.focus(), 80);
 }
 
 function closeJobModal() {
   el.jobModal.hidden = true;
-  document.body.style.overflow = "";
+  if (el.searchModal.hidden && el.settingsModal.hidden) document.body.style.overflow = "";
   currentModalEvent = null;
 }
 
@@ -620,9 +1252,20 @@ function resetJobForm() {
   el.jobForm.reset();
   el.eventId.value = "";
   el.dateInput.value = selectedDate;
+  el.endDateInput.value = selectedDate;
+  lastFormStartDate = selectedDate;
   el.startTimeInput.value = "08:00";
   el.endTimeInput.value = "10:00";
   el.allDayInput.checked = false;
+  el.hoardingDoneInput.checked = false;
+  el.hoardingRemoveInput.checked = false;
+  el.deliverySentInput.checked = false;
+  el.billedInput.checked = false;
+  el.hoardingDoneDateInput.value = "";
+  el.hoardingRemoveDateInput.value = "";
+  el.deliveryDateInput.value = "";
+  el.deliveryMaterialsInput.value = "";
+  el.billedDateInput.value = "";
   renderPeopleLists([], []);
   renderColourPicker("default");
   el.saveJobBtn.disabled = false;
@@ -639,8 +1282,33 @@ function fillJobForm(event, asCopy) {
   el.keepInput.value = data.keep;
   el.protectInput.value = data.protect;
   el.disposalInput.value = data.disposal;
+  el.hoardingDoneInput.checked = data.hoardingDone;
+  el.hoardingDoneDateInput.value = data.hoardingDoneDate;
+  el.hoardingRemoveInput.checked = data.hoardingRemoveRequired;
+  el.hoardingRemoveDateInput.value = data.hoardingRemoveDate;
+  el.deliverySentInput.checked = data.deliverySent;
+  el.deliveryDateInput.value = data.deliveryDate;
+  el.deliveryMaterialsInput.value = data.deliveryMaterials;
+  el.billedInput.checked = data.billed;
+  el.billedDateInput.value = data.billedDate;
   el.notesInput.value = data.notes;
-  el.dateInput.value = asCopy ? selectedDate : eventDateKey(event);
+  const originalRange = eventDateRange(event);
+  const originalDaySpan = Math.max(0, daysBetweenKeys(originalRange.start, originalRange.end));
+  const formStartDate = asCopy ? selectedDate : originalRange.start;
+  el.dateInput.value = formStartDate;
+  el.endDateInput.value = asCopy ? addDaysKey(formStartDate, originalDaySpan) : originalRange.end;
+  lastFormStartDate = formStartDate;
+  if (asCopy) {
+    el.hoardingDoneInput.checked = false;
+    el.hoardingDoneDateInput.value = "";
+    el.hoardingRemoveInput.checked = false;
+    el.hoardingRemoveDateInput.value = "";
+    el.deliverySentInput.checked = false;
+    el.deliveryDateInput.value = "";
+    el.deliveryMaterialsInput.value = "";
+    el.billedInput.checked = false;
+    el.billedDateInput.value = "";
+  }
 
   const allDay = Boolean(event.start?.date);
   el.allDayInput.checked = allDay;
@@ -652,11 +1320,53 @@ function fillJobForm(event, asCopy) {
   renderColourPicker(String(event.colorId || "default"));
 }
 
+function handleStartDateChange() {
+  const nextStart = el.dateInput.value;
+  if (!nextStart) return;
+  const currentEnd = el.endDateInput.value || nextStart;
+  if (lastFormStartDate && currentEnd >= lastFormStartDate) {
+    const durationDays = Math.max(0, daysBetweenKeys(lastFormStartDate, currentEnd));
+    el.endDateInput.value = addDaysKey(nextStart, durationDays);
+  } else if (!el.endDateInput.value || el.endDateInput.value < nextStart) {
+    el.endDateInput.value = nextStart;
+  }
+  lastFormStartDate = nextStart;
+  updateAssignmentWarnings();
+  updateTrackingFieldState(true);
+}
+
+function handleEndDateChange() {
+  const start = el.dateInput.value;
+  const end = el.endDateInput.value;
+  if (start && end && end < start) {
+    el.endDateInput.value = start;
+    showToast("End date cannot be before start date. / 结束日期不能早于开始日期。", true);
+  }
+  updateAssignmentWarnings();
+}
+
 function updateTimeFieldState() {
   const disabled = el.allDayInput.checked;
   el.startTimeInput.disabled = disabled;
   el.endTimeInput.disabled = disabled;
   document.querySelectorAll(".timeField").forEach((node) => node.style.opacity = disabled ? ".52" : "1");
+}
+
+
+function updateTrackingFieldState(fillDefaultDate) {
+  const jobDate = el.dateInput.value || selectedDate;
+  const pairs = [
+    [el.hoardingDoneInput, el.hoardingDoneDateInput],
+    [el.hoardingRemoveInput, el.hoardingRemoveDateInput],
+    [el.deliverySentInput, el.deliveryDateInput],
+    [el.billedInput, el.billedDateInput]
+  ];
+
+  pairs.forEach(([checkbox, dateInput]) => {
+    dateInput.disabled = !checkbox.checked;
+    if (fillDefaultDate && checkbox.checked && !dateInput.value) dateInput.value = jobDate;
+  });
+  el.deliveryMaterialsInput.disabled = !el.deliverySentInput.checked;
 }
 
 function renderPeopleLists(selectedForemen, selectedWorkers) {
@@ -697,24 +1407,34 @@ function renderPersonGroup(container, names, type, selectedNames) {
 }
 
 function updateAssignmentWarnings() {
-  const key = el.dateInput.value;
-  if (!key) return;
+  const startKey = el.dateInput.value;
+  const endKey = el.endDateInput.value || startKey;
+  if (!startKey) return;
   const editingId = el.eventId.value;
   const foremanMap = new Map();
   const workerMap = new Map();
 
-  eventsForDate(key).forEach((event) => {
+  events.forEach((event) => {
     if (event.id === editingId) return;
+    const range = eventDateRange(event);
+    if (!dateRangesOverlap(startKey, endKey, range.start, range.end)) return;
     const data = parseEventData(event);
     const address = data.address || event.summary || "Another job / 其他工作";
-    data.foremen.forEach((name) => foremanMap.set(name, address));
-    data.workers.forEach((name) => workerMap.set(name, address));
+    const dateText = range.start === range.end
+      ? formatDateShort(range.start)
+      : `${formatDateShort(range.start)}–${formatDateShort(range.end)}`;
+    const warningText = `${address} (${dateText})`;
+    data.foremen.forEach((name) => {
+      if (!foremanMap.has(name)) foremanMap.set(name, warningText);
+    });
+    data.workers.forEach((name) => {
+      if (!workerMap.has(name)) workerMap.set(name, warningText);
+    });
   });
 
   applyWarnings(el.foremenList, foremanMap);
   applyWarnings(el.workersList, workerMap);
 }
-
 function applyWarnings(container, map) {
   container.querySelectorAll(".personChoice").forEach((label) => {
     const input = label.querySelector("input");
@@ -815,6 +1535,7 @@ function collectJobForm() {
   return {
     address: el.addressInput.value.trim(),
     date: el.dateInput.value,
+    endDate: el.endDateInput.value || el.dateInput.value,
     startTime: el.startTimeInput.value,
     endTime: el.endTimeInput.value,
     allDay: el.allDayInput.checked,
@@ -825,6 +1546,15 @@ function collectJobForm() {
     keep: el.keepInput.value.trim(),
     protect: el.protectInput.value.trim(),
     disposal: el.disposalInput.value.trim(),
+    hoardingDone: el.hoardingDoneInput.checked,
+    hoardingDoneDate: el.hoardingDoneInput.checked ? el.hoardingDoneDateInput.value : "",
+    hoardingRemoveRequired: el.hoardingRemoveInput.checked,
+    hoardingRemoveDate: el.hoardingRemoveInput.checked ? el.hoardingRemoveDateInput.value : "",
+    deliverySent: el.deliverySentInput.checked,
+    deliveryDate: el.deliverySentInput.checked ? el.deliveryDateInput.value : "",
+    deliveryMaterials: el.deliverySentInput.checked ? el.deliveryMaterialsInput.value.trim() : "",
+    billed: el.billedInput.checked,
+    billedDate: el.billedInput.checked ? el.billedDateInput.value : "",
     foremen: checkedValues(el.foremenList),
     workers: checkedValues(el.workersList),
     colourId: el.colourPicker.querySelector('input[name="jobColour"]:checked')?.value || "default",
@@ -845,7 +1575,7 @@ function buildCalendarEvent(data) {
     extendedProperties: {
       private: {
         kgCeilingApp: "1",
-        kgCeilingVersion: "1.1.0"
+        kgCeilingVersion: "1.3.0"
       }
     }
   };
@@ -854,16 +1584,17 @@ function buildCalendarEvent(data) {
     resource.colorId = data.colourId;
   }
 
+  const endDate = data.endDate || data.date;
+  if (endDate < data.date) throw new Error("End date cannot be before start date. / 结束日期不能早于开始日期。");
+
   if (data.allDay) {
-    const next = dateFromKey(data.date);
-    next.setDate(next.getDate() + 1);
     resource.start = { date: data.date };
-    resource.end = { date: dateKey(next) };
+    resource.end = { date: addDaysKey(endDate, 1) };
   } else {
     if (!data.startTime || !data.endTime) throw new Error("Please enter start and end time. / 请输入开始和结束时间。");
     const start = localDateTime(data.date, data.startTime);
-    const end = localDateTime(data.date, data.endTime);
-    if (end <= start) throw new Error("End time must be after start time. / 结束时间必须迟于开始时间。");
+    const end = localDateTime(endDate, data.endTime);
+    if (end <= start) throw new Error("The ending date and time must be after the starting date and time. / 结束日期和时间必须迟于开始日期和时间。");
     resource.start = { dateTime: start.toISOString() };
     resource.end = { dateTime: end.toISOString() };
   }
@@ -871,22 +1602,40 @@ function buildCalendarEvent(data) {
 }
 
 function buildDescription(data) {
+  const yesNo = (value) => value ? "Yes / 是" : "No / 否";
   const lines = [
     DATA_HEADER,
-    `Address / 地址: ${data.address}`,
-    `Contact / 联系: ${data.contact}`,
-    `Lock No / 门锁号码: ${data.lock}`,
-    `Scope / 工作范围: ${data.scope}`,
-    `Remove / 拆除: ${data.remove}`,
-    `Keep / 保留: ${data.keep}`,
-    `Protect / 保护: ${data.protect}`,
-    `Disposal / 清理与丢弃: ${data.disposal}`,
+    `Address / 地址: ${encodeField(data.address)}`,
+    `Contact / 联系: ${encodeField(data.contact)}`,
+    `Lock No / 门锁号码: ${encodeField(data.lock)}`,
+    `Scope / 工作范围: ${encodeField(data.scope)}`,
+    `Remove / 拆除: ${encodeField(data.remove)}`,
+    `Keep / 保留: ${encodeField(data.keep)}`,
+    `Protect / 保护: ${encodeField(data.protect)}`,
+    `Disposal / 清理与丢弃: ${encodeField(data.disposal)}`,
+    `Hoarding Done / 围板已完成: ${yesNo(data.hoardingDone)}`,
+    `Hoarding Done Date / 围板完成日期: ${data.hoardingDoneDate || ""}`,
+    `Hoarding Remove Required / 围板需要拆除: ${yesNo(data.hoardingRemoveRequired)}`,
+    `Hoarding Removal Date / 围板拆除日期: ${data.hoardingRemoveDate || ""}`,
+    `Delivery Sent / 已送货: ${yesNo(data.deliverySent)}`,
+    `Delivery Date / 送货日期: ${data.deliveryDate || ""}`,
+    `Delivery Materials / 送货材料: ${encodeField(data.deliveryMaterials)}`,
+    `Billed / 已开单: ${yesNo(data.billed)}`,
+    `Billed Date / 开单日期: ${data.billedDate || ""}`,
     `Foremen / 头手: ${data.foremen.join(" || ")}`,
     `Workers / 工人: ${data.workers.join(" || ")}`,
-    `Notes / 备注: ${data.notes}`,
+    `Notes / 备注: ${encodeField(data.notes)}`,
     APP_MARKER
   ];
   return lines.join("\n");
+}
+
+function encodeField(value) {
+  return String(value || "").replace(/\r?\n/g, "\\n");
+}
+
+function decodeField(value) {
+  return String(value || "").replace(/\\n/g, "\n");
 }
 
 function parseEventData(event) {
@@ -900,6 +1649,15 @@ function parseEventData(event) {
     keep: "",
     protect: "",
     disposal: "",
+    hoardingDone: false,
+    hoardingDoneDate: "",
+    hoardingRemoveRequired: false,
+    hoardingRemoveDate: "",
+    deliverySent: false,
+    deliveryDate: "",
+    deliveryMaterials: "",
+    billed: false,
+    billedDate: "",
     foremen: [],
     workers: [],
     notes: ""
@@ -925,17 +1683,26 @@ function parseEventData(event) {
     return "";
   };
 
-  data.address = get("Address / 地址", "Address") || data.address;
-  data.contact = get("Contact / 联系", "Contact");
-  data.lock = get("Lock No / 门锁号码", "Lock No");
-  data.scope = get("Scope / 工作范围", "Scope", "SCOPE");
-  data.remove = get("Remove / 拆除", "Remove");
-  data.keep = get("Keep / 保留", "Keep");
-  data.protect = get("Protect / 保护", "Protect");
-  data.disposal = get("Disposal / 清理与丢弃", "Disposal");
+  data.address = decodeField(get("Address / 地址", "Address")) || data.address;
+  data.contact = decodeField(get("Contact / 联系", "Contact"));
+  data.lock = decodeField(get("Lock No / 门锁号码", "Lock No"));
+  data.scope = decodeField(get("Scope / 工作范围", "Scope", "SCOPE"));
+  data.remove = decodeField(get("Remove / 拆除", "Remove"));
+  data.keep = decodeField(get("Keep / 保留", "Keep"));
+  data.protect = decodeField(get("Protect / 保护", "Protect"));
+  data.disposal = decodeField(get("Disposal / 清理与丢弃", "Disposal"));
+  data.hoardingDoneDate = get("Hoarding Done Date / 围板完成日期", "Hoarding Done Date");
+  data.hoardingDone = parseYesNo(get("Hoarding Done / 围板已完成", "Hoarding Done")) || Boolean(data.hoardingDoneDate);
+  data.hoardingRemoveDate = get("Hoarding Removal Date / 围板拆除日期", "Hoarding Removal Date", "Hoarding Remove Date");
+  data.hoardingRemoveRequired = parseYesNo(get("Hoarding Remove Required / 围板需要拆除", "Hoarding Remove Required")) || Boolean(data.hoardingRemoveDate);
+  data.deliveryDate = get("Delivery Date / 送货日期", "Delivery Date");
+  data.deliveryMaterials = decodeField(get("Delivery Materials / 送货材料", "Delivery Materials"));
+  data.deliverySent = parseYesNo(get("Delivery Sent / 已送货", "Delivery Sent")) || Boolean(data.deliveryDate || data.deliveryMaterials);
+  data.billedDate = get("Billed Date / 开单日期", "Billed Date");
+  data.billed = parseYesNo(get("Billed / 已开单", "Billed")) || Boolean(data.billedDate);
   data.foremen = splitPeople(get("Foremen / 头手", "Foremen"));
   data.workers = splitPeople(get("Workers / 工人", "Workers"));
-  data.notes = get("Notes / 备注", "Notes");
+  data.notes = decodeField(get("Notes / 备注", "Notes"));
   return data;
 }
 
@@ -944,26 +1711,48 @@ function splitPeople(value) {
   return value.split(/\s*\|\|\s*|\s*,\s*/).map((item) => item.trim()).filter(Boolean);
 }
 
+
+function parseYesNo(value) {
+  return /^(yes|true|1|是|已|done|billed)/i.test(String(value || "").trim());
+}
+
+async function deleteEventFromCard(event) {
+  if (!event?.id) return;
+  const data = parseEventData(event);
+  const address = data.address || event.summary || "this job / 此工作";
+  const ok = window.confirm(`Delete ${address} from the app and Google Calendar?\n从应用和谷歌日历删除 ${address}？`);
+  if (!ok) return;
+  await deleteCalendarEvent(event.id, false);
+}
+
 async function deleteCurrentJob() {
   const eventId = el.eventId.value;
   if (!eventId) return;
   const ok = window.confirm("Delete this job from the app and Google Calendar?\n从应用和谷歌日历删除此工作？");
   if (!ok) return;
-
   el.deleteJobBtn.disabled = true;
-  const calendarId = encodeURIComponent(CONFIG.CALENDAR_ID || "primary");
   try {
-    await apiFetch(`/calendars/${calendarId}/events/${encodeURIComponent(eventId)}`, { method: "DELETE" });
-    closeJobModal();
-    showToast("Job deleted from both calendars. / 工作已从两边删除。", false);
-    await refreshEvents(false);
-  } catch (error) {
-    showToast(`Delete failed: ${error.message} / 删除失败：${error.message}`, true);
+    await deleteCalendarEvent(eventId, true);
   } finally {
     el.deleteJobBtn.disabled = false;
   }
 }
 
+async function deleteCalendarEvent(eventId, closeEditor) {
+  if (!isConnected()) {
+    disconnectForExpiredToken();
+    return;
+  }
+  const calendarId = encodeURIComponent(CONFIG.CALENDAR_ID || "primary");
+  try {
+    await apiFetch(`/calendars/${calendarId}/events/${encodeURIComponent(eventId)}`, { method: "DELETE" });
+    if (closeEditor) closeJobModal();
+    showToast("Job deleted from both calendars. / 工作已从两边删除。", false);
+    await refreshEvents(false);
+  } catch (error) {
+    showToast(`Delete failed: ${error.message} / 删除失败：${error.message}`, true);
+  }
+}
 function openSettings() {
   el.calendarIdText.textContent = CONFIG.CALENDAR_ID || "primary";
   el.settingsModal.hidden = false;
@@ -972,7 +1761,7 @@ function openSettings() {
 
 function closeSettings() {
   el.settingsModal.hidden = true;
-  if (el.jobModal.hidden) document.body.style.overflow = "";
+  if (el.jobModal.hidden && el.searchModal.hidden) document.body.style.overflow = "";
 }
 
 async function resetAppCache() {
@@ -1021,6 +1810,27 @@ function dateKey(date) {
 function dateFromKey(key) {
   const [year, month, day] = key.split("-").map(Number);
   return new Date(year, month - 1, day, 12, 0, 0, 0);
+}
+
+function addDaysKey(key, days) {
+  if (!key) return "";
+  const date = dateFromKey(key);
+  date.setDate(date.getDate() + Number(days || 0));
+  return dateKey(date);
+}
+
+function daysBetweenKeys(startKey, endKey) {
+  if (!startKey || !endKey) return 0;
+  const start = dateFromKey(startKey);
+  const end = dateFromKey(endKey);
+  return Math.round((end.getTime() - start.getTime()) / 86400000);
+}
+
+function dateRangesOverlap(startA, endA, startB, endB) {
+  if (!startA || !startB) return false;
+  const safeEndA = endA || startA;
+  const safeEndB = endB || startB;
+  return startA <= safeEndB && startB <= safeEndA;
 }
 
 function localDateTime(dateValue, timeValue) {

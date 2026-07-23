@@ -1,4 +1,4 @@
-const CACHE_NAME = "kg-ceiling-calendar-v1.1.0-google-colours";
+const CACHE_NAME = "kg-ceiling-calendar-v1.3.0-multiday-drag-copy-delete";
 const APP_FILES = [
   "./",
   "./index.html",
