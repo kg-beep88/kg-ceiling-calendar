@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f766e">
+  <meta name="description" content="Simple bilingual ceiling work planner synced with Google Calendar.">
+  <title>KG Ceiling Work Calendar / KG 天花工作日历</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <noscript>
+    <div class="noscript">JavaScript is required / 必须开启 JavaScript</div>
+  </noscript>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brandMark" aria-hidden="true">KG</div>
+      <div>
+        <h1>KG Ceiling Work Calendar</h1>
+        <p>KG 天花工作日历</p>
+      </div>
+    </div>
+
+    <div class="topActions">
+      <span id="connectionBadge" class="statusBadge statusOff">Not connected / 未连接</span>
+      <button id="connectBtn" class="btn btnGoogle" type="button">
+        <span class="btnIcon" aria-hidden="true">G</span>
+        <span>Connect Google Calendar<br><small>连接谷歌日历</small></span>
+      </button>
+      <button id="refreshBtn" class="btn btnSecondary" type="button" disabled>
+        ↻ <span>Refresh / 刷新</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="appShell">
+    <section id="welcomeCard" class="welcomeCard">
+      <div class="welcomeIcon" aria-hidden="true">1</div>
+      <div>
+        <h2>First, connect Google Calendar / 第一步，连接谷歌日历</h2>
+        <p>Click the green button once. Your ceiling jobs will then appear here and in Google Calendar. / 点击绿色按钮一次，天花工作会同时显示在这里和谷歌日历。</p>
+      </div>
+    </section>
+
+    <section class="toolbar card" aria-label="Calendar controls / 日历控制">
+      <div class="toolbarGroup">
+        <button id="prevMonthBtn" class="iconBtn" type="button" aria-label="Previous month / 上个月">‹</button>
+        <button id="todayBtn" class="btn btnSecondary" type="button">Today / 今天</button>
+        <button id="nextMonthBtn" class="iconBtn" type="button" aria-label="Next month / 下个月">›</button>
+      </div>
+      <h2 id="monthTitle" class="monthTitle">Month / 月份</h2>
+      <div class="toolbarGroup toolbarRight">
+        <button id="openGoogleBtn" class="btn btnSecondary" type="button">Open Google Calendar / 打开谷歌日历</button>
+        <button id="settingsBtn" class="iconBtn" type="button" aria-label="Settings / 设置">⚙</button>
+      </div>
+    </section>
+
+    <section class="mainGrid">
+      <div class="calendarPanel card">
+        <div class="weekdayRow" aria-hidden="true">
+          <div>Sun<br><small>日</small></div>
+          <div>Mon<br><small>一</small></div>
+          <div>Tue<br><small>二</small></div>
+          <div>Wed<br><small>三</small></div>
+          <div>Thu<br><small>四</small></div>
+          <div>Fri<br><small>五</small></div>
+          <div>Sat<br><small>六</small></div>
+        </div>
+        <div id="calendarGrid" class="calendarGrid" role="grid" aria-label="Work calendar / 工作日历"></div>
+      </div>
+
+      <aside class="dayPanel card">
+        <div class="dayPanelHead">
+          <div>
+            <p class="eyebrow">Selected date / 已选日期</p>
+            <h2 id="selectedDateTitle">Today / 今天</h2>
+          </div>
+          <button id="addJobBtn" class="btn btnPrimary" type="button" disabled>
+            ＋ Add Job<br><small>新增工作</small>
+          </button>
+        </div>
+
+        <div id="syncMessage" class="syncMessage" role="status" aria-live="polite">
+          Connect Google Calendar to begin. / 请先连接谷歌日历。
+        </div>
+
+        <div id="dayJobs" class="dayJobs"></div>
+      </aside>
+    </section>
+    <footer style="text-align:center;padding:18px 8px;color:#637471;font-size:13px"><a href="privacy.html" style="color:#0f766e;font-weight:800">Privacy Policy / 隐私政策</a></footer>
+  </main>
+
+  <button id="floatingAddBtn" class="floatingAdd" type="button" disabled aria-label="Add job / 新增工作">＋</button>
+
+  <div id="jobModal" class="modalBackdrop" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="jobModalTitle">
+      <header class="modalHead">
+        <div>
+          <p class="eyebrow">Ceiling job / 天花工作</p>
+          <h2 id="jobModalTitle">Add Job / 新增工作</h2>
+        </div>
+        <button id="closeModalBtn" class="iconBtn" type="button" aria-label="Close / 关闭">×</button>
+      </header>
+
+      <form id="jobForm" class="modalForm">
+        <div class="modalBody">
+          <input id="eventId" type="hidden">
+
+          <div class="formSection importantSection">
+            <label class="field fullField">
+              <span>Work address or job name / 工作地址或工作名称 <b>*</b></span>
+              <input id="addressInput" type="text" required autocomplete="street-address" placeholder="Example: 10 Collyer Quay / 例如：10 Collyer Quay">
+            </label>
+          </div>
+
+          <div class="formSection">
+            <h3>1. Date and time / 日期和时间</h3>
+            <div class="formGrid formGrid3">
+              <label class="field">
+                <span>Date / 日期</span>
+                <input id="dateInput" type="date" required>
+              </label>
+              <label class="field timeField">
+                <span>Start / 开始</span>
+                <input id="startTimeInput" type="time" value="08:00">
+              </label>
+              <label class="field timeField">
+                <span>End / 结束</span>
+                <input id="endTimeInput" type="time" value="10:00">
+              </label>
+            </div>
+            <label class="checkLine">
+              <input id="allDayInput" type="checkbox">
+              <span>All-day job / 全天工作</span>
+            </label>
+          </div>
+
+          <div class="formSection">
+            <h3>2. Main details / 主要资料</h3>
+            <div class="formGrid">
+              <label class="field">
+                <span>Contact person and phone / 联系人和电话</span>
+                <input id="contactInput" type="text" autocomplete="tel" placeholder="Name + phone / 姓名 + 电话">
+              </label>
+              <label class="field">
+                <span>Lock number / 门锁号码</span>
+                <input id="lockInput" type="text" inputmode="numeric" placeholder="Example: 1234 / 例如：1234">
+              </label>
+            </div>
+            <label class="field fullField">
+              <span>Scope of work / 工作范围</span>
+              <textarea id="scopeInput" rows="3" placeholder="What ceiling work is needed? / 需要做什么天花工作？"></textarea>
+            </label>
+          </div>
+
+          <details class="formSection optionalSection" open>
+            <summary>3. Work instructions / 工作指示</summary>
+            <div class="formGrid">
+              <label class="field">
+                <span>Remove / 拆除</span>
+                <textarea id="removeInput" rows="2"></textarea>
+              </label>
+              <label class="field">
+                <span>Keep / 保留</span>
+                <textarea id="keepInput" rows="2"></textarea>
+              </label>
+              <label class="field">
+                <span>Protect / 保护</span>
+                <textarea id="protectInput" rows="2"></textarea>
+              </label>
+              <label class="field">
+                <span>Disposal / 清理与丢弃</span>
+                <textarea id="disposalInput" rows="2"></textarea>
+              </label>
+            </div>
+          </details>
+
+          <div class="formSection">
+            <h3>4. People / 人员</h3>
+            <div class="peopleGrid">
+              <fieldset class="peopleBox">
+                <legend>Foremen / 头手</legend>
+                <div id="foremenList" class="checkList"></div>
+              </fieldset>
+              <fieldset class="peopleBox">
+                <legend>Workers / 工人</legend>
+                <div id="workersList" class="checkList"></div>
+              </fieldset>
+            </div>
+            <p class="helpText">A red address means this person already has another job on this date. / 红色地址表示此人在同一天已有其他工作。</p>
+          </div>
+
+          <div class="formSection">
+            <h3>5. Google Calendar colour / 谷歌日历颜色</h3>
+            <div id="colourPicker" class="colourPicker" role="radiogroup" aria-label="Choose job colour / 选择工作颜色"></div>
+          </div>
+
+          <details class="formSection optionalSection">
+            <summary>6. Extra notes / 其他备注</summary>
+            <label class="field fullField">
+              <span>Notes / 备注</span>
+              <textarea id="notesInput" rows="4" placeholder="Any extra information / 其他资料"></textarea>
+            </label>
+          </details>
+        </div>
+
+        <footer class="modalFoot">
+          <button id="deleteJobBtn" class="btn btnDanger" type="button" hidden>Delete / 删除</button>
+          <div class="modalFootRight">
+            <button id="cancelBtn" class="btn btnSecondary" type="button">Cancel / 取消</button>
+            <button id="saveJobBtn" class="btn btnPrimary btnSave" type="submit">
+              Save to Google Calendar<br><small>保存到谷歌日历</small>
+            </button>
+          </div>
+        </footer>
+      </form>
+    </section>
+  </div>
+
+  <div id="settingsModal" class="modalBackdrop" hidden>
+    <section class="modal smallModal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <header class="modalHead">
+        <div>
+          <p class="eyebrow">Simple settings / 简单设置</p>
+          <h2 id="settingsTitle">Settings / 设置</h2>
+        </div>
+        <button id="closeSettingsBtn" class="iconBtn" type="button" aria-label="Close / 关闭">×</button>
+      </header>
+      <div class="modalBody settingsBody">
+        <div class="formSection">
+          <h3>Calendar / 日历</h3>
+          <p>This app uses your main Google Calendar. / 此应用使用您的主要谷歌日历。</p>
+          <p class="monoText" id="calendarIdText">primary</p>
+        </div>
+        <div class="formSection">
+          <h3>Automatic sync / 自动同步</h3>
+          <p>The app refreshes every 60 seconds and whenever you return to the page. / 应用每 60 秒刷新一次，并在您回到页面时刷新。</p>
+        </div>
+        <div class="formSection">
+          <h3>Reset app cache / 重置应用缓存</h3>
+          <p>Use this only if an old version is still showing. / 只有旧版本仍显示时才使用。</p>
+          <button id="resetCacheBtn" class="btn btnDanger" type="button">Reset Cache / 重置缓存</button>
+        </div>
+      </div>
+      <footer class="modalFoot">
+        <div></div>
+        <button id="doneSettingsBtn" class="btn btnPrimary" type="button">Done / 完成</button>
+      </footer>
+    </section>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="config.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="app.js" defer></script>
+</body>
+</html>
