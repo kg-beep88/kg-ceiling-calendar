@@ -1,7 +1,7 @@
 window.KG_CONFIG = {
   // Google OAuth Web Client ID. A client ID is public and safe to place in browser code.
   // 谷歌 OAuth 网页客户端 ID。客户端 ID 可以安全地放在网页代码中。
-  GOOGLE_CLIENT_ID: "695871721774-1e7q94tl17ekbquihm3f5uq37r8k5hu8.apps.googleusercontent.com",
+  GOOGLE_CLIENT_ID: "1003316566308-c54h3bdag8bf6jocsc6g17rgb4kj098n.apps.googleusercontent.com",
 
   // Use the signed-in user's main Google Calendar.
   // 使用登录用户的主要谷歌日历。
