@@ -5,7 +5,7 @@ window.KG_CONFIG = {
 
   // Use the signed-in user's main Google Calendar.
   // 使用登录用户的主要谷歌日历。
-  CALENDAR_ID: "primary",
+  CALENDAR_ID: "161afc2b39c63d9e0cb766d21e1b544e9c7d3d03fcdce363bf1f194a79ad034e@group.calendar.google.com",
 
   // Event access plus read-only calendar-list access lets the app use the exact Google Calendar colours.
   // 事项权限加只读日历列表权限，让应用使用与谷歌日历完全相同的颜色。
