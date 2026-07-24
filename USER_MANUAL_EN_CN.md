@@ -67,14 +67,21 @@ Fill only what is needed:
 First enter:
 - **Installer name / 安装人员姓名**
 
-Tick what needs amendment:
-- **Ceiling / 天花**
-- **Partition / 隔墙**
-- **Pelmet / Box Up / L Box / 窗帘盒 / 包箱 / L Box**
-- **Add Timber Support / Other / 加木支撑 / 其他**
+Tick what needs amendment. Beside every item there is a small manual-detail box. / 勾选需要修改的项目。每个项目旁边都有一个小的手动填写框。
 
-Use **Remark / 备注** to explain what needs to be changed.  
-使用 **Remark / 备注** 填写需要修改的详细内容。
+- **Ceiling / 天花** — type the ceiling detail beside it / 可在旁边填写天花详情
+- **Partition / 隔墙** — type the partition detail beside it / 可在旁边填写隔墙详情
+- **Pelmet / Box Up / L Box / 窗帘盒 / 包箱 / L Box** — type the exact item/detail / 可填写具体项目和详情
+- **Add Timber Support / Other / 加木支撑 / 其他** — type any other detail / 可填写其他详情
+
+Example / 例子:
+```
+Ceiling / 天花: patch 600 x 600 opening
+Partition / 隔墙: add 1 pc access opening
+```
+
+Use the larger **Remark / 备注** box for general instructions.  
+较大的 **Remark / 备注** 可填写整体说明。
 
 ### 4. Deliver / 送货
 
@@ -161,7 +168,28 @@ Deleting removes the job from both the app and KG Work Google Calendar.
 
 ---
 
-## 8. Search an address / 搜索地址
+## 8. Send job details to WhatsApp / 发送工作资料到 WhatsApp
+
+### One site / 单个工地
+
+1. Find the job in the selected-day list. / 在当天工作清单找到该工地。
+2. Press **WhatsApp / 单个工地**. / 点击 **WhatsApp / 单个工地**。
+3. WhatsApp will open with the job details already prepared. / WhatsApp 会自动打开并准备好工作资料。
+4. Choose the person or group and send it. / 选择联系人或群组后发送。
+
+The message includes the address, dates, time, contact, ID details, installer, amendment details, delivery information and billing number.  
+信息会包括地址、日期、时间、联系人、ID 资料、安装人员、修改详情、送货资料和开单号码。
+
+### Whole day / 当天全部工地
+
+1. Click the date you want. / 点击要发送的日期。
+2. Press **WhatsApp Day / 当天全部** beside the date heading. / 点击日期旁的 **WhatsApp Day / 当天全部**。
+3. All jobs for that date will be prepared in one WhatsApp message. / 当天所有工作会自动整理成一条 WhatsApp 信息。
+4. Choose the person or group and send it. / 选择联系人或群组后发送。
+
+---
+
+## 9. Search an address / 搜索地址
 
 Use the search bar at the top. / 使用顶部搜索栏。
 
@@ -185,7 +213,7 @@ Press **Edit / 编辑** beside a history record to change it directly.
 
 ---
 
-## 9. Important rules / 重要规则
+## 10. Important rules / 重要规则
 
 1. Use the same address spelling for the same site. / 同一个工地尽量使用相同地址写法。
 2. Check dates before saving. / 保存前检查日期。

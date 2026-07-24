@@ -158,6 +158,10 @@ body.touchDragging { user-select: none; overscroll-behavior: none; }
 .jobMeta { display: flex; flex-wrap: wrap; gap: 5px 10px; color: var(--muted); font-size: 13px; }
 .jobScope { margin: 7px 0 0; color: #435450; font-size: 13px; line-height: 1.4; white-space: pre-wrap; }
 .jobActions { display: flex; align-items: flex-start; flex-wrap: wrap; justify-content: flex-end; gap: 5px; }
+.dayPanelActions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
+.btnWhatsApp { color: #fff; background: #1f8f4e; border-color: #1f8f4e; }
+.btnWhatsApp:hover { background: #197943; border-color: #197943; }
+.miniWhatsAppBtn { color: #126c38; background: #edfff4; border-color: #a7dfbd; }
 .miniBtn { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 54px; min-height: 42px; padding: 5px 8px; border: 1px solid var(--border); border-radius: 10px; background: #f4f7f6; font-family: inherit; font-size: 13px; font-weight: 850; line-height: 1.05; }
 .miniBtn small { font-size: 10px; font-weight: 750; }
 .miniDeleteBtn { color: #b42318; background: #fff1f0; border-color: #f7b4ad; }
@@ -176,7 +180,7 @@ body.touchDragging { user-select: none; overscroll-behavior: none; }
 .modalFootRight { display: flex; justify-content: flex-end; gap: 9px; }
 .btnSave { min-width: 230px; }
 
-.formSection { margin-bottom: 14px; padding: 15px; border: 1px solid var(--border); border-radius: 14px; background: #fff; }
+.formSection { margin-bottom: 26px; padding: 15px; border: 1px solid var(--border); border-radius: 14px; background: #fff; }
 .importantSection { border: 2px solid #8fd8cf; background: #f3fffd; }
 .formSection h3 { margin: 0 0 12px; font-size: 17px; }
 .formSection summary { cursor: pointer; font-weight: 900; font-size: 17px; }
@@ -226,8 +230,10 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); box-sh
 
 .amendBox { min-width: 0; margin: 12px 0; padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: #f8fbfa; }
 .amendBox legend { padding: 0 6px; font-weight: 900; }
-.amendChoices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 14px; }
-.amendChoices .checkLine { margin-top: 0; padding: 10px; border-radius: 10px; background: #fff; border: 1px solid var(--border); }
+.amendChoices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; }
+.amendChoiceRow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(120px, .8fr); gap: 8px; align-items: center; padding: 9px; border-radius: 10px; background: #fff; border: 1px solid var(--border); }
+.amendChoices .checkLine { margin-top: 0; padding: 0; border: 0; background: transparent; }
+.amendDetailInput { min-height: 38px !important; padding: 7px 9px !important; font-size: 12px; }
 .deliverySection .fullField { grid-column: 1 / -1; }
 .billingSection .field { max-width: 620px; }
 .trackingBox { min-width: 0; margin: 0; padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: #f8fbfa; }
@@ -318,6 +324,8 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); box-sh
   .eventChip { padding: 3px 4px; font-size: 9px; border-radius: 5px; }
   .moreEvents { font-size: 9px; }
   .dayPanelHead { align-items: flex-start; padding: 13px; }
+  .dayPanelActions { width: 100%; justify-content: flex-end; }
+  .dayPanelActions .btnWhatsApp { flex: 1; min-width: 140px; }
   .dayPanelHead .btnPrimary { display: none; }
   .floatingAdd { display: block; }
   .jobCard { grid-template-columns: 7px 1fr; }
@@ -339,6 +347,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); box-sh
   .historyEditBtn { width: 100%; }
 
   .amendChoices { grid-template-columns: 1fr; }
+  .amendChoiceRow { grid-template-columns: 1fr; }
   .colourPicker { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .modalFoot { align-items: stretch; padding: 9px 10px calc(9px + var(--safe-bottom)); }
   .modalFootRight { flex: 1; }

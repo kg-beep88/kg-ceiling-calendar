@@ -1,5 +1,5 @@
 # KG CEILING WORK CALENDAR — ADMIN SETUP / 管理员设置
-## VERSION 1.5.0 — SIMPLIFIED JOB FORM / 版本 1.5.0 — 简化工作表格
+## VERSION 1.6.0 — WHATSAPP + AMENDMENT DETAILS / 版本 1.6.0 — WhatsApp + 修改详情
 
 This file is for the person setting up the app. Normal staff should read `USER_MANUAL_EN_CN.md`.  
 本文件给管理员设置应用使用。普通员工请阅读 `USER_MANUAL_EN_CN.md`。
@@ -13,6 +13,12 @@ The job editor now contains only:
 4. Deliver / 送货
 5. Billing / 开单
 6. Google Calendar colour / 谷歌日历颜色
+
+New in v1.6.0:
+- Each amendment choice has its own small manual-detail box. / 每个修改项目都有独立小填写框。
+- Each site card has **WhatsApp Site / 单个工地** export. / 每个工地都有 WhatsApp 单个工地发送按钮。
+- Selected day has **WhatsApp Day / 当天全部** export. / 每天都有 WhatsApp 当天全部发送按钮。
+- Form sections 1–6 have more spacing for easier reading. / 表格 1–6 项之间增加间距，更容易看。
 
 Removed from the form:
 - Scope of work / 工作范围
@@ -77,7 +83,8 @@ Expected website:
 5. Edit it from Google Calendar and press Refresh in the app.
 6. Test Copy, Delete and drag-to-move.
 7. Test a continue job with a pause between work periods.
-8. Search the address and confirm the history shows the new simplified fields.
+8. Test WhatsApp Site and WhatsApp Day.
+9. Search the address and confirm the history shows the new simplified fields.
 
 ## Old screen still appears / 仍然显示旧页面
 

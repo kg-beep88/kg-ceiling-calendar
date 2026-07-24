@@ -103,9 +103,14 @@
             <p class="eyebrow">Selected date / 已选日期</p>
             <h2 id="selectedDateTitle">Today / 今天</h2>
           </div>
-          <button id="addJobBtn" class="btn btnPrimary" type="button" disabled>
-            ＋ Add Job<br><small>新增工作</small>
-          </button>
+          <div class="dayPanelActions">
+            <button id="whatsAppDayBtn" class="btn btnWhatsApp" type="button" disabled>
+              WhatsApp Day<br><small>当天全部</small>
+            </button>
+            <button id="addJobBtn" class="btn btnPrimary" type="button" disabled>
+              ＋ Add Job<br><small>新增工作</small>
+            </button>
+          </div>
         </div>
 
         <div id="syncMessage" class="syncMessage" role="status" aria-live="polite">
@@ -216,10 +221,22 @@
             <fieldset class="amendBox">
               <legend>What needs amendment? / 需要修改什么？</legend>
               <div class="amendChoices">
-                <label class="checkLine"><input id="amendCeilingInput" type="checkbox"><span>Ceiling / 天花</span></label>
-                <label class="checkLine"><input id="amendPartitionInput" type="checkbox"><span>Partition / 隔墙</span></label>
-                <label class="checkLine"><input id="amendPelmetInput" type="checkbox"><span>Pelmet / Box Up / L Box / 窗帘盒 / 包箱 / L Box</span></label>
-                <label class="checkLine"><input id="amendTimberOtherInput" type="checkbox"><span>Add Timber Support / Other / 加木支撑 / 其他</span></label>
+                <div class="amendChoiceRow">
+                  <label class="checkLine"><input id="amendCeilingInput" type="checkbox"><span>Ceiling / 天花</span></label>
+                  <input id="amendCeilingDetailInput" class="amendDetailInput" type="text" placeholder="Manual detail / 手动填写详情">
+                </div>
+                <div class="amendChoiceRow">
+                  <label class="checkLine"><input id="amendPartitionInput" type="checkbox"><span>Partition / 隔墙</span></label>
+                  <input id="amendPartitionDetailInput" class="amendDetailInput" type="text" placeholder="Manual detail / 手动填写详情">
+                </div>
+                <div class="amendChoiceRow">
+                  <label class="checkLine"><input id="amendPelmetInput" type="checkbox"><span>Pelmet / Box Up / L Box / 窗帘盒 / 包箱 / L Box</span></label>
+                  <input id="amendPelmetDetailInput" class="amendDetailInput" type="text" placeholder="Manual detail / 手动填写详情">
+                </div>
+                <div class="amendChoiceRow">
+                  <label class="checkLine"><input id="amendTimberOtherInput" type="checkbox"><span>Add Timber Support / Other / 加木支撑 / 其他</span></label>
+                  <input id="amendTimberOtherDetailInput" class="amendDetailInput" type="text" placeholder="Manual detail / 手动填写详情">
+                </div>
               </div>
             </fieldset>
             <label class="field fullField">

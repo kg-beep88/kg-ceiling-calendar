@@ -76,13 +76,14 @@ function cacheElements() {
   const ids = [
     "connectionBadge", "connectBtn", "refreshBtn", "welcomeCard", "prevMonthBtn",
     "todayBtn", "nextMonthBtn", "monthTitle", "openGoogleBtn", "settingsBtn",
-    "calendarGrid", "selectedDateTitle", "addJobBtn", "syncMessage", "dayJobs",
+    "calendarGrid", "selectedDateTitle", "addJobBtn", "whatsAppDayBtn", "syncMessage", "dayJobs",
     "floatingAddBtn", "addressSearchForm", "addressSearchInput", "addressSearchBtn",
     "jobModal", "jobModalTitle", "closeModalBtn", "jobForm", "eventId", "continueGroupId", "addressInput",
     "dateInput", "endDateInput", "startTimeInput", "endTimeInput", "allDayInput", "continueJobInput",
     "continuePeriodsWrap", "continuePeriodsList", "addContinuePeriodBtn", "contactInput",
     "lockInput", "idFirmInput", "idNameInput", "installerNameInput", "amendCeilingInput",
-    "amendPartitionInput", "amendPelmetInput", "amendTimberOtherInput", "amendRemarkInput",
+    "amendCeilingDetailInput", "amendPartitionInput", "amendPartitionDetailInput",
+    "amendPelmetInput", "amendPelmetDetailInput", "amendTimberOtherInput", "amendTimberOtherDetailInput", "amendRemarkInput",
     "deliveryDateInput", "deliveryMaterialsInput", "deliveryRemarkInput", "billingNumberInput",
     "colourPicker", "deleteJobBtn", "cancelBtn",
     "saveJobBtn", "searchModal", "closeSearchBtn", "historySearchForm",
@@ -115,6 +116,7 @@ function bindEvents() {
     if (event.target === el.searchModal) closeSearchModal();
   });
   el.addJobBtn.addEventListener("click", () => openJobModal());
+  el.whatsAppDayBtn.addEventListener("click", shareSelectedDayToWhatsApp);
   el.floatingAddBtn.addEventListener("click", () => openJobModal());
   el.closeModalBtn.addEventListener("click", closeJobModal);
   el.cancelBtn.addEventListener("click", closeJobModal);
@@ -226,6 +228,7 @@ function setConnectionState(state) {
   el.connectBtn.disabled = busy;
   el.refreshBtn.disabled = !connected;
   el.addJobBtn.disabled = !connected;
+  el.whatsAppDayBtn.disabled = !connected;
   el.floatingAddBtn.disabled = !connected;
   el.addressSearchBtn.disabled = !connected;
 
@@ -694,6 +697,7 @@ function shiftedEventTimes(event, newStartDate) {
 function renderDayJobs() {
   el.dayJobs.innerHTML = "";
   const dayEvents = eventsForDate(selectedDate);
+  el.whatsAppDayBtn.disabled = !isConnected() || dayEvents.length === 0;
   if (!dayEvents.length) {
     const empty = document.createElement("div");
     empty.className = "emptyState";
@@ -763,6 +767,14 @@ function renderDayJobs() {
     copyBtn.disabled = !isConnected();
     copyBtn.addEventListener("click", () => openJobModal(event, true));
 
+    const whatsAppBtn = document.createElement("button");
+    whatsAppBtn.type = "button";
+    whatsAppBtn.className = "miniBtn miniWhatsAppBtn";
+    whatsAppBtn.title = "WhatsApp Site / 单个工地";
+    whatsAppBtn.setAttribute("aria-label", "WhatsApp Site / 单个工地");
+    whatsAppBtn.innerHTML = "↗ <span>WhatsApp<br><small>单个工地</small></span>";
+    whatsAppBtn.addEventListener("click", () => shareSiteToWhatsApp(event));
+
     const deleteBtn = document.createElement("button");
     deleteBtn.type = "button";
     deleteBtn.className = "miniBtn miniDeleteBtn";
@@ -771,7 +783,7 @@ function renderDayJobs() {
     deleteBtn.innerHTML = "🗑 <span>Delete<br><small>删除</small></span>";
     deleteBtn.disabled = !isConnected();
     deleteBtn.addEventListener("click", () => deleteEventFromCard(event));
-    actions.append(editBtn, copyBtn, deleteBtn);
+    actions.append(editBtn, copyBtn, whatsAppBtn, deleteBtn);
 
     card.append(strip, info, actions);
     el.dayJobs.appendChild(card);
@@ -780,10 +792,15 @@ function renderDayJobs() {
 
 function amendmentLabels(data) {
   const labels = [];
-  if (data.amendCeiling) labels.push("Ceiling / 天花");
-  if (data.amendPartition) labels.push("Partition / 隔墙");
-  if (data.amendPelmet) labels.push("Pelmet / Box Up / L Box");
-  if (data.amendTimberOther) labels.push("Add Timber Support / Other / 加木支撑 / 其他");
+  const add = (enabled, label, detail) => {
+    const cleanDetail = String(detail || "").trim();
+    if (!enabled && !cleanDetail) return;
+    labels.push(cleanDetail ? `${label}: ${cleanDetail}` : label);
+  };
+  add(data.amendCeiling, "Ceiling / 天花", data.amendCeilingDetail);
+  add(data.amendPartition, "Partition / 隔墙", data.amendPartitionDetail);
+  add(data.amendPelmet, "Pelmet / Box Up / L Box / 窗帘盒 / 包箱 / L Box", data.amendPelmetDetail);
+  add(data.amendTimberOther, "Add Timber Support / Other / 加木支撑 / 其他", data.amendTimberOtherDetail);
   return labels;
 }
 
@@ -802,6 +819,95 @@ function buildTrackingTags(data) {
   }
   if (data.billingNumber) add(`Billing #${data.billingNumber} / 开单号码`, "good");
   return wrap;
+}
+
+function shareSiteToWhatsApp(event) {
+  if (!event) return;
+  openWhatsAppMessage(buildWhatsAppSiteMessage(event));
+}
+
+function shareSelectedDayToWhatsApp() {
+  const dayEvents = eventsForDate(selectedDate);
+  if (!dayEvents.length) {
+    showToast("No jobs on this date. / 这个日期没有工作。", true);
+    return;
+  }
+
+  const headingDate = formatDateLongBilingual(selectedDate);
+  const blocks = dayEvents.map((event, index) => buildWhatsAppSiteMessage(event, index + 1, true));
+  const text = [
+    `*KG CEILING DAILY WORK / KG 天花每日工作*`,
+    `*Date / 日期:* ${headingDate}`,
+    `*Total sites / 工地数量:* ${dayEvents.length}`,
+    "",
+    blocks.join("\n\n------------------------------\n\n")
+  ].join("\n");
+  openWhatsAppMessage(text);
+}
+
+function buildWhatsAppSiteMessage(event, number = 0, compactHeading = false) {
+  const data = parseEventData(event);
+  const range = eventDateRange(event);
+  const lines = [];
+  const address = data.address || event.summary || event.location || "No address / 没有地址";
+
+  if (number) lines.push(`*${number}. ${address}*`);
+  else {
+    lines.push(`*KG CEILING SITE DETAIL / KG 天花工地资料*`);
+    lines.push(`*Address / 地址:* ${address}`);
+  }
+
+  const dateText = range.start === range.end
+    ? formatDateLongBilingual(range.start)
+    : `${formatDateLongBilingual(range.start)} → ${formatDateLongBilingual(range.end)}`;
+  lines.push(`*Work date / 工作日期:* ${dateText}`);
+  lines.push(`*Time / 时间:* ${eventTimeLabel(event)}`);
+
+  if (data.continueJob) {
+    lines.push(`*Continue job / 继续工作:* Yes / 是${data.continueSequence > 1 ? ` (#${data.continueSequence})` : ""}`);
+  }
+  if (data.contact) lines.push(`*Contact / 联系人:* ${data.contact}`);
+  if (data.lock) lines.push(`*Lock / 门锁:* ${data.lock}`);
+  if (data.idFirm) lines.push(`*ID Firm / ID 公司:* ${data.idFirm}`);
+  if (data.idName) lines.push(`*ID Name / ID 联系人:* ${data.idName}`);
+  if (data.installerName) lines.push(`*Installer / 安装人员:* ${data.installerName}`);
+
+  const amendments = amendmentLabels(data);
+  if (amendments.length) {
+    lines.push(`*Need amend / 需要修改:*`);
+    amendments.forEach((item) => lines.push(`- ${item}`));
+  }
+  if (data.amendRemark) lines.push(`*Remark / 备注:* ${data.amendRemark}`);
+
+  if (data.deliveryDate || data.deliveryMaterials || data.deliveryRemark) {
+    lines.push(`*Deliver / 送货:*`);
+    if (data.deliveryDate) lines.push(`- Date / 日期: ${formatDateLongBilingual(data.deliveryDate)}`);
+    if (data.deliveryMaterials) lines.push(`- Material / 材料: ${data.deliveryMaterials}`);
+    if (data.deliveryRemark) lines.push(`- Remark / 备注: ${data.deliveryRemark}`);
+  }
+
+  lines.push(`*Billing / 开单:* ${data.billingNumber ? data.billingNumber : "Not billed / 未开单"}`);
+  return lines.join("\n");
+}
+
+function formatDateLongBilingual(key) {
+  if (!key) return "-";
+  const date = dateFromKey(key);
+  const en = date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+  const zh = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+  return `${en} / ${zh}`;
+}
+
+function openWhatsAppMessage(text) {
+  const clean = String(text || "").trim();
+  if (!clean) return;
+  const url = `https://wa.me/?text=${encodeURIComponent(clean)}`;
+  const opened = window.open(url, "_blank");
+  if (opened) {
+    try { opened.opener = null; } catch { /* Browser may block opener access. */ }
+  } else {
+    window.location.href = url;
+  }
 }
 
 function startAddressSearch(rawTerm) {
@@ -1272,9 +1378,13 @@ function resetJobForm() {
   el.idNameInput.value = "";
   el.installerNameInput.value = "";
   el.amendCeilingInput.checked = false;
+  el.amendCeilingDetailInput.value = "";
   el.amendPartitionInput.checked = false;
+  el.amendPartitionDetailInput.value = "";
   el.amendPelmetInput.checked = false;
+  el.amendPelmetDetailInput.value = "";
   el.amendTimberOtherInput.checked = false;
+  el.amendTimberOtherDetailInput.value = "";
   el.amendRemarkInput.value = "";
   el.deliveryDateInput.value = "";
   el.deliveryMaterialsInput.value = "";
@@ -1294,9 +1404,13 @@ function fillJobForm(event, asCopy) {
   el.idNameInput.value = data.idName;
   el.installerNameInput.value = data.installerName;
   el.amendCeilingInput.checked = data.amendCeiling;
+  el.amendCeilingDetailInput.value = data.amendCeilingDetail || "";
   el.amendPartitionInput.checked = data.amendPartition;
+  el.amendPartitionDetailInput.value = data.amendPartitionDetail || "";
   el.amendPelmetInput.checked = data.amendPelmet;
+  el.amendPelmetDetailInput.value = data.amendPelmetDetail || "";
   el.amendTimberOtherInput.checked = data.amendTimberOther;
+  el.amendTimberOtherDetailInput.value = data.amendTimberOtherDetail || "";
   el.amendRemarkInput.value = data.amendRemark;
   el.deliveryDateInput.value = data.deliveryDate;
   el.deliveryMaterialsInput.value = data.deliveryMaterials;
@@ -1610,10 +1724,14 @@ function collectJobForm() {
     idFirm: el.idFirmInput.value.trim(),
     idName: el.idNameInput.value.trim(),
     installerName: el.installerNameInput.value.trim(),
-    amendCeiling: el.amendCeilingInput.checked,
-    amendPartition: el.amendPartitionInput.checked,
-    amendPelmet: el.amendPelmetInput.checked,
-    amendTimberOther: el.amendTimberOtherInput.checked,
+    amendCeiling: el.amendCeilingInput.checked || Boolean(el.amendCeilingDetailInput.value.trim()),
+    amendCeilingDetail: el.amendCeilingDetailInput.value.trim(),
+    amendPartition: el.amendPartitionInput.checked || Boolean(el.amendPartitionDetailInput.value.trim()),
+    amendPartitionDetail: el.amendPartitionDetailInput.value.trim(),
+    amendPelmet: el.amendPelmetInput.checked || Boolean(el.amendPelmetDetailInput.value.trim()),
+    amendPelmetDetail: el.amendPelmetDetailInput.value.trim(),
+    amendTimberOther: el.amendTimberOtherInput.checked || Boolean(el.amendTimberOtherDetailInput.value.trim()),
+    amendTimberOtherDetail: el.amendTimberOtherDetailInput.value.trim(),
     amendRemark: el.amendRemarkInput.value.trim(),
     deliveryDate: el.deliveryDateInput.value,
     deliveryMaterials: el.deliveryMaterialsInput.value.trim(),
@@ -1640,7 +1758,7 @@ function buildCalendarEvent(data) {
     extendedProperties: {
       private: {
         kgCeilingApp: "1",
-        kgCeilingVersion: "1.5.0",
+        kgCeilingVersion: "1.6.0",
         ...(data.continueJob && data.continueGroupId ? {
           kgContinueJob: "1",
           kgContinueGroup: data.continueGroupId,
@@ -1685,9 +1803,13 @@ function buildDescription(data) {
     `Continue Group ID: ${data.continueGroupId || ""}`,
     `Continue Sequence / 继续工作时段: ${data.continueSequence || 1}`,
     `Amend Ceiling / 修改天花: ${yesNo(data.amendCeiling)}`,
+    `Amend Ceiling Detail / 天花修改详情: ${encodeField(data.amendCeilingDetail)}`,
     `Amend Partition / 修改隔墙: ${yesNo(data.amendPartition)}`,
+    `Amend Partition Detail / 隔墙修改详情: ${encodeField(data.amendPartitionDetail)}`,
     `Amend Pelmet Box LBox / 修改窗帘盒包箱LBox: ${yesNo(data.amendPelmet)}`,
+    `Amend Pelmet Detail / 窗帘盒包箱LBox修改详情: ${encodeField(data.amendPelmetDetail)}`,
     `Amend Timber Other / 加木支撑其他: ${yesNo(data.amendTimberOther)}`,
+    `Amend Timber Other Detail / 木支撑其他修改详情: ${encodeField(data.amendTimberOtherDetail)}`,
     `Amend Remark / 修改备注: ${encodeField(data.amendRemark)}`,
     `Delivery Date / 送货日期: ${data.deliveryDate || ""}`,
     `Delivery Materials / 送货材料: ${encodeField(data.deliveryMaterials)}`,
@@ -1719,9 +1841,13 @@ function parseEventData(event) {
     continueGroupId: "",
     continueSequence: 1,
     amendCeiling: false,
+    amendCeilingDetail: "",
     amendPartition: false,
+    amendPartitionDetail: "",
     amendPelmet: false,
+    amendPelmetDetail: "",
     amendTimberOther: false,
+    amendTimberOtherDetail: "",
     amendRemark: "",
     deliveryDate: "",
     deliveryMaterials: "",
@@ -1776,9 +1902,13 @@ function parseEventData(event) {
   data.continueSequence = Number(get("Continue Sequence / 继续工作时段", "Continue Sequence") || event.extendedProperties?.private?.kgContinueSequence || 1) || 1;
   data.continueJob = parseYesNo(get("Continue Job / 继续工作", "Continue Job")) || event.extendedProperties?.private?.kgContinueJob === "1" || Boolean(data.continueGroupId);
   data.amendCeiling = parseYesNo(get("Amend Ceiling / 修改天花", "Amend Ceiling"));
+  data.amendCeilingDetail = decodeField(get("Amend Ceiling Detail / 天花修改详情", "Amend Ceiling Detail"));
   data.amendPartition = parseYesNo(get("Amend Partition / 修改隔墙", "Amend Partition"));
+  data.amendPartitionDetail = decodeField(get("Amend Partition Detail / 隔墙修改详情", "Amend Partition Detail"));
   data.amendPelmet = parseYesNo(get("Amend Pelmet Box LBox / 修改窗帘盒包箱LBox", "Amend Pelmet Box LBox"));
+  data.amendPelmetDetail = decodeField(get("Amend Pelmet Detail / 窗帘盒包箱LBox修改详情", "Amend Pelmet Detail"));
   data.amendTimberOther = parseYesNo(get("Amend Timber Other / 加木支撑其他", "Amend Timber Other"));
+  data.amendTimberOtherDetail = decodeField(get("Amend Timber Other Detail / 木支撑其他修改详情", "Amend Timber Other Detail"));
   data.amendRemark = decodeField(get("Amend Remark / 修改备注", "Amend Remark"));
   data.deliveryDate = get("Delivery Date / 送货日期", "Delivery Date");
   data.deliveryMaterials = decodeField(get("Delivery Materials / 送货材料", "Delivery Materials"));
