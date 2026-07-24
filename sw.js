@@ -1,10 +1,9 @@
-const CACHE_NAME = "kg-ceiling-calendar-v1.6.1-whatsapp-amend-details";
+const CACHE_NAME = "kg-ceiling-calendar-v1.6.4-hardfix";
 const APP_FILES = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
-  "./config.js",
   "./manifest.webmanifest",
   "./privacy.html",
   "./README_DONKEY_STEPS.md",
@@ -31,6 +30,16 @@ self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
+
+  // Always fetch config.js fresh. This prevents an old Calendar ID or Client ID
+  // from being trapped in the service-worker cache after an admin update.
+  if (url.pathname.endsWith("/config.js")) {
+    event.respondWith(
+      fetch(new Request(event.request, { cache: "no-store" }))
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
 
   event.respondWith(
     fetch(event.request)

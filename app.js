@@ -1,6 +1,25 @@
 "use strict";
 
-const CONFIG = window.KG_CONFIG || {};
+const BUILT_IN_CONFIG = {
+  GOOGLE_CLIENT_ID: "1003316566308-c54h3bdag8bf6jocsc6g17rgb4kj098n.apps.googleusercontent.com",
+  CALENDAR_ID: "161afc2b39c63d9e0cb766d21e1b544e9c7d3d03fcdce363bf1f194a79ad034e@group.calendar.google.com",
+  GOOGLE_SCOPE: "https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.calendarlist.readonly",
+  AUTO_REFRESH_SECONDS: 60,
+  HISTORY_START: "2026-01-01",
+  HISTORY_END: "2051-01-01"
+};
+
+const RAW_CONFIG = window.KG_CONFIG || {};
+const CONFIG = { ...BUILT_IN_CONFIG, ...RAW_CONFIG };
+
+// Self-heal when an old cached config.js still contains the setup placeholder.
+if (!String(CONFIG.GOOGLE_CLIENT_ID || "").trim() || String(CONFIG.GOOGLE_CLIENT_ID).includes("PASTE")) {
+  CONFIG.GOOGLE_CLIENT_ID = BUILT_IN_CONFIG.GOOGLE_CLIENT_ID;
+}
+if (!String(CONFIG.CALENDAR_ID || "").trim() || String(CONFIG.CALENDAR_ID).includes("PASTE_KG_WORK") || CONFIG.CALENDAR_ID === "primary") {
+  CONFIG.CALENDAR_ID = BUILT_IN_CONFIG.CALENDAR_ID;
+}
+if (!String(CONFIG.GOOGLE_SCOPE || "").trim()) CONFIG.GOOGLE_SCOPE = BUILT_IN_CONFIG.GOOGLE_SCOPE;
 const API_BASE = "https://www.googleapis.com/calendar/v3";
 const APP_MARKER = "#KGCEILING";
 const DATA_HEADER = "[KG CEILING APP DATA / KG 天花应用资料]";
@@ -711,7 +730,7 @@ function renderDayJobs() {
   dayEvents.forEach((event) => {
     const data = parseEventData(event);
     const card = document.createElement("article");
-    card.className = "jobCard";
+    card.className = "jobCard jobCardAddressOnly";
 
     const strip = document.createElement("div");
     strip.className = "jobColour";
@@ -721,34 +740,11 @@ function renderDayJobs() {
     info.className = "jobInfo";
     const title = document.createElement("h3");
     title.textContent = data.address || event.summary || "Untitled job / 未命名工作";
-    const meta = document.createElement("div");
-    meta.className = "jobMeta";
-    const range = eventDateRange(event);
-    const pieces = [eventTimeLabel(event)];
-    if (range.start !== range.end) pieces.unshift(`Dates / 日期: ${formatDateShort(range.start)}–${formatDateShort(range.end)}`);
-    if (data.contact) pieces.push(`Contact / 联系: ${data.contact}`);
-    if (data.idFirm) pieces.push(`ID Firm / ID 公司: ${data.idFirm}`);
-    if (data.idName) pieces.push(`ID Name / ID 联系人: ${data.idName}`);
-    if (data.installerName) pieces.push(`Installer / 安装人员: ${data.installerName}`);
-    pieces.forEach((piece) => {
-      const span = document.createElement("span");
-      span.textContent = piece;
-      meta.appendChild(span);
-    });
-    info.append(title, meta);
-
-    const amend = amendmentLabels(data);
-    if (amend.length || data.amendRemark) {
-      const p = document.createElement("p");
-      p.className = "jobScope";
-      p.textContent = [amend.length ? `Need amend / 需要修改: ${amend.join(", ")}` : "", data.amendRemark].filter(Boolean).join(" — ");
-      info.appendChild(p);
-    }
-    const tags = buildTrackingTags(data);
-    if (tags.childElementCount) info.appendChild(tags);
+    info.appendChild(title);
 
     const actions = document.createElement("div");
     actions.className = "jobActions";
+
     const editBtn = document.createElement("button");
     editBtn.type = "button";
     editBtn.className = "miniBtn";
@@ -783,8 +779,8 @@ function renderDayJobs() {
     deleteBtn.innerHTML = "🗑 <span>Delete<br><small>删除</small></span>";
     deleteBtn.disabled = !isConnected();
     deleteBtn.addEventListener("click", () => deleteEventFromCard(event));
-    actions.append(editBtn, copyBtn, whatsAppBtn, deleteBtn);
 
+    actions.append(editBtn, copyBtn, whatsAppBtn, deleteBtn);
     card.append(strip, info, actions);
     el.dayJobs.appendChild(card);
   });
@@ -1758,7 +1754,7 @@ function buildCalendarEvent(data) {
     extendedProperties: {
       private: {
         kgCeilingApp: "1",
-        kgCeilingVersion: "1.6.1",
+        kgCeilingVersion: "1.6.2",
         ...(data.continueJob && data.continueGroupId ? {
           kgContinueJob: "1",
           kgContinueGroup: data.continueGroupId,

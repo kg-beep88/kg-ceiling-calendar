@@ -1,5 +1,5 @@
 # KG CEILING WORK CALENDAR — ADMIN SETUP / 管理员设置
-## VERSION 1.6.1 — WHATSAPP + AMENDMENT DETAILS / 版本 1.6.1 — WhatsApp + 修改详情
+## VERSION 1.6.2 — SIMPLE RIGHT PANEL + BIG AMENDMENT BOXES / 版本 1.6.2 — 简化右侧栏 + 加大修改输入框
 
 This file is for the person setting up the app. Normal staff should read `USER_MANUAL_EN_CN.md`.  
 本文件给管理员设置应用使用。普通员工请阅读 `USER_MANUAL_EN_CN.md`。
@@ -14,7 +14,13 @@ The job editor now contains only:
 5. Billing / 开单
 6. Google Calendar colour / 谷歌日历颜色
 
-New in v1.6.1:
+New in v1.6.2:
+- Right-side day panel now shows the site address only (with action buttons below).
+- Amendment choices use one full-width row each.
+- All four checkboxes are locked to the same 24×24 size.
+- Manual amendment detail boxes are larger.
+
+Previous features retained:
 - Each amendment choice has its own small manual-detail box. / 每个修改项目都有独立小填写框。
 - Each site card has **WhatsApp Site / 单个工地** export. / 每个工地都有 WhatsApp 单个工地发送按钮。
 - Selected day has **WhatsApp Day / 当天全部** export. / 每天都有 WhatsApp 当天全部发送按钮。
@@ -89,3 +95,10 @@ Expected website:
 ## Old screen still appears / 仍然显示旧页面
 
 Open **Settings / 设置** → **Reset Cache / 重置缓存**, then close and reopen the app.
+
+
+## v1.6.3 already configured / v1.6.3 已配置
+
+This package already contains the KG Work Google Calendar ID and OAuth Client ID supplied by the administrator. Do not replace them unless the administrator intentionally changes the Google project or shared calendar.
+
+此版本已经填入管理员提供的 KG Work Google 日历 ID 和 OAuth Client ID。除非管理员有意更换 Google 项目或共享日历，否则不要修改。

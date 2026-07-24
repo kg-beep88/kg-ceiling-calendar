@@ -1,0 +1,2 @@
+KG Ceiling Work Calendar v1.6.4
+Built-in KG Work configuration fallback enabled.
