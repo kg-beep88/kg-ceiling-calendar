@@ -1,5 +1,5 @@
 # KG CEILING WORK CALENDAR — ADMIN SETUP / 管理员设置
-## VERSION 1.6.0 — WHATSAPP + AMENDMENT DETAILS / 版本 1.6.0 — WhatsApp + 修改详情
+## VERSION 1.6.1 — WHATSAPP + AMENDMENT DETAILS / 版本 1.6.1 — WhatsApp + 修改详情
 
 This file is for the person setting up the app. Normal staff should read `USER_MANUAL_EN_CN.md`.  
 本文件给管理员设置应用使用。普通员工请阅读 `USER_MANUAL_EN_CN.md`。
@@ -14,7 +14,7 @@ The job editor now contains only:
 5. Billing / 开单
 6. Google Calendar colour / 谷歌日历颜色
 
-New in v1.6.0:
+New in v1.6.1:
 - Each amendment choice has its own small manual-detail box. / 每个修改项目都有独立小填写框。
 - Each site card has **WhatsApp Site / 单个工地** export. / 每个工地都有 WhatsApp 单个工地发送按钮。
 - Selected day has **WhatsApp Day / 当天全部** export. / 每天都有 WhatsApp 当天全部发送按钮。

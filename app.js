@@ -1758,7 +1758,7 @@ function buildCalendarEvent(data) {
     extendedProperties: {
       private: {
         kgCeilingApp: "1",
-        kgCeilingVersion: "1.6.0",
+        kgCeilingVersion: "1.6.1",
         ...(data.continueJob && data.continueGroupId ? {
           kgContinueJob: "1",
           kgContinueGroup: data.continueGroupId,

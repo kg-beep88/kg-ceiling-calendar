@@ -151,13 +151,14 @@ body.touchDragging { user-select: none; overscroll-behavior: none; }
 .dayJobs { min-height: 180px; padding: 12px; overflow-y: auto; }
 .emptyState { padding: 30px 16px; text-align: center; color: var(--muted); }
 .emptyState strong { display: block; margin-bottom: 6px; color: var(--text); font-size: 17px; }
-.jobCard { display: grid; grid-template-columns: 8px 1fr auto; gap: 10px; margin-bottom: 10px; padding: 12px; border: 1px solid var(--border); border-radius: 14px; background: #fff; box-shadow: 0 4px 12px rgba(27, 57, 52, .06); }
+.jobCard { display: grid; grid-template-columns: 8px minmax(0, 1fr); gap: 10px; margin-bottom: 10px; padding: 12px; border: 1px solid var(--border); border-radius: 14px; background: #fff; box-shadow: 0 4px 12px rgba(27, 57, 52, .06); }
 .jobColour { border-radius: 999px; }
 .jobInfo { min-width: 0; }
-.jobInfo h3 { margin: 0 0 5px; font-size: 16px; overflow-wrap: anywhere; }
-.jobMeta { display: flex; flex-wrap: wrap; gap: 5px 10px; color: var(--muted); font-size: 13px; }
-.jobScope { margin: 7px 0 0; color: #435450; font-size: 13px; line-height: 1.4; white-space: pre-wrap; }
-.jobActions { display: flex; align-items: flex-start; flex-wrap: wrap; justify-content: flex-end; gap: 5px; }
+.jobInfo h3 { margin: 0 0 7px; font-size: 16px; line-height: 1.35; overflow-wrap: break-word; word-break: normal; }
+.jobMeta { display: grid; gap: 5px; color: var(--muted); font-size: 13px; line-height: 1.45; }
+.jobMeta span { display: block; min-width: 0; overflow-wrap: break-word; word-break: normal; }
+.jobScope { margin: 9px 0 0; color: #435450; font-size: 13px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: break-word; word-break: normal; }
+.jobActions { grid-column: 2; display: flex; align-items: flex-start; flex-wrap: wrap; justify-content: flex-start; gap: 6px; padding-top: 3px; }
 .dayPanelActions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
 .btnWhatsApp { color: #fff; background: #1f8f4e; border-color: #1f8f4e; }
 .btnWhatsApp:hover { background: #197943; border-color: #197943; }
@@ -231,9 +232,11 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); box-sh
 .amendBox { min-width: 0; margin: 12px 0; padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: #f8fbfa; }
 .amendBox legend { padding: 0 6px; font-weight: 900; }
 .amendChoices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; }
-.amendChoiceRow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(120px, .8fr); gap: 8px; align-items: center; padding: 9px; border-radius: 10px; background: #fff; border: 1px solid var(--border); }
-.amendChoices .checkLine { margin-top: 0; padding: 0; border: 0; background: transparent; }
-.amendDetailInput { min-height: 38px !important; padding: 7px 9px !important; font-size: 12px; }
+.amendChoiceRow { display: grid; grid-template-columns: 1fr; gap: 10px; align-items: start; padding: 12px; border-radius: 12px; background: #fff; border: 1px solid var(--border); }
+.amendChoices .checkLine { margin-top: 0; padding: 0; border: 0; background: transparent; align-items: flex-start; line-height: 1.35; }
+.amendChoices .checkLine input { flex: 0 0 22px; width: 22px; min-width: 22px; height: 22px; min-height: 22px; margin: 0; }
+.amendChoices .checkLine span { min-width: 0; overflow-wrap: break-word; word-break: normal; }
+.amendDetailInput { min-height: 78px !important; padding: 10px 11px !important; font-size: 14px; line-height: 1.45; resize: vertical; }
 .deliverySection .fullField { grid-column: 1 / -1; }
 .billingSection .field { max-width: 620px; }
 .trackingBox { min-width: 0; margin: 0; padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: #f8fbfa; }
