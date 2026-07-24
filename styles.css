@@ -185,11 +185,20 @@ body.touchDragging { user-select: none; overscroll-behavior: none; }
 .formGrid3 { grid-template-columns: 1.15fr 1fr 1fr; }
 .formGrid4 { grid-template-columns: 1.15fr 1.15fr 1fr 1fr; }
 .dateHelp { margin: 9px 0 0; }
+.dateOptionsRow { display: flex; flex-wrap: wrap; gap: 18px; align-items: center; }
+.continueCheck { color: var(--primary); }
+.continuePeriodsWrap { margin-top: 12px; padding: 12px; border: 1px dashed #8dbfb7; border-radius: 12px; background: #f3fbf9; }
+.continuePeriodsHead { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.continuePeriodsHead strong { display: block; font-size: 14px; }
+.continuePeriodsList { display: grid; gap: 9px; margin-top: 10px; }
+.continuePeriodRow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 9px; align-items: end; padding: 10px; border: 1px solid #d7e7e3; border-radius: 10px; background: #fff; }
+.continueRemoveBtn { min-height: 46px; }
+.btnSmall { min-height: 38px; padding: 7px 10px; font-size: 12px; }
 .field { display: grid; gap: 6px; min-width: 0; }
 .field > span { font-size: 13px; font-weight: 850; color: #344744; }
 .field b { color: var(--danger); }
 .fullField { grid-column: 1 / -1; }
-input[type="text"], input[type="search"], input[type="date"], input[type="time"], select, textarea {
+input[type="text"], input[type="search"], input[type="date"], input[type="time"], input[type="tel"], select, textarea {
   width: 100%;
   min-height: 46px;
   padding: 10px 11px;
@@ -223,6 +232,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); box-sh
 .statusTag.good { color: #05603a; background: #d1fadf; }
 .statusTag.warn { color: #7a2e0e; background: #ffead5; }
 .statusTag.bad { color: #8f1d14; background: #fee4e2; }
+.statusTag.info { color: #124e78; background: #e1f1fb; }
 
 .historyModal { width: min(1050px, 100%); }
 .historyBody { display: grid; align-content: start; gap: 12px; }
@@ -313,6 +323,10 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); box-sh
   .modalBody { padding: 10px; }
   .formSection { padding: 12px; }
   .formGrid, .formGrid3, .formGrid4, .peopleGrid { grid-template-columns: 1fr; }
+  .continuePeriodsHead { display: grid; grid-template-columns: 1fr; }
+  .continuePeriodsHead .btn { width: 100%; }
+  .continuePeriodRow { grid-template-columns: 1fr; }
+  .continueRemoveBtn { width: 100%; }
   .trackingGrid, .historySummaryGrid { grid-template-columns: 1fr; }
   .historyEventRow { grid-template-columns: 1fr; }
   .historyEditBtn { width: 100%; }

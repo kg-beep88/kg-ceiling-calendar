@@ -79,12 +79,13 @@ function cacheElements() {
     "todayBtn", "nextMonthBtn", "monthTitle", "openGoogleBtn", "settingsBtn",
     "calendarGrid", "selectedDateTitle", "addJobBtn", "syncMessage", "dayJobs",
     "floatingAddBtn", "addressSearchForm", "addressSearchInput", "addressSearchBtn",
-    "jobModal", "jobModalTitle", "closeModalBtn", "jobForm", "eventId", "addressInput",
-    "dateInput", "endDateInput", "startTimeInput", "endTimeInput", "allDayInput", "contactInput",
-    "lockInput", "scopeInput", "removeInput", "keepInput", "protectInput",
+    "jobModal", "jobModalTitle", "closeModalBtn", "jobForm", "eventId", "continueGroupId", "addressInput",
+    "dateInput", "endDateInput", "startTimeInput", "endTimeInput", "allDayInput", "continueJobInput",
+    "continuePeriodsWrap", "continuePeriodsList", "addContinuePeriodBtn", "contactInput",
+    "lockInput", "idFirmInput", "idNameInput", "idPhoneInput", "scopeInput", "removeInput", "keepInput", "protectInput",
     "disposalInput", "hoardingDoneInput", "hoardingDoneDateInput", "hoardingRemoveInput",
     "hoardingRemoveDateInput", "deliverySentInput", "deliveryDateInput",
-    "deliveryMaterialsInput", "billedInput", "billedDateInput", "foremenList",
+    "deliveryMaterialsInput", "billedInput", "billedDateInput", "billingNumberInput", "foremenList",
     "workersList", "colourPicker", "notesInput", "deleteJobBtn", "cancelBtn",
     "saveJobBtn", "searchModal", "closeSearchBtn", "historySearchForm",
     "historySearchInput", "historySearchBtn", "historySearchStatus",
@@ -122,6 +123,8 @@ function bindEvents() {
   el.jobForm.addEventListener("submit", saveJob);
   el.deleteJobBtn.addEventListener("click", deleteCurrentJob);
   el.allDayInput.addEventListener("change", updateTimeFieldState);
+  el.continueJobInput.addEventListener("change", () => updateContinueJobState(true));
+  el.addContinuePeriodBtn.addEventListener("click", () => addContinuePeriodRow());
   el.dateInput.addEventListener("change", handleStartDateChange);
   el.endDateInput.addEventListener("change", handleEndDateChange);
   [el.hoardingDoneInput, el.hoardingRemoveInput, el.deliverySentInput, el.billedInput]
@@ -724,6 +727,8 @@ function renderDayJobs() {
     const pieces = [eventTimeLabel(event)];
     if (range.start !== range.end) pieces.unshift(`Dates / 日期: ${formatDateShort(range.start)}–${formatDateShort(range.end)}`);
     if (data.contact) pieces.push(`Contact / 联系: ${data.contact}`);
+    if (data.idFirm) pieces.push(`ID Firm / ID 公司: ${data.idFirm}`);
+    if (data.idName || data.idPhone) pieces.push(`ID / ID 联系: ${[data.idName, data.idPhone].filter(Boolean).join(" ")}`);
     if (data.foremen.length) pieces.push(`Foremen / 头手: ${data.foremen.join(", ")}`);
     if (data.workers.length) pieces.push(`Workers / 工人: ${data.workers.join(", ")}`);
     pieces.forEach((piece) => {
@@ -787,6 +792,9 @@ function buildTrackingTags(data) {
     wrap.appendChild(tag);
   };
 
+  if (data.continueJob) {
+    add(`Continue job${data.continueSequence > 1 ? ` #${data.continueSequence}` : ""} / 继续工作`, "info");
+  }
   if (data.hoardingDone) {
     add(`Hoarding done${data.hoardingDoneDate ? `: ${formatDateShort(data.hoardingDoneDate)}` : ""} / 围板已完成`, "good");
   }
@@ -797,8 +805,9 @@ function buildTrackingTags(data) {
     add(`Delivery${data.deliveryDate ? `: ${formatDateShort(data.deliveryDate)}` : ""} / 送货`, "good");
   }
   if (data.billed) {
-    add(`Billed${data.billedDate ? `: ${formatDateShort(data.billedDate)}` : ""} / 已开单`, "good");
-  } else {
+    const number = data.billingNumber ? ` #${data.billingNumber}` : "";
+    add(`Billed${data.billedDate ? `: ${formatDateShort(data.billedDate)}` : ""}${number} / 已开单`, "good");
+  } else if (!(data.continueJob && data.continueSequence > 1)) {
     add("Not billed / 未开单", "bad");
   }
   return wrap;
@@ -925,7 +934,10 @@ function buildHistoryGroup(group) {
     .map(({ data, event }) => ({ date: data.deliveryDate || eventDateKey(event), materials: data.deliveryMaterials }))
     .sort((a, b) => String(b.date).localeCompare(String(a.date)));
   const billedDates = uniqueDateValues(records.filter(({ data }) => data.billed).map(({ data, event }) => data.billedDate || eventDateKey(event)));
-  const notBilledCount = records.filter(({ data }) => !data.billed).length;
+  const billingNumbers = Array.from(new Set(records.map(({ data }) => data.billingNumber).filter(Boolean)));
+  const notBilledCount = records.filter(({ data }) => !data.billed && !(data.continueJob && data.continueSequence > 1)).length;
+  const latestId = records.find(({ data }) => data.idFirm || data.idName || data.idPhone)?.data || {};
+  const continueRecords = records.filter(({ data }) => data.continueJob).length;
 
   const groupEl = document.createElement("section");
   groupEl.className = "historyGroup";
@@ -951,8 +963,15 @@ function buildHistoryGroup(group) {
     makeHistorySummary("Material deliveries / 材料送货", formatDeliveryList(deliveries)),
     makeHistorySummary("Billing / 开单", [
       `Billed dates / 已开单日期: ${formatDateList(billedDates)}`,
+      `Billing no. / 开单号码: ${billingNumbers.length ? billingNumbers.join(", ") : "None / 无"}`,
       `Not billed jobs / 未开单工作: ${notBilledCount}`
-    ].join("\n"))
+    ].join("\n")),
+    makeHistorySummary("ID firm / ID 公司", [
+      `Firm / 公司: ${latestId.idFirm || "None / 无"}`,
+      `Name / 姓名: ${latestId.idName || "None / 无"}`,
+      `Telephone / 电话: ${latestId.idPhone || "None / 无"}`
+    ].join("\n")),
+    makeHistorySummary("Continue job / 继续工作", continueRecords ? `${continueRecords} continuing period record(s) / ${continueRecords} 条继续工作记录` : "No / 否")
   );
 
   const list = document.createElement("div");
@@ -991,6 +1010,9 @@ function buildHistoryEventRow(event, data) {
   details.appendChild(tags);
   const lines = [];
   if (data.deliveryMaterials) lines.push(`Delivery materials / 送货材料: ${data.deliveryMaterials}`);
+  if (data.billingNumber) lines.push(`Billing no. / 开单号码: ${data.billingNumber}`);
+  if (data.idFirm) lines.push(`ID Firm / ID 公司: ${data.idFirm}`);
+  if (data.idName || data.idPhone) lines.push(`ID contact / ID 联系: ${[data.idName, data.idPhone].filter(Boolean).join(" ")}`);
   if (data.scope) lines.push(`Scope / 工作范围: ${data.scope}`);
   if (data.foremen.length) lines.push(`Foremen / 头手: ${data.foremen.join(", ")}`);
   if (data.workers.length) lines.push(`Workers / 工人: ${data.workers.join(", ")}`);
@@ -1237,6 +1259,7 @@ function openJobModal(event = null, asCopy = false) {
   el.jobModal.hidden = false;
   document.body.style.overflow = "hidden";
   updateTimeFieldState();
+  updateContinueJobState(false);
   updateTrackingFieldState(false);
   updateAssignmentWarnings();
   setTimeout(() => el.addressInput.focus(), 80);
@@ -1251,12 +1274,15 @@ function closeJobModal() {
 function resetJobForm() {
   el.jobForm.reset();
   el.eventId.value = "";
+  el.continueGroupId.value = "";
   el.dateInput.value = selectedDate;
   el.endDateInput.value = selectedDate;
   lastFormStartDate = selectedDate;
   el.startTimeInput.value = "08:00";
   el.endTimeInput.value = "10:00";
   el.allDayInput.checked = false;
+  el.continueJobInput.checked = false;
+  el.continuePeriodsList.innerHTML = "";
   el.hoardingDoneInput.checked = false;
   el.hoardingRemoveInput.checked = false;
   el.deliverySentInput.checked = false;
@@ -1266,6 +1292,10 @@ function resetJobForm() {
   el.deliveryDateInput.value = "";
   el.deliveryMaterialsInput.value = "";
   el.billedDateInput.value = "";
+  el.billingNumberInput.value = "";
+  el.idFirmInput.value = "";
+  el.idNameInput.value = "";
+  el.idPhoneInput.value = "";
   renderPeopleLists([], []);
   renderColourPicker("default");
   el.saveJobBtn.disabled = false;
@@ -1277,6 +1307,9 @@ function fillJobForm(event, asCopy) {
   el.addressInput.value = data.address || event.summary || "";
   el.contactInput.value = data.contact;
   el.lockInput.value = data.lock;
+  el.idFirmInput.value = data.idFirm;
+  el.idNameInput.value = data.idName;
+  el.idPhoneInput.value = data.idPhone;
   el.scopeInput.value = data.scope;
   el.removeInput.value = data.remove;
   el.keepInput.value = data.keep;
@@ -1291,6 +1324,10 @@ function fillJobForm(event, asCopy) {
   el.deliveryMaterialsInput.value = data.deliveryMaterials;
   el.billedInput.checked = data.billed;
   el.billedDateInput.value = data.billedDate;
+  el.billingNumberInput.value = data.billingNumber;
+  el.continueJobInput.checked = data.continueJob;
+  el.continueGroupId.value = data.continueGroupId;
+  el.continuePeriodsList.innerHTML = "";
   el.notesInput.value = data.notes;
   const originalRange = eventDateRange(event);
   const originalDaySpan = Math.max(0, daysBetweenKeys(originalRange.start, originalRange.end));
@@ -1308,6 +1345,10 @@ function fillJobForm(event, asCopy) {
     el.deliveryMaterialsInput.value = "";
     el.billedInput.checked = false;
     el.billedDateInput.value = "";
+    el.billingNumberInput.value = "";
+    el.continueJobInput.checked = false;
+    el.continueGroupId.value = "";
+    el.continuePeriodsList.innerHTML = "";
   }
 
   const allDay = Boolean(event.start?.date);
@@ -1367,6 +1408,112 @@ function updateTrackingFieldState(fillDefaultDate) {
     if (fillDefaultDate && checkbox.checked && !dateInput.value) dateInput.value = jobDate;
   });
   el.deliveryMaterialsInput.disabled = !el.deliverySentInput.checked;
+  el.billingNumberInput.disabled = !el.billedInput.checked;
+}
+
+function updateContinueJobState(addStarterRow) {
+  const enabled = el.continueJobInput.checked;
+  el.continuePeriodsWrap.hidden = !enabled;
+  if (enabled && addStarterRow && !el.continuePeriodsList.children.length) addContinuePeriodRow();
+  if (!enabled) el.continuePeriodsList.innerHTML = "";
+}
+
+function addContinuePeriodRow(startValue = "", endValue = "") {
+  el.continueJobInput.checked = true;
+  el.continuePeriodsWrap.hidden = false;
+
+  const row = document.createElement("div");
+  row.className = "continuePeriodRow";
+
+  const startLabel = document.createElement("label");
+  startLabel.className = "field";
+  const startText = document.createElement("span");
+  startText.textContent = "Continue start / 继续开始";
+  const start = document.createElement("input");
+  start.type = "date";
+  start.className = "continueStart";
+  start.required = true;
+  start.value = startValue || suggestNextContinueDate();
+  startLabel.append(startText, start);
+
+  const endLabel = document.createElement("label");
+  endLabel.className = "field";
+  const endText = document.createElement("span");
+  endText.textContent = "Continue end / 继续结束";
+  const end = document.createElement("input");
+  end.type = "date";
+  end.className = "continueEnd";
+  end.required = true;
+  end.value = endValue || start.value;
+  endLabel.append(endText, end);
+
+  start.addEventListener("change", () => {
+    if (!end.value || end.value < start.value) end.value = start.value;
+    updateAssignmentWarnings();
+  });
+  end.addEventListener("change", () => {
+    if (start.value && end.value < start.value) {
+      end.value = start.value;
+      showToast("Continue end date cannot be before start date. / 继续工作的结束日期不能早于开始日期。", true);
+    }
+    updateAssignmentWarnings();
+  });
+
+  const remove = document.createElement("button");
+  remove.type = "button";
+  remove.className = "btn btnDanger btnSmall continueRemoveBtn";
+  remove.textContent = "Remove / 删除";
+  remove.addEventListener("click", () => {
+    row.remove();
+    updateAssignmentWarnings();
+  });
+
+  row.append(startLabel, endLabel, remove);
+  el.continuePeriodsList.appendChild(row);
+  updateAssignmentWarnings();
+}
+
+function suggestNextContinueDate() {
+  const rows = Array.from(el.continuePeriodsList.querySelectorAll(".continuePeriodRow"));
+  if (rows.length) {
+    const lastEnd = rows[rows.length - 1].querySelector(".continueEnd")?.value;
+    if (lastEnd) return addDaysKey(lastEnd, 1);
+  }
+  const mainEnd = el.endDateInput.value || el.dateInput.value || selectedDate;
+  return mainEnd ? addDaysKey(mainEnd, 1) : selectedDate;
+}
+
+function collectContinuePeriods() {
+  if (!el.continueJobInput.checked) return [];
+  return Array.from(el.continuePeriodsList.querySelectorAll(".continuePeriodRow")).map((row) => ({
+    start: row.querySelector(".continueStart")?.value || "",
+    end: row.querySelector(".continueEnd")?.value || ""
+  })).filter((period) => period.start || period.end);
+}
+
+function createContinueGroupId() {
+  if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+  return `kg-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function continuationData(baseData, period, sequence) {
+  return {
+    ...baseData,
+    date: period.start,
+    endDate: period.end || period.start,
+    continueJob: true,
+    continueSequence: sequence,
+    hoardingDone: false,
+    hoardingDoneDate: "",
+    hoardingRemoveRequired: false,
+    hoardingRemoveDate: "",
+    deliverySent: false,
+    deliveryDate: "",
+    deliveryMaterials: "",
+    billed: false,
+    billedDate: "",
+    billingNumber: ""
+  };
 }
 
 function renderPeopleLists(selectedForemen, selectedWorkers) {
@@ -1413,11 +1560,15 @@ function updateAssignmentWarnings() {
   const editingId = el.eventId.value;
   const foremanMap = new Map();
   const workerMap = new Map();
+  const formRanges = [{ start: startKey, end: endKey }, ...collectContinuePeriods()];
 
   events.forEach((event) => {
     if (event.id === editingId) return;
     const range = eventDateRange(event);
-    if (!dateRangesOverlap(startKey, endKey, range.start, range.end)) return;
+    const overlapsAny = formRanges.some((formRange) =>
+      formRange.start && formRange.end && dateRangesOverlap(formRange.start, formRange.end, range.start, range.end)
+    );
+    if (!overlapsAny) return;
     const data = parseEventData(event);
     const address = data.address || event.summary || "Another job / 其他工作";
     const dateText = range.start === range.end
@@ -1486,6 +1637,15 @@ async function saveJob(event) {
     return;
   }
 
+  try {
+    validateContinuePeriods(formData);
+    if (formData.continueJob && !formData.continueGroupId) formData.continueGroupId = createContinueGroupId();
+    if (formData.continuePeriods.length) formData.continueJob = true;
+  } catch (error) {
+    showToast(error.message, true);
+    return;
+  }
+
   let calendarEvent;
   try {
     calendarEvent = buildCalendarEvent(formData);
@@ -1499,10 +1659,10 @@ async function saveJob(event) {
   const calendarId = encodeURIComponent(CONFIG.CALENDAR_ID || "primary");
   const eventId = el.eventId.value;
   if (eventId && formData.colourId === "default") {
-    // Google Calendar PATCH clears an existing special event colour when colorId is null.
     calendarEvent.colorId = null;
   }
 
+  let extraCreated = 0;
   try {
     if (eventId) {
       await apiFetch(`/calendars/${calendarId}/events/${encodeURIComponent(eventId)}`, {
@@ -1510,24 +1670,59 @@ async function saveJob(event) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(calendarEvent)
       });
-      showToast("Job updated in both calendars. / 工作已在两边更新。", false);
     } else {
       await apiFetch(`/calendars/${calendarId}/events`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(calendarEvent)
       });
-      showToast("Job saved to Google Calendar. / 工作已保存到谷歌日历。", false);
     }
+
+    if (formData.continueJob && formData.continuePeriods.length) {
+      for (let index = 0; index < formData.continuePeriods.length; index += 1) {
+        const continuation = continuationData(formData, formData.continuePeriods[index], index + 2);
+        const continuationEvent = buildCalendarEvent(continuation);
+        await apiFetch(`/calendars/${calendarId}/events`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(continuationEvent)
+        });
+        extraCreated += 1;
+      }
+    }
+
+    const message = extraCreated
+      ? `Saved with ${extraCreated} continuation period(s). / 已保存，并新增 ${extraCreated} 个继续工作时段。`
+      : (eventId ? "Job updated in both calendars. / 工作已在两边更新。" : "Job saved to Google Calendar. / 工作已保存到谷歌日历。");
+    showToast(message, false);
     selectedDate = formData.date;
     monthAnchor = startOfMonth(dateFromKey(formData.date));
     closeJobModal();
     await refreshEvents(false);
   } catch (error) {
-    showToast(`Save failed: ${error.message} / 保存失败：${error.message}`, true);
+    const partial = extraCreated ? ` Some continuation periods were already created (${extraCreated}). / 已建立 ${extraCreated} 个继续工作时段。` : "";
+    showToast(`Save failed: ${error.message}.${partial} / 保存失败：${error.message}`, true);
   } finally {
     el.saveJobBtn.disabled = false;
     el.saveJobBtn.innerHTML = "Save to Google Calendar<br><small>保存到谷歌日历</small>";
+  }
+}
+
+function validateContinuePeriods(data) {
+  const periods = data.continuePeriods || [];
+  let previousEnd = data.endDate || data.date;
+  for (let index = 0; index < periods.length; index += 1) {
+    const period = periods[index];
+    if (!period.start || !period.end) {
+      throw new Error("Please complete every continue-work date. / 请填写所有继续工作的日期。 ");
+    }
+    if (period.end < period.start) {
+      throw new Error("A continue-work end date cannot be before its start date. / 继续工作的结束日期不能早于开始日期。 ");
+    }
+    if (period.start <= previousEnd) {
+      throw new Error("Continue-work periods must start after the previous work period. / 继续工作时段必须在上一个工作时段结束后开始。 ");
+    }
+    previousEnd = period.end;
   }
 }
 
@@ -1541,6 +1736,9 @@ function collectJobForm() {
     allDay: el.allDayInput.checked,
     contact: el.contactInput.value.trim(),
     lock: el.lockInput.value.trim(),
+    idFirm: el.idFirmInput.value.trim(),
+    idName: el.idNameInput.value.trim(),
+    idPhone: el.idPhoneInput.value.trim(),
     scope: el.scopeInput.value.trim(),
     remove: el.removeInput.value.trim(),
     keep: el.keepInput.value.trim(),
@@ -1555,6 +1753,11 @@ function collectJobForm() {
     deliveryMaterials: el.deliverySentInput.checked ? el.deliveryMaterialsInput.value.trim() : "",
     billed: el.billedInput.checked,
     billedDate: el.billedInput.checked ? el.billedDateInput.value : "",
+    billingNumber: el.billedInput.checked ? el.billingNumberInput.value.trim() : "",
+    continueJob: el.continueJobInput.checked,
+    continueGroupId: el.continueGroupId.value.trim(),
+    continueSequence: (el.eventId.value && currentModalEvent) ? parseEventData(currentModalEvent).continueSequence : 1,
+    continuePeriods: collectContinuePeriods(),
     foremen: checkedValues(el.foremenList),
     workers: checkedValues(el.workersList),
     colourId: el.colourPicker.querySelector('input[name="jobColour"]:checked')?.value || "default",
@@ -1575,7 +1778,12 @@ function buildCalendarEvent(data) {
     extendedProperties: {
       private: {
         kgCeilingApp: "1",
-        kgCeilingVersion: "1.3.0"
+        kgCeilingVersion: "1.4.0",
+        ...(data.continueJob && data.continueGroupId ? {
+          kgContinueJob: "1",
+          kgContinueGroup: data.continueGroupId,
+          kgContinueSequence: String(data.continueSequence || 1)
+        } : {})
       }
     }
   };
@@ -1608,6 +1816,12 @@ function buildDescription(data) {
     `Address / 地址: ${encodeField(data.address)}`,
     `Contact / 联系: ${encodeField(data.contact)}`,
     `Lock No / 门锁号码: ${encodeField(data.lock)}`,
+    `ID Firm / ID 公司: ${encodeField(data.idFirm)}`,
+    `ID Name / ID 联系人姓名: ${encodeField(data.idName)}`,
+    `ID Phone / ID 联系电话: ${encodeField(data.idPhone)}`,
+    `Continue Job / 继续工作: ${yesNo(data.continueJob)}`,
+    `Continue Group ID: ${data.continueGroupId || ""}`,
+    `Continue Sequence / 继续工作时段: ${data.continueSequence || 1}`,
     `Scope / 工作范围: ${encodeField(data.scope)}`,
     `Remove / 拆除: ${encodeField(data.remove)}`,
     `Keep / 保留: ${encodeField(data.keep)}`,
@@ -1622,6 +1836,7 @@ function buildDescription(data) {
     `Delivery Materials / 送货材料: ${encodeField(data.deliveryMaterials)}`,
     `Billed / 已开单: ${yesNo(data.billed)}`,
     `Billed Date / 开单日期: ${data.billedDate || ""}`,
+    `Billing Number / 开单号码: ${encodeField(data.billingNumber)}`,
     `Foremen / 头手: ${data.foremen.join(" || ")}`,
     `Workers / 工人: ${data.workers.join(" || ")}`,
     `Notes / 备注: ${encodeField(data.notes)}`,
@@ -1644,6 +1859,12 @@ function parseEventData(event) {
     address: event.summary || event.location || "",
     contact: "",
     lock: "",
+    idFirm: "",
+    idName: "",
+    idPhone: "",
+    continueJob: false,
+    continueGroupId: "",
+    continueSequence: 1,
     scope: "",
     remove: "",
     keep: "",
@@ -1658,6 +1879,7 @@ function parseEventData(event) {
     deliveryMaterials: "",
     billed: false,
     billedDate: "",
+    billingNumber: "",
     foremen: [],
     workers: [],
     notes: ""
@@ -1686,6 +1908,12 @@ function parseEventData(event) {
   data.address = decodeField(get("Address / 地址", "Address")) || data.address;
   data.contact = decodeField(get("Contact / 联系", "Contact"));
   data.lock = decodeField(get("Lock No / 门锁号码", "Lock No"));
+  data.idFirm = decodeField(get("ID Firm / ID 公司", "ID Firm"));
+  data.idName = decodeField(get("ID Name / ID 联系人姓名", "ID Name"));
+  data.idPhone = decodeField(get("ID Phone / ID 联系电话", "ID Phone", "ID Telephone"));
+  data.continueGroupId = get("Continue Group ID") || event.extendedProperties?.private?.kgContinueGroup || "";
+  data.continueSequence = Number(get("Continue Sequence / 继续工作时段", "Continue Sequence") || event.extendedProperties?.private?.kgContinueSequence || 1) || 1;
+  data.continueJob = parseYesNo(get("Continue Job / 继续工作", "Continue Job")) || event.extendedProperties?.private?.kgContinueJob === "1" || Boolean(data.continueGroupId);
   data.scope = decodeField(get("Scope / 工作范围", "Scope", "SCOPE"));
   data.remove = decodeField(get("Remove / 拆除", "Remove"));
   data.keep = decodeField(get("Keep / 保留", "Keep"));
@@ -1699,7 +1927,8 @@ function parseEventData(event) {
   data.deliveryMaterials = decodeField(get("Delivery Materials / 送货材料", "Delivery Materials"));
   data.deliverySent = parseYesNo(get("Delivery Sent / 已送货", "Delivery Sent")) || Boolean(data.deliveryDate || data.deliveryMaterials);
   data.billedDate = get("Billed Date / 开单日期", "Billed Date");
-  data.billed = parseYesNo(get("Billed / 已开单", "Billed")) || Boolean(data.billedDate);
+  data.billingNumber = decodeField(get("Billing Number / 开单号码", "Billing Number", "Invoice Number"));
+  data.billed = parseYesNo(get("Billed / 已开单", "Billed")) || Boolean(data.billedDate || data.billingNumber);
   data.foremen = splitPeople(get("Foremen / 头手", "Foremen"));
   data.workers = splitPeople(get("Workers / 工人", "Workers"));
   data.notes = decodeField(get("Notes / 备注", "Notes"));

@@ -133,6 +133,7 @@
       <form id="jobForm" class="modalForm">
         <div class="modalBody">
           <input id="eventId" type="hidden">
+          <input id="continueGroupId" type="hidden">
 
           <div class="formSection importantSection">
             <label class="field fullField">
@@ -162,10 +163,26 @@
               </label>
             </div>
             <p class="helpText dateHelp">For a job lasting several days, choose both dates. Changing the start date keeps the same number of days. / 多日工作请选择开始和结束日期。更改开始日期时会保留相同天数。</p>
-            <label class="checkLine">
-              <input id="allDayInput" type="checkbox">
-              <span>All-day job / 全天工作</span>
-            </label>
+            <div class="dateOptionsRow">
+              <label class="checkLine">
+                <input id="allDayInput" type="checkbox">
+                <span>All-day job / 全天工作</span>
+              </label>
+              <label class="checkLine continueCheck">
+                <input id="continueJobInput" type="checkbox">
+                <span>Continue job / 继续工作</span>
+              </label>
+            </div>
+            <div id="continuePeriodsWrap" class="continuePeriodsWrap" hidden>
+              <div class="continuePeriodsHead">
+                <div>
+                  <strong>Work again after a pause / 暂停后继续工作</strong>
+                  <p class="helpText">Example: work 1–5 Jul, pause, continue again from 9 Jul. Each period appears separately in Google Calendar but stays marked as the same continuing job. / 例如：7月1日至5日工作，暂停几天，7月9日继续。每个时段会分开显示在谷歌日历，但会标记为同一个继续工作。</p>
+                </div>
+                <button id="addContinuePeriodBtn" class="btn btnSecondary btnSmall" type="button">+ Add work period / 添加继续日期</button>
+              </div>
+              <div id="continuePeriodsList" class="continuePeriodsList"></div>
+            </div>
           </div>
 
           <div class="formSection">
@@ -178,6 +195,18 @@
               <label class="field">
                 <span>Lock number / 门锁号码</span>
                 <input id="lockInput" type="text" inputmode="numeric" placeholder="Example: 1234 / 例如：1234">
+              </label>
+              <label class="field">
+                <span>ID firm / ID 公司</span>
+                <input id="idFirmInput" type="text" placeholder="Example: ABC Design Pte Ltd / 例如：ABC Design Pte Ltd">
+              </label>
+              <label class="field">
+                <span>ID name / ID 联系人姓名</span>
+                <input id="idNameInput" type="text" autocomplete="name" placeholder="Designer / project contact / 设计师或项目联系人">
+              </label>
+              <label class="field">
+                <span>ID telephone / ID 联系电话</span>
+                <input id="idPhoneInput" type="tel" autocomplete="tel" placeholder="Phone number / 电话号码">
               </label>
             </div>
             <label class="field fullField">
@@ -236,7 +265,11 @@
                   <span>Billed date / 开单日期</span>
                   <input id="billedDateInput" type="date" disabled>
                 </label>
-                <p class="helpText">Leave unticked when this job is not billed yet. / 尚未开单时不要勾选。</p>
+                <label class="field">
+                  <span>Manual billing number / 手动开单号码</span>
+                  <input id="billingNumberInput" type="text" disabled placeholder="Example: INV-2026-001 / 例如：INV-2026-001">
+                </label>
+                <p class="helpText">Leave unticked when this job is not billed yet. Enter your own billing/invoice number after billing. / 尚未开单时不要勾选。开单后填写自己的开单或发票号码。</p>
               </fieldset>
             </div>
           </div>
@@ -345,8 +378,8 @@
       <div class="modalBody settingsBody">
         <div class="formSection">
           <h3>Calendar / 日历</h3>
-          <p>This app uses your main Google Calendar. / 此应用使用您的主要谷歌日历。</p>
-          <p class="monoText" id="calendarIdText">primary</p>
+          <p>This app uses the shared KG Work Google Calendar. / 此应用使用共享的 KG Work 谷歌日历。</p>
+          <p class="monoText" id="calendarIdText">KG Work</p>
         </div>
         <div class="formSection">
           <h3>Automatic sync / 自动同步</h3>

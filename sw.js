@@ -1,4 +1,4 @@
-const CACHE_NAME = "kg-ceiling-calendar-v1.3.0-multiday-drag-copy-delete";
+const CACHE_NAME = "kg-ceiling-calendar-v1.4.0-continue-job-id-billing";
 const APP_FILES = [
   "./",
   "./index.html",
@@ -8,6 +8,7 @@ const APP_FILES = [
   "./manifest.webmanifest",
   "./privacy.html",
   "./README_DONKEY_STEPS.md",
+  "./USER_MANUAL_EN_CN.md",
   "./icons/icon-192.png",
   "./icons/icon-512.png"
 ];
