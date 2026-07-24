@@ -204,125 +204,60 @@
                 <span>ID name / ID 联系人姓名</span>
                 <input id="idNameInput" type="text" autocomplete="name" placeholder="Designer / project contact / 设计师或项目联系人">
               </label>
-              <label class="field">
-                <span>ID telephone / ID 联系电话</span>
-                <input id="idPhoneInput" type="tel" autocomplete="tel" placeholder="Phone number / 电话号码">
-              </label>
             </div>
+          </div>
+
+          <div class="formSection amendSection">
+            <h3>3. Need amend / 需要修改</h3>
             <label class="field fullField">
-              <span>Scope of work / 工作范围</span>
-              <textarea id="scopeInput" rows="3" placeholder="What ceiling work is needed? / 需要做什么天花工作？"></textarea>
+              <span>Installer name / 安装人员姓名</span>
+              <input id="installerNameInput" type="text" autocomplete="name" placeholder="Installer name / 安装人员姓名">
+            </label>
+            <fieldset class="amendBox">
+              <legend>What needs amendment? / 需要修改什么？</legend>
+              <div class="amendChoices">
+                <label class="checkLine"><input id="amendCeilingInput" type="checkbox"><span>Ceiling / 天花</span></label>
+                <label class="checkLine"><input id="amendPartitionInput" type="checkbox"><span>Partition / 隔墙</span></label>
+                <label class="checkLine"><input id="amendPelmetInput" type="checkbox"><span>Pelmet / Box Up / L Box / 窗帘盒 / 包箱 / L Box</span></label>
+                <label class="checkLine"><input id="amendTimberOtherInput" type="checkbox"><span>Add Timber Support / Other / 加木支撑 / 其他</span></label>
+              </div>
+            </fieldset>
+            <label class="field fullField">
+              <span>Remark / 备注</span>
+              <textarea id="amendRemarkInput" rows="4" placeholder="What needs to be amended? / 需要修改什么？"></textarea>
             </label>
           </div>
 
-
-          <div class="formSection trackingSection">
-            <h3>3. Site tracking / 工地记录</h3>
-            <div class="trackingGrid">
-              <fieldset class="trackingBox">
-                <legend>Hoarding / 围板</legend>
-                <label class="checkLine trackingCheck">
-                  <input id="hoardingDoneInput" type="checkbox">
-                  <span>Hoarding done / 围板已完成</span>
-                </label>
-                <label class="field">
-                  <span>Hoarding done date / 围板完成日期</span>
-                  <input id="hoardingDoneDateInput" type="date" disabled>
-                </label>
-                <label class="checkLine trackingCheck">
-                  <input id="hoardingRemoveInput" type="checkbox">
-                  <span>Hoarding needs removal / 围板需要拆除</span>
-                </label>
-                <label class="field">
-                  <span>Planned removal date / 计划拆除日期</span>
-                  <input id="hoardingRemoveDateInput" type="date" disabled>
-                </label>
-              </fieldset>
-
-              <fieldset class="trackingBox">
-                <legend>Material delivery / 材料送货</legend>
-                <label class="checkLine trackingCheck">
-                  <input id="deliverySentInput" type="checkbox">
-                  <span>Materials delivered / 材料已送到</span>
-                </label>
-                <label class="field">
-                  <span>Delivery date / 送货日期</span>
-                  <input id="deliveryDateInput" type="date" disabled>
-                </label>
-                <label class="field fullField">
-                  <span>Materials delivered / 送货材料</span>
-                  <textarea id="deliveryMaterialsInput" rows="3" disabled placeholder="Example: gypsum board, metal frame / 例如：石膏板、铁架"></textarea>
-                </label>
-              </fieldset>
-
-              <fieldset class="trackingBox billingBox">
-                <legend>Billing / 开单</legend>
-                <label class="checkLine trackingCheck">
-                  <input id="billedInput" type="checkbox">
-                  <span>Job already billed / 工作已开单</span>
-                </label>
-                <label class="field">
-                  <span>Billed date / 开单日期</span>
-                  <input id="billedDateInput" type="date" disabled>
-                </label>
-                <label class="field">
-                  <span>Manual billing number / 手动开单号码</span>
-                  <input id="billingNumberInput" type="text" disabled placeholder="Example: INV-2026-001 / 例如：INV-2026-001">
-                </label>
-                <p class="helpText">Leave unticked when this job is not billed yet. Enter your own billing/invoice number after billing. / 尚未开单时不要勾选。开单后填写自己的开单或发票号码。</p>
-              </fieldset>
-            </div>
-          </div>
-
-          <details class="formSection optionalSection" open>
-            <summary>4. Work instructions / 工作指示</summary>
+          <div class="formSection deliverySection">
+            <h3>4. Deliver / 送货</h3>
             <div class="formGrid">
               <label class="field">
-                <span>Remove / 拆除</span>
-                <textarea id="removeInput" rows="2"></textarea>
+                <span>Delivery date / 送货日期</span>
+                <input id="deliveryDateInput" type="date">
               </label>
-              <label class="field">
-                <span>Keep / 保留</span>
-                <textarea id="keepInput" rows="2"></textarea>
-              </label>
-              <label class="field">
-                <span>Protect / 保护</span>
-                <textarea id="protectInput" rows="2"></textarea>
-              </label>
-              <label class="field">
-                <span>Disposal / 清理与丢弃</span>
-                <textarea id="disposalInput" rows="2"></textarea>
+              <label class="field fullField">
+                <span>Delivery material / 送货材料</span>
+                <textarea id="deliveryMaterialsInput" rows="4" placeholder="Fill in the items yourself / 自己填写送货物品"></textarea>
               </label>
             </div>
-          </details>
+            <label class="field fullField">
+              <span>Delivery remark / 送货备注</span>
+              <textarea id="deliveryRemarkInput" rows="3" placeholder="Delivery notes / 送货备注"></textarea>
+            </label>
+          </div>
 
-          <div class="formSection">
-            <h3>5. People / 人员</h3>
-            <div class="peopleGrid">
-              <fieldset class="peopleBox">
-                <legend>Foremen / 头手</legend>
-                <div id="foremenList" class="checkList"></div>
-              </fieldset>
-              <fieldset class="peopleBox">
-                <legend>Workers / 工人</legend>
-                <div id="workersList" class="checkList"></div>
-              </fieldset>
-            </div>
-            <p class="helpText">A red address means this person already has another job on this date. / 红色地址表示此人在同一天已有其他工作。</p>
+          <div class="formSection billingSection">
+            <h3>5. Billing / 开单</h3>
+            <label class="field fullField">
+              <span>Billing number / 开单号码</span>
+              <input id="billingNumberInput" type="text" placeholder="Fill in billing number / 自己填写开单号码">
+            </label>
           </div>
 
           <div class="formSection">
             <h3>6. Google Calendar colour / 谷歌日历颜色</h3>
             <div id="colourPicker" class="colourPicker" role="radiogroup" aria-label="Choose job colour / 选择工作颜色"></div>
           </div>
-
-          <details class="formSection optionalSection">
-            <summary>7. Extra notes / 其他备注</summary>
-            <label class="field fullField">
-              <span>Notes / 备注</span>
-              <textarea id="notesInput" rows="4" placeholder="Any extra information / 其他资料"></textarea>
-            </label>
-          </details>
         </div>
 
         <footer class="modalFoot">

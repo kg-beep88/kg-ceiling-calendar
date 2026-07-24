@@ -1,4 +1,4 @@
-const CACHE_NAME = "kg-ceiling-calendar-v1.4.0-continue-job-id-billing";
+const CACHE_NAME = "kg-ceiling-calendar-v1.5.0-simplified-job-form";
 const APP_FILES = [
   "./",
   "./index.html",

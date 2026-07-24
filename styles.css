@@ -223,6 +223,13 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); box-sh
 
 .trackingSection { border-color: #b8d5cf; background: #fbfffe; }
 .trackingGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+
+.amendBox { min-width: 0; margin: 12px 0; padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: #f8fbfa; }
+.amendBox legend { padding: 0 6px; font-weight: 900; }
+.amendChoices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 14px; }
+.amendChoices .checkLine { margin-top: 0; padding: 10px; border-radius: 10px; background: #fff; border: 1px solid var(--border); }
+.deliverySection .fullField { grid-column: 1 / -1; }
+.billingSection .field { max-width: 620px; }
 .trackingBox { min-width: 0; margin: 0; padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: #f8fbfa; }
 .trackingBox legend { padding: 0 6px; font-weight: 900; }
 .trackingBox .field { margin-top: 10px; }
@@ -330,6 +337,8 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); box-sh
   .trackingGrid, .historySummaryGrid { grid-template-columns: 1fr; }
   .historyEventRow { grid-template-columns: 1fr; }
   .historyEditBtn { width: 100%; }
+
+  .amendChoices { grid-template-columns: 1fr; }
   .colourPicker { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .modalFoot { align-items: stretch; padding: 9px 10px calc(9px + var(--safe-bottom)); }
   .modalFootRight { flex: 1; }

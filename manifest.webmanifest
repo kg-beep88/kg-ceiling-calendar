@@ -1,7 +1,7 @@
 {
   "name": "KG Ceiling Work Calendar / KG 天花工作日历",
   "short_name": "KG Ceiling",
-  "description": "Bilingual KG ceiling work planner with Google Calendar sync, continue-job periods, ID firm, address history, delivery, hoarding and billing tracking.",
+  "description": "Bilingual KG ceiling work planner with Google Calendar sync, continue-job periods, ID firm, installer/amendment tracking, delivery and billing number tracking.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

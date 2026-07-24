@@ -66,7 +66,6 @@ function init() {
   cacheElements();
   bindEvents();
   renderColourPicker("default");
-  renderPeopleLists([], []);
   renderAll();
   loadCachedEvents();
   waitForGoogleIdentity();
@@ -82,11 +81,10 @@ function cacheElements() {
     "jobModal", "jobModalTitle", "closeModalBtn", "jobForm", "eventId", "continueGroupId", "addressInput",
     "dateInput", "endDateInput", "startTimeInput", "endTimeInput", "allDayInput", "continueJobInput",
     "continuePeriodsWrap", "continuePeriodsList", "addContinuePeriodBtn", "contactInput",
-    "lockInput", "idFirmInput", "idNameInput", "idPhoneInput", "scopeInput", "removeInput", "keepInput", "protectInput",
-    "disposalInput", "hoardingDoneInput", "hoardingDoneDateInput", "hoardingRemoveInput",
-    "hoardingRemoveDateInput", "deliverySentInput", "deliveryDateInput",
-    "deliveryMaterialsInput", "billedInput", "billedDateInput", "billingNumberInput", "foremenList",
-    "workersList", "colourPicker", "notesInput", "deleteJobBtn", "cancelBtn",
+    "lockInput", "idFirmInput", "idNameInput", "installerNameInput", "amendCeilingInput",
+    "amendPartitionInput", "amendPelmetInput", "amendTimberOtherInput", "amendRemarkInput",
+    "deliveryDateInput", "deliveryMaterialsInput", "deliveryRemarkInput", "billingNumberInput",
+    "colourPicker", "deleteJobBtn", "cancelBtn",
     "saveJobBtn", "searchModal", "closeSearchBtn", "historySearchForm",
     "historySearchInput", "historySearchBtn", "historySearchStatus",
     "historySearchResults", "doneSearchBtn", "settingsModal", "closeSettingsBtn",
@@ -127,8 +125,6 @@ function bindEvents() {
   el.addContinuePeriodBtn.addEventListener("click", () => addContinuePeriodRow());
   el.dateInput.addEventListener("change", handleStartDateChange);
   el.endDateInput.addEventListener("change", handleEndDateChange);
-  [el.hoardingDoneInput, el.hoardingRemoveInput, el.deliverySentInput, el.billedInput]
-    .forEach((input) => input.addEventListener("change", () => updateTrackingFieldState(true)));
   document.addEventListener("pointermove", handleTouchDragMove, { passive: false });
   document.addEventListener("pointerup", handleTouchDragEnd, { passive: false });
   document.addEventListener("pointercancel", cancelTouchDrag, { passive: false });
@@ -728,20 +724,21 @@ function renderDayJobs() {
     if (range.start !== range.end) pieces.unshift(`Dates / 日期: ${formatDateShort(range.start)}–${formatDateShort(range.end)}`);
     if (data.contact) pieces.push(`Contact / 联系: ${data.contact}`);
     if (data.idFirm) pieces.push(`ID Firm / ID 公司: ${data.idFirm}`);
-    if (data.idName || data.idPhone) pieces.push(`ID / ID 联系: ${[data.idName, data.idPhone].filter(Boolean).join(" ")}`);
-    if (data.foremen.length) pieces.push(`Foremen / 头手: ${data.foremen.join(", ")}`);
-    if (data.workers.length) pieces.push(`Workers / 工人: ${data.workers.join(", ")}`);
+    if (data.idName) pieces.push(`ID Name / ID 联系人: ${data.idName}`);
+    if (data.installerName) pieces.push(`Installer / 安装人员: ${data.installerName}`);
     pieces.forEach((piece) => {
       const span = document.createElement("span");
       span.textContent = piece;
       meta.appendChild(span);
     });
     info.append(title, meta);
-    if (data.scope) {
-      const scope = document.createElement("p");
-      scope.className = "jobScope";
-      scope.textContent = data.scope;
-      info.appendChild(scope);
+
+    const amend = amendmentLabels(data);
+    if (amend.length || data.amendRemark) {
+      const p = document.createElement("p");
+      p.className = "jobScope";
+      p.textContent = [amend.length ? `Need amend / 需要修改: ${amend.join(", ")}` : "", data.amendRemark].filter(Boolean).join(" — ");
+      info.appendChild(p);
     }
     const tags = buildTrackingTags(data);
     if (tags.childElementCount) info.appendChild(tags);
@@ -781,35 +778,29 @@ function renderDayJobs() {
   });
 }
 
+function amendmentLabels(data) {
+  const labels = [];
+  if (data.amendCeiling) labels.push("Ceiling / 天花");
+  if (data.amendPartition) labels.push("Partition / 隔墙");
+  if (data.amendPelmet) labels.push("Pelmet / Box Up / L Box");
+  if (data.amendTimberOther) labels.push("Add Timber Support / Other / 加木支撑 / 其他");
+  return labels;
+}
+
 function buildTrackingTags(data) {
   const wrap = document.createElement("div");
   wrap.className = "statusTags";
-
   const add = (text, className = "") => {
     const tag = document.createElement("span");
     tag.className = `statusTag ${className}`.trim();
     tag.textContent = text;
     wrap.appendChild(tag);
   };
-
-  if (data.continueJob) {
-    add(`Continue job${data.continueSequence > 1 ? ` #${data.continueSequence}` : ""} / 继续工作`, "info");
-  }
-  if (data.hoardingDone) {
-    add(`Hoarding done${data.hoardingDoneDate ? `: ${formatDateShort(data.hoardingDoneDate)}` : ""} / 围板已完成`, "good");
-  }
-  if (data.hoardingRemoveRequired) {
-    add(`Remove hoarding${data.hoardingRemoveDate ? `: ${formatDateShort(data.hoardingRemoveDate)}` : ""} / 拆围板`, "warn");
-  }
-  if (data.deliverySent) {
+  if (data.continueJob) add(`Continue job${data.continueSequence > 1 ? ` #${data.continueSequence}` : ""} / 继续工作`, "info");
+  if (data.deliveryDate || data.deliveryMaterials) {
     add(`Delivery${data.deliveryDate ? `: ${formatDateShort(data.deliveryDate)}` : ""} / 送货`, "good");
   }
-  if (data.billed) {
-    const number = data.billingNumber ? ` #${data.billingNumber}` : "";
-    add(`Billed${data.billedDate ? `: ${formatDateShort(data.billedDate)}` : ""}${number} / 已开单`, "good");
-  } else if (!(data.continueJob && data.continueSequence > 1)) {
-    add("Not billed / 未开单", "bad");
-  }
+  if (data.billingNumber) add(`Billing #${data.billingNumber} / 开单号码`, "good");
   return wrap;
 }
 
@@ -927,16 +918,14 @@ function buildHistoryGroup(group) {
   const sorted = [...group.events].sort((a, b) => eventStartMs(b) - eventStartMs(a));
   const records = sorted.map((event) => ({ event, data: parseEventData(event) }));
   const workDates = uniqueDateValues(records.flatMap(({ event }) => eventDateKeys(event)));
-  const hoardingDoneDates = uniqueDateValues(records.filter(({ data }) => data.hoardingDone).map(({ data, event }) => data.hoardingDoneDate || eventDateKey(event)));
-  const removalDates = uniqueDateValues(records.filter(({ data }) => data.hoardingRemoveRequired).map(({ data }) => data.hoardingRemoveDate).filter(Boolean));
   const deliveries = records
-    .filter(({ data }) => data.deliverySent)
-    .map(({ data, event }) => ({ date: data.deliveryDate || eventDateKey(event), materials: data.deliveryMaterials }))
+    .filter(({ data }) => data.deliveryDate || data.deliveryMaterials)
+    .map(({ data, event }) => ({ date: data.deliveryDate || eventDateKey(event), materials: data.deliveryMaterials, remark: data.deliveryRemark }))
     .sort((a, b) => String(b.date).localeCompare(String(a.date)));
-  const billedDates = uniqueDateValues(records.filter(({ data }) => data.billed).map(({ data, event }) => data.billedDate || eventDateKey(event)));
   const billingNumbers = Array.from(new Set(records.map(({ data }) => data.billingNumber).filter(Boolean)));
-  const notBilledCount = records.filter(({ data }) => !data.billed && !(data.continueJob && data.continueSequence > 1)).length;
-  const latestId = records.find(({ data }) => data.idFirm || data.idName || data.idPhone)?.data || {};
+  const latestId = records.find(({ data }) => data.idFirm || data.idName)?.data || {};
+  const installerNames = Array.from(new Set(records.map(({ data }) => data.installerName).filter(Boolean)));
+  const amendments = Array.from(new Set(records.flatMap(({ data }) => amendmentLabels(data))));
   const continueRecords = records.filter(({ data }) => data.continueJob).length;
 
   const groupEl = document.createElement("section");
@@ -952,24 +941,21 @@ function buildHistoryGroup(group) {
   headText.append(title, subtitle);
   head.appendChild(headText);
 
+  const deliveryText = deliveries.length
+    ? deliveries.map((item) => `${item.date ? formatDateShort(item.date) : "No date / 无日期"}: ${item.materials || "Material not entered / 未填写材料"}${item.remark ? ` — ${item.remark}` : ""}`).join("\n")
+    : "None / 无";
+
   const summary = document.createElement("div");
   summary.className = "historySummaryGrid";
   summary.append(
     makeHistorySummary("Work dates / 工作日期", formatDateList(workDates)),
-    makeHistorySummary("Hoarding / 围板", [
-      `Done / 完成: ${formatDateList(hoardingDoneDates)}`,
-      `Remove / 拆除: ${formatDateList(removalDates)}`
-    ].join("\n")),
-    makeHistorySummary("Material deliveries / 材料送货", formatDeliveryList(deliveries)),
-    makeHistorySummary("Billing / 开单", [
-      `Billed dates / 已开单日期: ${formatDateList(billedDates)}`,
-      `Billing no. / 开单号码: ${billingNumbers.length ? billingNumbers.join(", ") : "None / 无"}`,
-      `Not billed jobs / 未开单工作: ${notBilledCount}`
-    ].join("\n")),
-    makeHistorySummary("ID firm / ID 公司", [
+    makeHistorySummary("Installer / 安装人员", installerNames.length ? installerNames.join(", ") : "None / 无"),
+    makeHistorySummary("Need amend / 需要修改", amendments.length ? amendments.join(", ") : "None / 无"),
+    makeHistorySummary("Deliver / 送货", deliveryText),
+    makeHistorySummary("Billing number / 开单号码", billingNumbers.length ? billingNumbers.join(", ") : "None / 无"),
+    makeHistorySummary("ID details / ID 资料", [
       `Firm / 公司: ${latestId.idFirm || "None / 无"}`,
-      `Name / 姓名: ${latestId.idName || "None / 无"}`,
-      `Telephone / 电话: ${latestId.idPhone || "None / 无"}`
+      `Name / 姓名: ${latestId.idName || "None / 无"}`
     ].join("\n")),
     makeHistorySummary("Continue job / 继续工作", continueRecords ? `${continueRecords} continuing period record(s) / ${continueRecords} 条继续工作记录` : "No / 否")
   );
@@ -1007,15 +993,17 @@ function buildHistoryEventRow(event, data) {
   const details = document.createElement("div");
   details.className = "historyEventDetails";
   const tags = buildTrackingTags(data);
-  details.appendChild(tags);
+  if (tags.childElementCount) details.appendChild(tags);
   const lines = [];
-  if (data.deliveryMaterials) lines.push(`Delivery materials / 送货材料: ${data.deliveryMaterials}`);
+  if (data.installerName) lines.push(`Installer / 安装人员: ${data.installerName}`);
+  const amendments = amendmentLabels(data);
+  if (amendments.length) lines.push(`Need amend / 需要修改: ${amendments.join(", ")}`);
+  if (data.amendRemark) lines.push(`Remark / 备注: ${data.amendRemark}`);
+  if (data.deliveryMaterials) lines.push(`Delivery material / 送货材料: ${data.deliveryMaterials}`);
+  if (data.deliveryRemark) lines.push(`Delivery remark / 送货备注: ${data.deliveryRemark}`);
   if (data.billingNumber) lines.push(`Billing no. / 开单号码: ${data.billingNumber}`);
   if (data.idFirm) lines.push(`ID Firm / ID 公司: ${data.idFirm}`);
-  if (data.idName || data.idPhone) lines.push(`ID contact / ID 联系: ${[data.idName, data.idPhone].filter(Boolean).join(" ")}`);
-  if (data.scope) lines.push(`Scope / 工作范围: ${data.scope}`);
-  if (data.foremen.length) lines.push(`Foremen / 头手: ${data.foremen.join(", ")}`);
-  if (data.workers.length) lines.push(`Workers / 工人: ${data.workers.join(", ")}`);
+  if (data.idName) lines.push(`ID Name / ID 联系人: ${data.idName}`);
   if (lines.length) {
     const p = document.createElement("p");
     p.textContent = lines.join(" • ");
@@ -1247,8 +1235,7 @@ function openJobModal(event = null, asCopy = false) {
     el.dateInput.value = selectedDate;
     el.endDateInput.value = selectedDate;
     lastFormStartDate = selectedDate;
-    renderPeopleLists([], []);
-    renderColourPicker("default");
+      renderColourPicker("default");
   }
 
   el.eventId.value = event && !asCopy ? event.id : "";
@@ -1260,8 +1247,6 @@ function openJobModal(event = null, asCopy = false) {
   document.body.style.overflow = "hidden";
   updateTimeFieldState();
   updateContinueJobState(false);
-  updateTrackingFieldState(false);
-  updateAssignmentWarnings();
   setTimeout(() => el.addressInput.focus(), 80);
 }
 
@@ -1283,20 +1268,18 @@ function resetJobForm() {
   el.allDayInput.checked = false;
   el.continueJobInput.checked = false;
   el.continuePeriodsList.innerHTML = "";
-  el.hoardingDoneInput.checked = false;
-  el.hoardingRemoveInput.checked = false;
-  el.deliverySentInput.checked = false;
-  el.billedInput.checked = false;
-  el.hoardingDoneDateInput.value = "";
-  el.hoardingRemoveDateInput.value = "";
-  el.deliveryDateInput.value = "";
-  el.deliveryMaterialsInput.value = "";
-  el.billedDateInput.value = "";
-  el.billingNumberInput.value = "";
   el.idFirmInput.value = "";
   el.idNameInput.value = "";
-  el.idPhoneInput.value = "";
-  renderPeopleLists([], []);
+  el.installerNameInput.value = "";
+  el.amendCeilingInput.checked = false;
+  el.amendPartitionInput.checked = false;
+  el.amendPelmetInput.checked = false;
+  el.amendTimberOtherInput.checked = false;
+  el.amendRemarkInput.value = "";
+  el.deliveryDateInput.value = "";
+  el.deliveryMaterialsInput.value = "";
+  el.deliveryRemarkInput.value = "";
+  el.billingNumberInput.value = "";
   renderColourPicker("default");
   el.saveJobBtn.disabled = false;
   el.saveJobBtn.innerHTML = "Save to Google Calendar<br><small>保存到谷歌日历</small>";
@@ -1309,26 +1292,19 @@ function fillJobForm(event, asCopy) {
   el.lockInput.value = data.lock;
   el.idFirmInput.value = data.idFirm;
   el.idNameInput.value = data.idName;
-  el.idPhoneInput.value = data.idPhone;
-  el.scopeInput.value = data.scope;
-  el.removeInput.value = data.remove;
-  el.keepInput.value = data.keep;
-  el.protectInput.value = data.protect;
-  el.disposalInput.value = data.disposal;
-  el.hoardingDoneInput.checked = data.hoardingDone;
-  el.hoardingDoneDateInput.value = data.hoardingDoneDate;
-  el.hoardingRemoveInput.checked = data.hoardingRemoveRequired;
-  el.hoardingRemoveDateInput.value = data.hoardingRemoveDate;
-  el.deliverySentInput.checked = data.deliverySent;
+  el.installerNameInput.value = data.installerName;
+  el.amendCeilingInput.checked = data.amendCeiling;
+  el.amendPartitionInput.checked = data.amendPartition;
+  el.amendPelmetInput.checked = data.amendPelmet;
+  el.amendTimberOtherInput.checked = data.amendTimberOther;
+  el.amendRemarkInput.value = data.amendRemark;
   el.deliveryDateInput.value = data.deliveryDate;
   el.deliveryMaterialsInput.value = data.deliveryMaterials;
-  el.billedInput.checked = data.billed;
-  el.billedDateInput.value = data.billedDate;
+  el.deliveryRemarkInput.value = data.deliveryRemark;
   el.billingNumberInput.value = data.billingNumber;
   el.continueJobInput.checked = data.continueJob;
   el.continueGroupId.value = data.continueGroupId;
   el.continuePeriodsList.innerHTML = "";
-  el.notesInput.value = data.notes;
   const originalRange = eventDateRange(event);
   const originalDaySpan = Math.max(0, daysBetweenKeys(originalRange.start, originalRange.end));
   const formStartDate = asCopy ? selectedDate : originalRange.start;
@@ -1336,15 +1312,9 @@ function fillJobForm(event, asCopy) {
   el.endDateInput.value = asCopy ? addDaysKey(formStartDate, originalDaySpan) : originalRange.end;
   lastFormStartDate = formStartDate;
   if (asCopy) {
-    el.hoardingDoneInput.checked = false;
-    el.hoardingDoneDateInput.value = "";
-    el.hoardingRemoveInput.checked = false;
-    el.hoardingRemoveDateInput.value = "";
-    el.deliverySentInput.checked = false;
     el.deliveryDateInput.value = "";
     el.deliveryMaterialsInput.value = "";
-    el.billedInput.checked = false;
-    el.billedDateInput.value = "";
+    el.deliveryRemarkInput.value = "";
     el.billingNumberInput.value = "";
     el.continueJobInput.checked = false;
     el.continueGroupId.value = "";
@@ -1357,7 +1327,6 @@ function fillJobForm(event, asCopy) {
     el.startTimeInput.value = timeInputValue(new Date(event.start.dateTime));
     if (event.end?.dateTime) el.endTimeInput.value = timeInputValue(new Date(event.end.dateTime));
   }
-  renderPeopleLists(data.foremen, data.workers);
   renderColourPicker(String(event.colorId || "default"));
 }
 
@@ -1372,8 +1341,6 @@ function handleStartDateChange() {
     el.endDateInput.value = nextStart;
   }
   lastFormStartDate = nextStart;
-  updateAssignmentWarnings();
-  updateTrackingFieldState(true);
 }
 
 function handleEndDateChange() {
@@ -1383,7 +1350,6 @@ function handleEndDateChange() {
     el.endDateInput.value = start;
     showToast("End date cannot be before start date. / 结束日期不能早于开始日期。", true);
   }
-  updateAssignmentWarnings();
 }
 
 function updateTimeFieldState() {
@@ -1393,23 +1359,6 @@ function updateTimeFieldState() {
   document.querySelectorAll(".timeField").forEach((node) => node.style.opacity = disabled ? ".52" : "1");
 }
 
-
-function updateTrackingFieldState(fillDefaultDate) {
-  const jobDate = el.dateInput.value || selectedDate;
-  const pairs = [
-    [el.hoardingDoneInput, el.hoardingDoneDateInput],
-    [el.hoardingRemoveInput, el.hoardingRemoveDateInput],
-    [el.deliverySentInput, el.deliveryDateInput],
-    [el.billedInput, el.billedDateInput]
-  ];
-
-  pairs.forEach(([checkbox, dateInput]) => {
-    dateInput.disabled = !checkbox.checked;
-    if (fillDefaultDate && checkbox.checked && !dateInput.value) dateInput.value = jobDate;
-  });
-  el.deliveryMaterialsInput.disabled = !el.deliverySentInput.checked;
-  el.billingNumberInput.disabled = !el.billedInput.checked;
-}
 
 function updateContinueJobState(addStarterRow) {
   const enabled = el.continueJobInput.checked;
@@ -1503,97 +1452,19 @@ function continuationData(baseData, period, sequence) {
     endDate: period.end || period.start,
     continueJob: true,
     continueSequence: sequence,
-    hoardingDone: false,
-    hoardingDoneDate: "",
-    hoardingRemoveRequired: false,
-    hoardingRemoveDate: "",
-    deliverySent: false,
     deliveryDate: "",
     deliveryMaterials: "",
-    billed: false,
-    billedDate: "",
+    deliveryRemark: "",
     billingNumber: ""
   };
 }
 
-function renderPeopleLists(selectedForemen, selectedWorkers) {
-  renderPersonGroup(el.foremenList, CONFIG.FOREMEN || [], "foreman", selectedForemen);
-  renderPersonGroup(el.workersList, CONFIG.WORKERS || [], "worker", selectedWorkers);
-}
-
-function renderPersonGroup(container, names, type, selectedNames) {
-  container.innerHTML = "";
-  if (!names.length) {
-    const empty = document.createElement("p");
-    empty.className = "helpText";
-    empty.textContent = "Add names in config.js / 请在 config.js 添加名字";
-    container.appendChild(empty);
-    return;
-  }
-
-  names.forEach((name, index) => {
-    const label = document.createElement("label");
-    label.className = "personChoice";
-    const input = document.createElement("input");
-    input.type = "checkbox";
-    input.name = type;
-    input.value = name;
-    input.id = `${type}-${index}`;
-    input.checked = selectedNames.includes(name);
-    const textWrap = document.createElement("span");
-    const base = document.createElement("span");
-    base.className = "personName";
-    base.textContent = name;
-    const warning = document.createElement("span");
-    warning.className = "assignmentWarning";
-    warning.hidden = true;
-    textWrap.append(base, warning);
-    label.append(input, textWrap);
-    container.appendChild(label);
-  });
+function renderPeopleLists() {
+  // Installer is entered as free text in the simplified form.
 }
 
 function updateAssignmentWarnings() {
-  const startKey = el.dateInput.value;
-  const endKey = el.endDateInput.value || startKey;
-  if (!startKey) return;
-  const editingId = el.eventId.value;
-  const foremanMap = new Map();
-  const workerMap = new Map();
-  const formRanges = [{ start: startKey, end: endKey }, ...collectContinuePeriods()];
-
-  events.forEach((event) => {
-    if (event.id === editingId) return;
-    const range = eventDateRange(event);
-    const overlapsAny = formRanges.some((formRange) =>
-      formRange.start && formRange.end && dateRangesOverlap(formRange.start, formRange.end, range.start, range.end)
-    );
-    if (!overlapsAny) return;
-    const data = parseEventData(event);
-    const address = data.address || event.summary || "Another job / 其他工作";
-    const dateText = range.start === range.end
-      ? formatDateShort(range.start)
-      : `${formatDateShort(range.start)}–${formatDateShort(range.end)}`;
-    const warningText = `${address} (${dateText})`;
-    data.foremen.forEach((name) => {
-      if (!foremanMap.has(name)) foremanMap.set(name, warningText);
-    });
-    data.workers.forEach((name) => {
-      if (!workerMap.has(name)) workerMap.set(name, warningText);
-    });
-  });
-
-  applyWarnings(el.foremenList, foremanMap);
-  applyWarnings(el.workersList, workerMap);
-}
-function applyWarnings(container, map) {
-  container.querySelectorAll(".personChoice").forEach((label) => {
-    const input = label.querySelector("input");
-    const warning = label.querySelector(".assignmentWarning");
-    const address = map.get(input.value);
-    warning.hidden = !address;
-    warning.textContent = address ? `Already at: ${address} / 已安排：${address}` : "";
-  });
+  // Worker/foreman assignment warnings were removed from the simplified form.
 }
 
 function renderColourPicker(selectedId) {
@@ -1738,30 +1609,21 @@ function collectJobForm() {
     lock: el.lockInput.value.trim(),
     idFirm: el.idFirmInput.value.trim(),
     idName: el.idNameInput.value.trim(),
-    idPhone: el.idPhoneInput.value.trim(),
-    scope: el.scopeInput.value.trim(),
-    remove: el.removeInput.value.trim(),
-    keep: el.keepInput.value.trim(),
-    protect: el.protectInput.value.trim(),
-    disposal: el.disposalInput.value.trim(),
-    hoardingDone: el.hoardingDoneInput.checked,
-    hoardingDoneDate: el.hoardingDoneInput.checked ? el.hoardingDoneDateInput.value : "",
-    hoardingRemoveRequired: el.hoardingRemoveInput.checked,
-    hoardingRemoveDate: el.hoardingRemoveInput.checked ? el.hoardingRemoveDateInput.value : "",
-    deliverySent: el.deliverySentInput.checked,
-    deliveryDate: el.deliverySentInput.checked ? el.deliveryDateInput.value : "",
-    deliveryMaterials: el.deliverySentInput.checked ? el.deliveryMaterialsInput.value.trim() : "",
-    billed: el.billedInput.checked,
-    billedDate: el.billedInput.checked ? el.billedDateInput.value : "",
-    billingNumber: el.billedInput.checked ? el.billingNumberInput.value.trim() : "",
+    installerName: el.installerNameInput.value.trim(),
+    amendCeiling: el.amendCeilingInput.checked,
+    amendPartition: el.amendPartitionInput.checked,
+    amendPelmet: el.amendPelmetInput.checked,
+    amendTimberOther: el.amendTimberOtherInput.checked,
+    amendRemark: el.amendRemarkInput.value.trim(),
+    deliveryDate: el.deliveryDateInput.value,
+    deliveryMaterials: el.deliveryMaterialsInput.value.trim(),
+    deliveryRemark: el.deliveryRemarkInput.value.trim(),
+    billingNumber: el.billingNumberInput.value.trim(),
     continueJob: el.continueJobInput.checked,
     continueGroupId: el.continueGroupId.value.trim(),
     continueSequence: (el.eventId.value && currentModalEvent) ? parseEventData(currentModalEvent).continueSequence : 1,
     continuePeriods: collectContinuePeriods(),
-    foremen: checkedValues(el.foremenList),
-    workers: checkedValues(el.workersList),
-    colourId: el.colourPicker.querySelector('input[name="jobColour"]:checked')?.value || "default",
-    notes: el.notesInput.value.trim()
+    colourId: el.colourPicker.querySelector('input[name="jobColour"]:checked')?.value || "default"
   };
 }
 
@@ -1778,7 +1640,7 @@ function buildCalendarEvent(data) {
     extendedProperties: {
       private: {
         kgCeilingApp: "1",
-        kgCeilingVersion: "1.4.0",
+        kgCeilingVersion: "1.5.0",
         ...(data.continueJob && data.continueGroupId ? {
           kgContinueJob: "1",
           kgContinueGroup: data.continueGroupId,
@@ -1818,28 +1680,19 @@ function buildDescription(data) {
     `Lock No / 门锁号码: ${encodeField(data.lock)}`,
     `ID Firm / ID 公司: ${encodeField(data.idFirm)}`,
     `ID Name / ID 联系人姓名: ${encodeField(data.idName)}`,
-    `ID Phone / ID 联系电话: ${encodeField(data.idPhone)}`,
+    `Installer Name / 安装人员姓名: ${encodeField(data.installerName)}`,
     `Continue Job / 继续工作: ${yesNo(data.continueJob)}`,
     `Continue Group ID: ${data.continueGroupId || ""}`,
     `Continue Sequence / 继续工作时段: ${data.continueSequence || 1}`,
-    `Scope / 工作范围: ${encodeField(data.scope)}`,
-    `Remove / 拆除: ${encodeField(data.remove)}`,
-    `Keep / 保留: ${encodeField(data.keep)}`,
-    `Protect / 保护: ${encodeField(data.protect)}`,
-    `Disposal / 清理与丢弃: ${encodeField(data.disposal)}`,
-    `Hoarding Done / 围板已完成: ${yesNo(data.hoardingDone)}`,
-    `Hoarding Done Date / 围板完成日期: ${data.hoardingDoneDate || ""}`,
-    `Hoarding Remove Required / 围板需要拆除: ${yesNo(data.hoardingRemoveRequired)}`,
-    `Hoarding Removal Date / 围板拆除日期: ${data.hoardingRemoveDate || ""}`,
-    `Delivery Sent / 已送货: ${yesNo(data.deliverySent)}`,
+    `Amend Ceiling / 修改天花: ${yesNo(data.amendCeiling)}`,
+    `Amend Partition / 修改隔墙: ${yesNo(data.amendPartition)}`,
+    `Amend Pelmet Box LBox / 修改窗帘盒包箱LBox: ${yesNo(data.amendPelmet)}`,
+    `Amend Timber Other / 加木支撑其他: ${yesNo(data.amendTimberOther)}`,
+    `Amend Remark / 修改备注: ${encodeField(data.amendRemark)}`,
     `Delivery Date / 送货日期: ${data.deliveryDate || ""}`,
     `Delivery Materials / 送货材料: ${encodeField(data.deliveryMaterials)}`,
-    `Billed / 已开单: ${yesNo(data.billed)}`,
-    `Billed Date / 开单日期: ${data.billedDate || ""}`,
+    `Delivery Remark / 送货备注: ${encodeField(data.deliveryRemark)}`,
     `Billing Number / 开单号码: ${encodeField(data.billingNumber)}`,
-    `Foremen / 头手: ${data.foremen.join(" || ")}`,
-    `Workers / 工人: ${data.workers.join(" || ")}`,
-    `Notes / 备注: ${encodeField(data.notes)}`,
     APP_MARKER
   ];
   return lines.join("\n");
@@ -1861,10 +1714,21 @@ function parseEventData(event) {
     lock: "",
     idFirm: "",
     idName: "",
-    idPhone: "",
+    installerName: "",
     continueJob: false,
     continueGroupId: "",
     continueSequence: 1,
+    amendCeiling: false,
+    amendPartition: false,
+    amendPelmet: false,
+    amendTimberOther: false,
+    amendRemark: "",
+    deliveryDate: "",
+    deliveryMaterials: "",
+    deliveryRemark: "",
+    billingNumber: "",
+    // Legacy values are kept only so old calendar records still open safely.
+    idPhone: "",
     scope: "",
     remove: "",
     keep: "",
@@ -1875,18 +1739,15 @@ function parseEventData(event) {
     hoardingRemoveRequired: false,
     hoardingRemoveDate: "",
     deliverySent: false,
-    deliveryDate: "",
-    deliveryMaterials: "",
     billed: false,
     billedDate: "",
-    billingNumber: "",
     foremen: [],
     workers: [],
     notes: ""
   };
 
   if (!description.includes(DATA_HEADER) && !description.includes(APP_MARKER)) {
-    data.scope = description.trim();
+    data.amendRemark = description.trim();
     return data;
   }
 
@@ -1910,10 +1771,22 @@ function parseEventData(event) {
   data.lock = decodeField(get("Lock No / 门锁号码", "Lock No"));
   data.idFirm = decodeField(get("ID Firm / ID 公司", "ID Firm"));
   data.idName = decodeField(get("ID Name / ID 联系人姓名", "ID Name"));
-  data.idPhone = decodeField(get("ID Phone / ID 联系电话", "ID Phone", "ID Telephone"));
+  data.installerName = decodeField(get("Installer Name / 安装人员姓名", "Installer Name"));
   data.continueGroupId = get("Continue Group ID") || event.extendedProperties?.private?.kgContinueGroup || "";
   data.continueSequence = Number(get("Continue Sequence / 继续工作时段", "Continue Sequence") || event.extendedProperties?.private?.kgContinueSequence || 1) || 1;
   data.continueJob = parseYesNo(get("Continue Job / 继续工作", "Continue Job")) || event.extendedProperties?.private?.kgContinueJob === "1" || Boolean(data.continueGroupId);
+  data.amendCeiling = parseYesNo(get("Amend Ceiling / 修改天花", "Amend Ceiling"));
+  data.amendPartition = parseYesNo(get("Amend Partition / 修改隔墙", "Amend Partition"));
+  data.amendPelmet = parseYesNo(get("Amend Pelmet Box LBox / 修改窗帘盒包箱LBox", "Amend Pelmet Box LBox"));
+  data.amendTimberOther = parseYesNo(get("Amend Timber Other / 加木支撑其他", "Amend Timber Other"));
+  data.amendRemark = decodeField(get("Amend Remark / 修改备注", "Amend Remark"));
+  data.deliveryDate = get("Delivery Date / 送货日期", "Delivery Date");
+  data.deliveryMaterials = decodeField(get("Delivery Materials / 送货材料", "Delivery Materials"));
+  data.deliveryRemark = decodeField(get("Delivery Remark / 送货备注", "Delivery Remark"));
+  data.billingNumber = decodeField(get("Billing Number / 开单号码", "Billing Number", "Invoice Number"));
+
+  // Backward compatibility for older KG Ceiling Calendar records.
+  data.idPhone = decodeField(get("ID Phone / ID 联系电话", "ID Phone", "ID Telephone"));
   data.scope = decodeField(get("Scope / 工作范围", "Scope", "SCOPE"));
   data.remove = decodeField(get("Remove / 拆除", "Remove"));
   data.keep = decodeField(get("Keep / 保留", "Keep"));
@@ -1923,15 +1796,16 @@ function parseEventData(event) {
   data.hoardingDone = parseYesNo(get("Hoarding Done / 围板已完成", "Hoarding Done")) || Boolean(data.hoardingDoneDate);
   data.hoardingRemoveDate = get("Hoarding Removal Date / 围板拆除日期", "Hoarding Removal Date", "Hoarding Remove Date");
   data.hoardingRemoveRequired = parseYesNo(get("Hoarding Remove Required / 围板需要拆除", "Hoarding Remove Required")) || Boolean(data.hoardingRemoveDate);
-  data.deliveryDate = get("Delivery Date / 送货日期", "Delivery Date");
-  data.deliveryMaterials = decodeField(get("Delivery Materials / 送货材料", "Delivery Materials"));
   data.deliverySent = parseYesNo(get("Delivery Sent / 已送货", "Delivery Sent")) || Boolean(data.deliveryDate || data.deliveryMaterials);
   data.billedDate = get("Billed Date / 开单日期", "Billed Date");
-  data.billingNumber = decodeField(get("Billing Number / 开单号码", "Billing Number", "Invoice Number"));
-  data.billed = parseYesNo(get("Billed / 已开单", "Billed")) || Boolean(data.billedDate || data.billingNumber);
+  data.billed = Boolean(data.billingNumber) || parseYesNo(get("Billed / 已开单", "Billed")) || Boolean(data.billedDate);
   data.foremen = splitPeople(get("Foremen / 头手", "Foremen"));
   data.workers = splitPeople(get("Workers / 工人", "Workers"));
   data.notes = decodeField(get("Notes / 备注", "Notes"));
+
+  // Map useful legacy information into the new simple fields when possible.
+  if (!data.installerName && data.foremen.length) data.installerName = data.foremen.join(", ");
+  if (!data.amendRemark) data.amendRemark = data.scope || data.remove || data.notes || "";
   return data;
 }
 
