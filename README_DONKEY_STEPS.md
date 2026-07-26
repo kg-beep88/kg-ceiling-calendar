@@ -9,7 +9,7 @@ This file is for the person setting up the app. Normal staff should read `USER_M
 The job editor now contains only:
 1. Date and time / 日期和时间
 2. Main details / 主要资料
-3. Need amend / 需要修改
+3. Job Scope / 工作范围
 4. Deliver / 送货
 5. Billing / 开单
 6. Google Calendar colour / 谷歌日历颜色

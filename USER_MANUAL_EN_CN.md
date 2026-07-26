@@ -62,12 +62,12 @@ Fill only what is needed:
 - ID firm / ID 公司
 - ID name / ID 联系人姓名
 
-### 3. Need amend / 需要修改
+### 3. Job Scope / 工作范围
 
 First enter:
 - **Installer name / 安装人员姓名**
 
-Tick what needs amendment. Beside every item there is a small manual-detail box. / 勾选需要修改的项目。每个项目旁边都有一个小的手动填写框。
+Tick the job area. Each item has a manual-detail box. / 勾选工作区域。每个项目都有手动填写详情框。
 
 - **Ceiling / 天花** — type the ceiling detail beside it / 可在旁边填写天花详情
 - **Partition / 隔墙** — type the partition detail beside it / 可在旁边填写隔墙详情
@@ -202,7 +202,7 @@ Type part of the address, for example:
 The address history can show:
 - Work dates / 工作日期
 - Installer name / 安装人员姓名
-- What needs amendment / 需要修改的项目
+- Job Area / 工作区域
 - Delivery date, material and remark / 送货日期、材料和备注
 - Billing number / 开单号码
 - ID firm and ID name / ID 公司和联系人

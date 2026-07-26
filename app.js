@@ -886,7 +886,7 @@ function buildWhatsAppSiteMessage(event, number = 0, compactHeading = false) {
 
   const amendments = amendmentLabels(data);
   if (amendments.length) {
-    lines.push(`*Need amend / 需要修改:*`);
+    lines.push(`*Job Scope / 工作范围:*`);
     amendments.forEach((item) => lines.push(`- ${item}`));
   }
   if (data.amendRemark) {
@@ -1086,7 +1086,7 @@ function buildHistoryGroup(group) {
   summary.append(
     makeHistorySummary("Work dates / 工作日期", formatDateList(workDates)),
     makeHistorySummary("Installer / 安装人员", installerNames.length ? installerNames.join(", ") : "None / 无"),
-    makeHistorySummary("Need amend / 需要修改", amendments.length ? amendments.join(", ") : "None / 无"),
+    makeHistorySummary("Job Scope / 工作范围", amendments.length ? amendments.join(", ") : "None / 无"),
     makeHistorySummary("Deliver / 送货", deliveryText),
     makeHistorySummary("Billing number / 开单号码", billingNumbers.length ? billingNumbers.join(", ") : "None / 无"),
     makeHistorySummary("ID details / ID 资料", [
@@ -1133,7 +1133,7 @@ function buildHistoryEventRow(event, data) {
   const lines = [];
   if (data.installerName) lines.push(`Installer / 安装人员: ${data.installerName}`);
   const amendments = amendmentLabels(data);
-  if (amendments.length) lines.push(`Need amend / 需要修改: ${amendments.join(", ")}`);
+  if (amendments.length) lines.push(`Job Scope / 工作范围: ${amendments.join(", ")}`);
   if (data.amendRemark) lines.push(`Remark / 备注: ${data.amendRemark}`);
   if (data.deliveryMaterials) lines.push(`Delivery material / 送货材料: ${data.deliveryMaterials}`);
   if (data.deliveryRemark) lines.push(`Delivery remark / 送货备注: ${data.deliveryRemark}`);
