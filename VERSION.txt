@@ -1,2 +1,2 @@
-KG Ceiling Work Calendar v1.6.4
-Built-in KG Work configuration fallback enabled.
+KG Ceiling Calendar v1.6.5
+WhatsApp preview/edit/copy workflow. No direct WhatsApp opening. Delivery and billing excluded from copied messages.

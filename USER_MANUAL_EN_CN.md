@@ -221,3 +221,18 @@ Press **Edit / 编辑** beside a history record to change it directly.
 4. Enter the real delivery date. / 填写真实送货日期。
 5. Leave billing number blank until you have one. / 还没有开单号码时请留空。
 6. Press Refresh before saying another person's update is missing. / 认为其他人的资料不见前，请先点击刷新。
+
+
+## WhatsApp Copy / WhatsApp 复制
+
+Press **WhatsApp / 单个工地** for one site, or **WhatsApp Day / 当天全部** for the selected day.
+
+点击 **WhatsApp / 单个工地** 可准备单个工地资料；点击 **WhatsApp Day / 当天全部** 可准备当天全部工地资料。
+
+The app **does not open or send WhatsApp automatically**. A preview box opens first. You can edit any wording, then press **Copy Text / 复制文字**. Open WhatsApp yourself and paste the message.
+
+应用**不会自动打开或发送 WhatsApp**。系统会先打开预览框。你可以先修改任何文字，然后点击 **Copy Text / 复制文字**，再自己打开 WhatsApp 粘贴发送。
+
+Delivery and billing information are not included in the copied WhatsApp message.
+
+送货和开单资料不会显示在复制的 WhatsApp 信息中。

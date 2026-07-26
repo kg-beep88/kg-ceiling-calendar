@@ -107,7 +107,9 @@ function cacheElements() {
     "colourPicker", "deleteJobBtn", "cancelBtn",
     "saveJobBtn", "searchModal", "closeSearchBtn", "historySearchForm",
     "historySearchInput", "historySearchBtn", "historySearchStatus",
-    "historySearchResults", "doneSearchBtn", "settingsModal", "closeSettingsBtn",
+    "historySearchResults", "doneSearchBtn", "whatsAppPreviewModal", "whatsAppPreviewTitle",
+    "closeWhatsAppPreviewBtn", "whatsAppPreviewText", "clearWhatsAppPreviewBtn",
+    "cancelWhatsAppPreviewBtn", "copyWhatsAppPreviewBtn", "settingsModal", "closeSettingsBtn",
     "calendarIdText", "resetCacheBtn", "doneSettingsBtn", "toast"
   ];
   ids.forEach((id) => { el[id] = document.getElementById(id); });
@@ -149,6 +151,16 @@ function bindEvents() {
   document.addEventListener("pointermove", handleTouchDragMove, { passive: false });
   document.addEventListener("pointerup", handleTouchDragEnd, { passive: false });
   document.addEventListener("pointercancel", cancelTouchDrag, { passive: false });
+  el.closeWhatsAppPreviewBtn.addEventListener("click", closeWhatsAppPreview);
+  el.cancelWhatsAppPreviewBtn.addEventListener("click", closeWhatsAppPreview);
+  el.clearWhatsAppPreviewBtn.addEventListener("click", () => {
+    el.whatsAppPreviewText.value = "";
+    el.whatsAppPreviewText.focus();
+  });
+  el.copyWhatsAppPreviewBtn.addEventListener("click", copyWhatsAppPreviewText);
+  el.whatsAppPreviewModal.addEventListener("click", (event) => {
+    if (event.target === el.whatsAppPreviewModal) closeWhatsAppPreview();
+  });
   el.settingsModal.addEventListener("click", (event) => {
     if (event.target === el.settingsModal) closeSettings();
   });
@@ -162,6 +174,7 @@ function bindEvents() {
     if (event.key !== "Escape") return;
     if (!el.jobModal.hidden) closeJobModal();
     else if (!el.searchModal.hidden) closeSearchModal();
+    else if (!el.whatsAppPreviewModal.hidden) closeWhatsAppPreview();
     else if (!el.settingsModal.hidden) closeSettings();
   });
   document.addEventListener("visibilitychange", () => {
@@ -766,9 +779,9 @@ function renderDayJobs() {
     const whatsAppBtn = document.createElement("button");
     whatsAppBtn.type = "button";
     whatsAppBtn.className = "miniBtn miniWhatsAppBtn";
-    whatsAppBtn.title = "WhatsApp Site / 单个工地";
-    whatsAppBtn.setAttribute("aria-label", "WhatsApp Site / 单个工地");
-    whatsAppBtn.innerHTML = "↗ <span>WhatsApp<br><small>单个工地</small></span>";
+    whatsAppBtn.title = "WhatsApp Copy Site / 复制单个工地";
+    whatsAppBtn.setAttribute("aria-label", "WhatsApp Copy Site / 复制单个工地");
+    whatsAppBtn.innerHTML = "⧉ <span>WhatsApp Copy<br><small>复制单个工地</small></span>";
     whatsAppBtn.addEventListener("click", () => shareSiteToWhatsApp(event));
 
     const deleteBtn = document.createElement("button");
@@ -819,7 +832,7 @@ function buildTrackingTags(data) {
 
 function shareSiteToWhatsApp(event) {
   if (!event) return;
-  openWhatsAppMessage(buildWhatsAppSiteMessage(event));
+  openWhatsAppPreview(buildWhatsAppSiteMessage(event), "Site message / 单个工地信息");
 }
 
 function shareSelectedDayToWhatsApp() {
@@ -838,7 +851,7 @@ function shareSelectedDayToWhatsApp() {
     "",
     blocks.join("\n\n------------------------------\n\n")
   ].join("\n");
-  openWhatsAppMessage(text);
+  openWhatsAppPreview(text, "Daily message / 当天全部信息");
 }
 
 function buildWhatsAppSiteMessage(event, number = 0, compactHeading = false) {
@@ -865,7 +878,10 @@ function buildWhatsAppSiteMessage(event, number = 0, compactHeading = false) {
   if (data.contact) lines.push(`*Contact / 联系人:* ${data.contact}`);
   if (data.lock) lines.push(`*Lock / 门锁:* ${data.lock}`);
   if (data.idFirm) lines.push(`*ID Firm / ID 公司:* ${data.idFirm}`);
-  if (data.idName) lines.push(`*ID Name / ID 联系人:* ${data.idName}`);
+  if (data.idName) {
+    lines.push(`*ID Name / ID 联系人:* ${data.idName}`);
+    lines.push("");
+  }
   if (data.installerName) lines.push(`*Installer / 安装人员:* ${data.installerName}`);
 
   const amendments = amendmentLabels(data);
@@ -873,17 +889,12 @@ function buildWhatsAppSiteMessage(event, number = 0, compactHeading = false) {
     lines.push(`*Need amend / 需要修改:*`);
     amendments.forEach((item) => lines.push(`- ${item}`));
   }
-  if (data.amendRemark) lines.push(`*Remark / 备注:* ${data.amendRemark}`);
-
-  if (data.deliveryDate || data.deliveryMaterials || data.deliveryRemark) {
-    lines.push(`*Deliver / 送货:*`);
-    if (data.deliveryDate) lines.push(`- Date / 日期: ${formatDateLongBilingual(data.deliveryDate)}`);
-    if (data.deliveryMaterials) lines.push(`- Material / 材料: ${data.deliveryMaterials}`);
-    if (data.deliveryRemark) lines.push(`- Remark / 备注: ${data.deliveryRemark}`);
+  if (data.amendRemark) {
+    lines.push(`*Remark / 备注:* ${data.amendRemark}`);
+    lines.push("");
   }
 
-  lines.push(`*Billing / 开单:* ${data.billingNumber ? data.billingNumber : "Not billed / 未开单"}`);
-  return lines.join("\n");
+  return lines.join("\n").trimEnd();
 }
 
 function formatDateLongBilingual(key) {
@@ -894,15 +905,38 @@ function formatDateLongBilingual(key) {
   return `${en} / ${zh}`;
 }
 
-function openWhatsAppMessage(text) {
+function openWhatsAppPreview(text, title = "WhatsApp Preview / WhatsApp 预览") {
   const clean = String(text || "").trim();
   if (!clean) return;
-  const url = `https://wa.me/?text=${encodeURIComponent(clean)}`;
-  const opened = window.open(url, "_blank");
-  if (opened) {
-    try { opened.opener = null; } catch { /* Browser may block opener access. */ }
-  } else {
-    window.location.href = url;
+  el.whatsAppPreviewTitle.textContent = title;
+  el.whatsAppPreviewText.value = clean;
+  el.whatsAppPreviewModal.hidden = false;
+  document.body.style.overflow = "hidden";
+  window.setTimeout(() => {
+    el.whatsAppPreviewText.focus();
+    el.whatsAppPreviewText.setSelectionRange(0, 0);
+  }, 0);
+}
+
+function closeWhatsAppPreview() {
+  el.whatsAppPreviewModal.hidden = true;
+  document.body.style.overflow = "";
+}
+
+async function copyWhatsAppPreviewText() {
+  const text = String(el.whatsAppPreviewText.value || "");
+  if (!text.trim()) {
+    showToast("Nothing to copy. / 没有内容可以复制。", true);
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast("Copied. Paste it into WhatsApp yourself. / 已复制，请自己粘贴到 WhatsApp。", false);
+  } catch {
+    el.whatsAppPreviewText.focus();
+    el.whatsAppPreviewText.select();
+    const copied = document.execCommand && document.execCommand("copy");
+    showToast(copied ? "Copied. / 已复制。" : "Select the text and copy it manually. / 请选择文字后手动复制。", !copied);
   }
 }
 

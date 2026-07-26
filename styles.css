@@ -360,3 +360,13 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); box-sh
   .modalFootRight .btn { flex: 1; padding-inline: 10px; }
   .btnSave { min-width: 0; }
 }
+
+/* v1.6.5 editable WhatsApp copy preview */
+.whatsappPreviewModal { width: min(760px, 100%); height: min(90dvh, 820px); }
+.whatsappPreviewBody { display: flex; flex-direction: column; gap: 12px; }
+.whatsappPreviewHelp { margin: 0; padding: 10px 12px; border-radius: 12px; background: #eef8f5; color: #315a53; font-weight: 700; line-height: 1.5; }
+.whatsAppPreviewText { min-height: 430px; resize: vertical; white-space: pre-wrap; line-height: 1.55; font-family: inherit; font-size: 15px; }
+@media (max-width: 720px) {
+  .whatsappPreviewModal { height: 100dvh; max-height: 100dvh; }
+  .whatsAppPreviewText { min-height: 55dvh; font-size: 16px; }
+}
