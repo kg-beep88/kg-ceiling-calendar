@@ -1847,6 +1847,11 @@ async function saveJob(event) {
   let extraCreated = 0;
   try {
     if (eventId) {
+      // Google Calendar PATCH merges the nested start/end objects. When changing
+      // between a timed event and an all-day event, explicitly clear the old
+      // alternative fields so Google does not receive both `date` and
+      // `dateTime`, which causes “Invalid start time”.
+      normaliseTimingFieldsForPatch(calendarEvent, formData.allDay);
       await apiFetch(`/calendars/${calendarId}/events/${encodeURIComponent(eventId)}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -1888,6 +1893,22 @@ async function saveJob(event) {
     el.saveJobBtn.disabled = false;
     el.saveJobBtn.innerHTML = "Save to Google Calendar<br><small>保存到谷歌日历</small>";
   }
+}
+
+
+function normaliseTimingFieldsForPatch(resource, allDay) {
+  if (!resource?.start || !resource?.end) return resource;
+
+  if (allDay) {
+    resource.start.dateTime = null;
+    resource.start.timeZone = null;
+    resource.end.dateTime = null;
+    resource.end.timeZone = null;
+  } else {
+    resource.start.date = null;
+    resource.end.date = null;
+  }
+  return resource;
 }
 
 function validateContinuePeriods(data) {
@@ -2071,7 +2092,7 @@ function formatFormTime(data) {
 function buildPrivateProperties(data) {
   const privateProperties = {
     kgCeilingApp: "1",
-    kgCeilingVersion: "1.7.0",
+    kgCeilingVersion: "1.7.1",
     ...(data.continueJob && data.continueGroupId ? {
       kgContinueJob: "1",
       kgContinueGroup: data.continueGroupId,

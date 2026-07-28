@@ -1,11 +1,14 @@
 # KG CEILING WORK CALENDAR — ADMIN SETUP / 管理员设置
-## VERSION 1.7.0 — FULL SEARCH + SINGAPORE TIME SYNC / 版本 1.7.0 — 全资料搜索 + 新加坡时间同步
+## VERSION 1.7.1 — FULL SEARCH + SINGAPORE TIME SYNC / 版本 1.7.1 — 全资料搜索 + 新加坡时间同步
 
 This file is for the person setting up the app. Normal staff should read `USER_MANUAL_EN_CN.md`.  
 本文件给管理员设置应用使用。普通员工请阅读 `USER_MANUAL_EN_CN.md`.
 
 
-## New in v1.7.0 / v1.7.0 新功能
+## New in v1.7.1 / v1.7.1 新功能
+
+- Fixed changing a timed job to **All-day / 全天**. The app now clears the old Google Calendar time fields before saving.
+- 修复把有时间的工作改成 **全天工作** 时出现 `Invalid start time` 的问题。
 
 - Search now checks every job detail, similar to Google Calendar search: address, ID name, lock number, ID firm, sales person, installer, job scope, remarks, delivery, billing number, dates, times and colours.
 - 搜索功能现在会检查所有工作资料，类似谷歌日历搜索：地址、ID 联系人、门锁号码、ID 公司、销售人员、安装人员、工作范围、备注、送货、开单号码、日期、时间和颜色。

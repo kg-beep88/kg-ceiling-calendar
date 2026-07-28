@@ -1,3 +1,11 @@
+# v1.7.1 note / v1.7.1 说明
+
+When changing an existing timed job to **All-day / 全天**, tick the All-day box and save normally. The old start/end times will be removed automatically.
+
+把已有时间的工作改成 **全天工作** 时，勾选全天后直接保存。系统会自动清除旧的开始和结束时间。
+
+---
+
 # KG CEILING WORK CALENDAR / KG 天花工作日历
 ## SIMPLE USER MANUAL / 简单用户手册
 
