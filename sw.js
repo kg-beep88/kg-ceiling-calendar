@@ -1,4 +1,4 @@
-const CACHE_NAME = "kg-ceiling-calendar-v1.6.6-job-scope-labels";
+const CACHE_NAME = "kg-ceiling-calendar-v1.6.7-main-details-labels";
 const APP_FILES = [
   "./",
   "./index.html",

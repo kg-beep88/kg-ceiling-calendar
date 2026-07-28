@@ -875,11 +875,11 @@ function buildWhatsAppSiteMessage(event, number = 0, compactHeading = false) {
   if (data.continueJob) {
     lines.push(`*Continue job / 继续工作:* Yes / 是${data.continueSequence > 1 ? ` (#${data.continueSequence})` : ""}`);
   }
-  if (data.contact) lines.push(`*Contact / 联系人:* ${data.contact}`);
+  if (data.contact) lines.push(`*ID Name / ID 联系人姓名:* ${data.contact}`);
   if (data.lock) lines.push(`*Lock / 门锁:* ${data.lock}`);
   if (data.idFirm) lines.push(`*ID Firm / ID 公司:* ${data.idFirm}`);
   if (data.idName) {
-    lines.push(`*ID Name / ID 联系人:* ${data.idName}`);
+    lines.push(`*Sales Person / 销售人员:* ${data.idName}`);
     lines.push("");
   }
   if (data.installerName) lines.push(`*Installer / 安装人员:* ${data.installerName}`);
@@ -1059,7 +1059,7 @@ function buildHistoryGroup(group) {
     .map(({ data, event }) => ({ date: data.deliveryDate || eventDateKey(event), materials: data.deliveryMaterials, remark: data.deliveryRemark }))
     .sort((a, b) => String(b.date).localeCompare(String(a.date)));
   const billingNumbers = Array.from(new Set(records.map(({ data }) => data.billingNumber).filter(Boolean)));
-  const latestId = records.find(({ data }) => data.idFirm || data.idName)?.data || {};
+  const latestId = records.find(({ data }) => data.idFirm || data.contact || data.idName)?.data || {};
   const installerNames = Array.from(new Set(records.map(({ data }) => data.installerName).filter(Boolean)));
   const amendments = Array.from(new Set(records.flatMap(({ data }) => amendmentLabels(data))));
   const continueRecords = records.filter(({ data }) => data.continueJob).length;
@@ -1091,7 +1091,8 @@ function buildHistoryGroup(group) {
     makeHistorySummary("Billing number / 开单号码", billingNumbers.length ? billingNumbers.join(", ") : "None / 无"),
     makeHistorySummary("ID details / ID 资料", [
       `Firm / 公司: ${latestId.idFirm || "None / 无"}`,
-      `Name / 姓名: ${latestId.idName || "None / 无"}`
+      `ID Name / ID 联系人姓名: ${latestId.contact || "None / 无"}`,
+      `Sales Person / 销售人员: ${latestId.idName || "None / 无"}`
     ].join("\n")),
     makeHistorySummary("Continue job / 继续工作", continueRecords ? `${continueRecords} continuing period record(s) / ${continueRecords} 条继续工作记录` : "No / 否")
   );
@@ -1139,7 +1140,8 @@ function buildHistoryEventRow(event, data) {
   if (data.deliveryRemark) lines.push(`Delivery remark / 送货备注: ${data.deliveryRemark}`);
   if (data.billingNumber) lines.push(`Billing no. / 开单号码: ${data.billingNumber}`);
   if (data.idFirm) lines.push(`ID Firm / ID 公司: ${data.idFirm}`);
-  if (data.idName) lines.push(`ID Name / ID 联系人: ${data.idName}`);
+  if (data.contact) lines.push(`ID Name / ID 联系人姓名: ${data.contact}`);
+  if (data.idName) lines.push(`Sales Person / 销售人员: ${data.idName}`);
   if (lines.length) {
     const p = document.createElement("p");
     p.textContent = lines.join(" • ");
@@ -1824,10 +1826,10 @@ function buildDescription(data) {
   const lines = [
     DATA_HEADER,
     `Address / 地址: ${encodeField(data.address)}`,
-    `Contact / 联系: ${encodeField(data.contact)}`,
+    `ID Name / ID 联系人姓名: ${encodeField(data.contact)}`,
     `Lock No / 门锁号码: ${encodeField(data.lock)}`,
     `ID Firm / ID 公司: ${encodeField(data.idFirm)}`,
-    `ID Name / ID 联系人姓名: ${encodeField(data.idName)}`,
+    `Sales Person / 销售人员: ${encodeField(data.idName)}`,
     `Installer Name / 安装人员姓名: ${encodeField(data.installerName)}`,
     `Continue Job / 继续工作: ${yesNo(data.continueJob)}`,
     `Continue Group ID: ${data.continueGroupId || ""}`,
@@ -1923,10 +1925,17 @@ function parseEventData(event) {
   };
 
   data.address = decodeField(get("Address / 地址", "Address")) || data.address;
-  data.contact = decodeField(get("Contact / 联系", "Contact"));
+  const hasSalesPersonField = map.has("sales person / 销售人员") || map.has("sales person");
+  if (hasSalesPersonField) {
+    data.contact = decodeField(get("ID Name / ID 联系人姓名", "ID Name"));
+    data.idName = decodeField(get("Sales Person / 销售人员", "Sales Person"));
+  } else {
+    // Backward compatibility with jobs saved before v1.6.7.
+    data.contact = decodeField(get("Contact / 联系", "Contact"));
+    data.idName = decodeField(get("ID Name / ID 联系人姓名", "ID Name"));
+  }
   data.lock = decodeField(get("Lock No / 门锁号码", "Lock No"));
   data.idFirm = decodeField(get("ID Firm / ID 公司", "ID Firm"));
-  data.idName = decodeField(get("ID Name / ID 联系人姓名", "ID Name"));
   data.installerName = decodeField(get("Installer Name / 安装人员姓名", "Installer Name"));
   data.continueGroupId = get("Continue Group ID") || event.extendedProperties?.private?.kgContinueGroup || "";
   data.continueSequence = Number(get("Continue Sequence / 继续工作时段", "Continue Sequence") || event.extendedProperties?.private?.kgContinueSequence || 1) || 1;

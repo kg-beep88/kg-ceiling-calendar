@@ -9,7 +9,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=1.6.6">
+  <link rel="stylesheet" href="styles.css?v=1.6.7">
 </head>
 <body>
   <noscript>
@@ -21,7 +21,7 @@
       <div class="brandMark" aria-hidden="true">KG</div>
       <div>
         <h1>KG Ceiling Work Calendar</h1>
-        <p>KG 天花工作日历 · v1.6.6</p>
+        <p>KG 天花工作日历 · v1.6.4</p>
       </div>
     </div>
 
@@ -194,8 +194,8 @@
             <h3>2. Main details / 主要资料</h3>
             <div class="formGrid">
               <label class="field">
-                <span>Contact person and phone / 联系人和电话</span>
-                <input id="contactInput" type="text" autocomplete="tel" placeholder="Name + phone / 姓名 + 电话">
+                <span>ID Name / ID 联系人姓名</span>
+                <input id="contactInput" type="text" autocomplete="name" placeholder="ID Name / ID 联系人姓名">
               </label>
               <label class="field">
                 <span>Lock number / 门锁号码</span>
@@ -206,8 +206,8 @@
                 <input id="idFirmInput" type="text" placeholder="Example: ABC Design Pte Ltd / 例如：ABC Design Pte Ltd">
               </label>
               <label class="field">
-                <span>ID name / ID 联系人姓名</span>
-                <input id="idNameInput" type="text" autocomplete="name" placeholder="Designer / project contact / 设计师或项目联系人">
+                <span>Sales Person / 销售人员</span>
+                <input id="idNameInput" type="text" autocomplete="name" placeholder="Sales Person / 销售人员">
               </label>
             </div>
           </div>
@@ -241,7 +241,7 @@
             </fieldset>
             <label class="field fullField">
               <span>Remark / 备注</span>
-              <textarea id="amendRemarkInput" rows="4" placeholder="Job scope remark / 工作范围备注"></textarea>
+              <textarea id="amendRemarkInput" rows="4" placeholder="What needs to be amended? / 需要修改什么？"></textarea>
             </label>
           </div>
 
@@ -379,8 +379,8 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="config.js?v=1.6.6"></script>
+  <script src="config.js?v=1.6.7"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="app.js?v=1.6.6" defer></script>
+  <script src="app.js?v=1.6.7" defer></script>
 </body>
 </html>

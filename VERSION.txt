@@ -1,2 +1,1 @@
-KG Ceiling Calendar v1.6.6
-WhatsApp preview/edit/copy workflow. No direct WhatsApp opening. Delivery and billing excluded from copied messages.
+KG Ceiling Calendar v1.6.7
