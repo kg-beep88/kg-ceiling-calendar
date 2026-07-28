@@ -9,7 +9,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=1.6.7">
+  <link rel="stylesheet" href="styles.css?v=1.7.0">
 </head>
 <body>
   <noscript>
@@ -21,7 +21,7 @@
       <div class="brandMark" aria-hidden="true">KG</div>
       <div>
         <h1>KG Ceiling Work Calendar</h1>
-        <p>KG 天花工作日历 · v1.6.4</p>
+        <p>KG 天花工作日历 · v1.7.0</p>
       </div>
     </div>
 
@@ -47,21 +47,21 @@
     </section>
 
 
-    <section class="searchCard card" aria-label="Address search / 地址搜索">
+    <section class="searchCard card" aria-label="Full job search / 全部工作搜索">
       <div class="searchIntro">
         <div class="searchIcon" aria-hidden="true">⌕</div>
         <div>
-          <h2>Find an address and see full site history / 搜索地址并查看完整工地记录</h2>
-          <p>See every work date, hoarding date, delivery and billing record. / 查看所有工作日期、围板、送货和开单记录。</p>
+          <h2>Search all job details / 搜索所有工作资料</h2>
+          <p>Search like Google Calendar: address, ID name, sales person, installer, job scope, remarks, delivery, billing number, date or time. / 像谷歌日历一样搜索：地址、ID 联系人、销售人员、安装人员、工作范围、备注、送货、开单号码、日期或时间。</p>
         </div>
       </div>
       <form id="addressSearchForm" class="addressSearchForm">
         <label class="field searchField">
-          <span>Address or job name / 地址或工作名称</span>
-          <input id="addressSearchInput" type="search" autocomplete="off" placeholder="Example: 10 Collyer Quay / 例如：10 Collyer Quay">
+          <span>Search any job detail / 搜索任何工作资料</span>
+          <input id="addressSearchInput" type="search" autocomplete="off" placeholder="Example: address, Darren, ceiling, delivery, billing no. / 例如：地址、Darren、天花、送货、开单号码">
         </label>
         <button id="addressSearchBtn" class="btn btnPrimary" type="submit" disabled>
-          Search History<br><small>搜索记录</small>
+          Search Jobs<br><small>搜索工作</small>
         </button>
       </form>
     </section>
@@ -143,7 +143,7 @@
           <div class="formSection importantSection">
             <label class="field fullField">
               <span>Work address or job name / 工作地址或工作名称 <b>*</b></span>
-              <input id="addressInput" type="text" required autocomplete="street-address" placeholder="Example: 10 Collyer Quay / 例如：10 Collyer Quay">
+              <input id="addressInput" type="text" required autocomplete="street-address" placeholder="Example: address, Darren, ceiling, delivery, billing no. / 例如：地址、Darren、天花、送货、开单号码">
             </label>
           </div>
 
@@ -170,7 +170,7 @@
             <p class="helpText dateHelp">For a job lasting several days, choose both dates. Changing the start date keeps the same number of days. / 多日工作请选择开始和结束日期。更改开始日期时会保留相同天数。</p>
             <div class="dateOptionsRow">
               <label class="checkLine">
-                <input id="allDayInput" type="checkbox">
+                <input id="allDayInput" type="checkbox" checked>
                 <span>All-day job / 全天工作</span>
               </label>
               <label class="checkLine continueCheck">
@@ -296,7 +296,7 @@
       <header class="modalHead">
         <div>
           <p class="eyebrow">Site records / 工地记录</p>
-          <h2 id="searchModalTitle">Address History / 地址历史</h2>
+          <h2 id="searchModalTitle">Job Search / 工作搜索</h2>
         </div>
         <button id="closeSearchBtn" class="iconBtn" type="button" aria-label="Close / 关闭">×</button>
       </header>
@@ -304,7 +304,7 @@
         <form id="historySearchForm" class="historySearchBar">
           <label class="field searchField">
             <span>Search another address / 搜索其他地址</span>
-            <input id="historySearchInput" type="search" autocomplete="off" placeholder="Type address / 输入地址">
+            <input id="historySearchInput" type="search" autocomplete="off" placeholder="Type any job detail / 输入任何工作资料">
           </label>
           <button id="historySearchBtn" class="btn btnPrimary" type="submit">Search / 搜索</button>
         </form>
@@ -379,8 +379,8 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="config.js?v=1.6.7"></script>
+  <script src="config.js?v=1.7.0"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="app.js?v=1.6.7" defer></script>
+  <script src="app.js?v=1.7.0" defer></script>
 </body>
 </html>

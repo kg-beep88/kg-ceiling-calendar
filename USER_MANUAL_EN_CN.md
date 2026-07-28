@@ -41,8 +41,11 @@ Choose:
 - Start time / 开始时间
 - End time / 结束时间
 
-For a full-day job, tick **All-day job / 全天工作**.  
-全天工作请勾选 **All-day job / 全天工作**。
+New jobs are already set to **All-day job / 全天工作** by default.  
+新工作默认已经勾选 **All-day job / 全天工作**。
+
+Only untick All-day when you need to enter a start and end time.  
+只有需要填写开始和结束时间时，才取消全天工作。
 
 For a job that pauses and continues later, tick **Continue job / 继续工作** and add another work period.  
 如果工作暂停几天后再继续，请勾选 **Continue job / 继续工作**，然后添加继续工作的日期。
@@ -236,3 +239,40 @@ The app **does not open or send WhatsApp automatically**. A preview box opens fi
 Delivery and billing information are not included in the copied WhatsApp message.
 
 送货和开单资料不会显示在复制的 WhatsApp 信息中。
+
+
+---
+
+## Search all job details / 搜索所有工作资料
+
+The search box works across all saved job information. You can search using:
+- Address / 地址
+- ID name / ID 联系人
+- Lock number / 门锁号码
+- ID firm / ID 公司
+- Sales person / 销售人员
+- Installer / 安装人员
+- Job scope or remark / 工作范围或备注
+- Delivery date or material / 送货日期或材料
+- Billing number / 开单号码
+- Work date, time or colour / 工作日期、时间或颜色
+
+搜索框会搜索所有已保存工作资料，包括地址、ID 联系人、门锁号码、ID 公司、销售人员、安装人员、工作范围、备注、送货、开单号码、日期、时间和颜色。
+
+You may type several words. The result must contain all the words.  
+可以输入多个关键词；结果必须包含所有关键词。
+
+Example / 例子:
+`Darren ceiling B-100`
+
+---
+
+## Daily job order / 每日工作排序
+
+Jobs are automatically arranged by:
+1. Start time / 开始时间
+2. Google Calendar colour / 谷歌日历颜色
+3. Address / 地址
+
+All-day jobs are treated as starting at the beginning of the day.  
+全天工作会排在当天开始的位置。

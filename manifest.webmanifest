@@ -1,14 +1,24 @@
 {
   "name": "KG Ceiling Work Calendar / KG 天花工作日历",
   "short_name": "KG Ceiling",
-  "description": "Bilingual KG ceiling work planner with Google Calendar sync, continue-job periods, ID firm, installer/amendment tracking, delivery and billing number tracking.",
+  "description": "Bilingual KG ceiling work planner with full-detail search, Singapore-time Google Calendar sync, all-day default jobs, delivery and billing tracking.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f3f7f6",
   "theme_color": "#0f766e",
   "icons": [
-    {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
-    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
   ]
 }

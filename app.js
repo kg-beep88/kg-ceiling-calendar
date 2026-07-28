@@ -5,6 +5,8 @@ const BUILT_IN_CONFIG = {
   CALENDAR_ID: "161afc2b39c63d9e0cb766d21e1b544e9c7d3d03fcdce363bf1f194a79ad034e@group.calendar.google.com",
   GOOGLE_SCOPE: "https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.calendarlist.readonly",
   AUTO_REFRESH_SECONDS: 60,
+  TIME_ZONE: "Asia/Singapore",
+  UTC_OFFSET: "+08:00",
   HISTORY_START: "2026-01-01",
   HISTORY_END: "2051-01-01"
 };
@@ -72,6 +74,9 @@ let toastTimer = null;
 let currentModalEvent = null;
 let lastAddressSearch = "";
 let searchRequestNumber = 0;
+let historyEventsCache = [];
+let historyEventsFetchedAt = 0;
+const HISTORY_CACHE_MS = 5 * 60 * 1000;
 let lastFormStartDate = "";
 let nativeDragData = null;
 let touchDragState = null;
@@ -372,8 +377,9 @@ async function refreshEvents(showSuccess) {
   try {
     const range = visibleCalendarRange();
     const params = new URLSearchParams({
-      timeMin: range.start.toISOString(),
-      timeMax: range.end.toISOString(),
+      timeMin: calendarBoundaryString(dateKey(range.start)),
+      timeMax: calendarBoundaryString(dateKey(range.end)),
+      timeZone: CONFIG.TIME_ZONE || "Asia/Singapore",
       singleEvents: "true",
       orderBy: "startTime",
       showDeleted: "false",
@@ -381,17 +387,74 @@ async function refreshEvents(showSuccess) {
     });
     const calendarId = encodeURIComponent(CONFIG.CALENDAR_ID || "primary");
     const data = await apiFetch(`/calendars/${calendarId}/events?${params.toString()}`);
-    events = Array.isArray(data.items) ? data.items : [];
+    const items = Array.isArray(data.items) ? data.items : [];
+    await synchronizeVisibleDescriptions(items);
+    events = items;
+    invalidateHistoryCache();
     saveCachedEvents();
     renderAll();
-    const nowText = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    setSyncMessage(`Synced at ${nowText}. Changes from Google Calendar are shown here. / 已于 ${nowText} 同步，谷歌日历的更改会显示在这里。`, false);
+    const nowText = new Intl.DateTimeFormat([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: CONFIG.TIME_ZONE || "Asia/Singapore"
+    }).format(new Date());
+    setSyncMessage(`Synced at ${nowText}. Google Calendar dates and times are shown in Singapore time. / 已于 ${nowText} 同步，日期和时间以新加坡时间显示。`, false);
     if (showSuccess) showToast("Calendar is up to date. / 日历已更新。", false);
   } catch (error) {
     setSyncMessage(`Sync failed: ${error.message} / 同步失败：${error.message}`, true);
   } finally {
     el.refreshBtn.disabled = !isConnected();
   }
+}
+
+
+
+async function synchronizeVisibleDescriptions(items) {
+  const calendarId = encodeURIComponent(CONFIG.CALENDAR_ID || "primary");
+  let updatedCount = 0;
+  const maximumUpdates = 12;
+
+  for (const event of items) {
+    if (updatedCount >= maximumUpdates) break;
+    const ownedByApp = event?.extendedProperties?.private?.kgCeilingApp === "1"
+      || String(event.description || "").includes(APP_MARKER)
+      || String(event.description || "").includes(DATA_HEADER);
+    if (!ownedByApp || !event.id) continue;
+
+    const data = jobDataWithEventTiming(event);
+    const expected = buildDescription(data);
+    if (String(event.description || "") === expected) continue;
+
+    try {
+      await apiFetch(`/calendars/${calendarId}/events/${encodeURIComponent(event.id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description: expected })
+      });
+      event.description = expected;
+      updatedCount += 1;
+    } catch {
+      // Timing and layout syncing should not stop the main calendar refresh.
+    }
+  }
+}
+
+function jobDataWithEventTiming(event) {
+  const data = parseEventData(event);
+  const range = eventDateRange(event);
+  data.date = range.start;
+  data.endDate = range.end || range.start;
+  data.allDay = Boolean(event.start?.date);
+  if (!data.allDay && event.start?.dateTime) {
+    data.startTime = timeInputValueInCalendarZone(new Date(event.start.dateTime));
+    data.endTime = event.end?.dateTime
+      ? timeInputValueInCalendarZone(new Date(event.end.dateTime))
+      : "";
+  } else {
+    data.startTime = "";
+    data.endTime = "";
+  }
+  return data;
 }
 
 function startAutoRefresh() {
@@ -714,17 +777,22 @@ function shiftedEventTimes(event, newStartDate) {
   }
 
   const originalStart = new Date(event.start?.dateTime);
-  const originalEnd = event.end?.dateTime ? new Date(event.end.dateTime) : new Date(originalStart.getTime() + 60 * 60 * 1000);
+  const originalEnd = event.end?.dateTime
+    ? new Date(event.end.dateTime)
+    : new Date(originalStart.getTime() + 60 * 60 * 1000);
   const durationMs = Math.max(60 * 1000, originalEnd.getTime() - originalStart.getTime());
-  const newStart = localDateTime(newStartDate, timeInputValue(originalStart));
-  newStart.setSeconds(originalStart.getSeconds(), originalStart.getMilliseconds());
-  const newEnd = new Date(newStart.getTime() + durationMs);
-  const start = { dateTime: newStart.toISOString() };
-  const end = { dateTime: newEnd.toISOString() };
-  if (event.start?.timeZone) start.timeZone = event.start.timeZone;
-  if (event.end?.timeZone) end.timeZone = event.end.timeZone;
-  return { start, end };
+  const startTime = timeInputValueInCalendarZone(originalStart);
+  const newStartText = calendarDateTimeString(newStartDate, startTime);
+  const newStartMs = Date.parse(newStartText);
+  const newEnd = new Date(newStartMs + durationMs);
+  const timeZone = CONFIG.TIME_ZONE || "Asia/Singapore";
+
+  return {
+    start: { dateTime: newStartText, timeZone },
+    end: { dateTime: calendarDateTimeFromDate(newEnd), timeZone }
+  };
 }
+
 
 function renderDayJobs() {
   el.dayJobs.innerHTML = "";
@@ -946,8 +1014,8 @@ function startAddressSearch(rawTerm) {
     showToast("Connect Google Calendar first. / 请先连接谷歌日历。", true);
     return;
   }
-  if (term.length < 2) {
-    showToast("Type at least 2 letters or numbers. / 请至少输入两个字或号码。", true);
+  if (!term) {
+    showToast("Type something to search. / 请输入搜索内容。", true);
     return;
   }
   lastAddressSearch = term;
@@ -988,45 +1056,116 @@ async function searchAddressHistory(term) {
 }
 
 async function fetchAllAddressEvents(term) {
+  const all = await fetchAllHistoryEvents();
+  const tokens = parseSearchTokens(term);
+  return all.filter((event) => {
+    const haystack = buildEventSearchText(event);
+    return tokens.every((token) => haystack.includes(token));
+  });
+}
+
+function invalidateHistoryCache() {
+  historyEventsCache = [];
+  historyEventsFetchedAt = 0;
+}
+
+async function fetchAllHistoryEvents(force = false) {
+  if (!force && historyEventsCache.length && Date.now() - historyEventsFetchedAt < HISTORY_CACHE_MS) {
+    return historyEventsCache;
+  }
+
   const calendarId = encodeURIComponent(CONFIG.CALENDAR_ID || "primary");
   const startDate = String(CONFIG.HISTORY_START || "2026-01-01");
   const endDate = String(CONFIG.HISTORY_END || "2051-01-01");
-  const timeMin = new Date(`${startDate}T00:00:00`).toISOString();
-  const timeMax = new Date(`${endDate}T00:00:00`).toISOString();
   const all = [];
   let pageToken = "";
 
   do {
     const params = new URLSearchParams({
-      timeMin,
-      timeMax,
+      timeMin: calendarBoundaryString(startDate),
+      timeMax: calendarBoundaryString(endDate),
+      timeZone: CONFIG.TIME_ZONE || "Asia/Singapore",
       singleEvents: "true",
       orderBy: "startTime",
       showDeleted: "false",
-      maxResults: "2500",
-      q: term
+      maxResults: "2500"
     });
     if (pageToken) params.set("pageToken", pageToken);
     const data = await apiFetch(`/calendars/${calendarId}/events?${params.toString()}`);
     all.push(...(Array.isArray(data?.items) ? data.items : []));
     pageToken = data?.nextPageToken || "";
-  } while (pageToken && all.length < 10000);
+  } while (pageToken && all.length < 20000);
 
-  const normalizedTerm = normalizeAddress(term);
-  return all.filter((event) => {
-    const data = parseEventData(event);
-    const addressText = normalizeAddress(`${data.address} ${event.summary || ""} ${event.location || ""}`);
-    return addressText.includes(normalizedTerm);
-  });
+  historyEventsCache = all;
+  historyEventsFetchedAt = Date.now();
+  return all;
 }
+
+function parseSearchTokens(term) {
+  const matches = String(term || "").match(/"[^"]+"|'[^']+'|\S+/g) || [];
+  return matches
+    .map((token) => token.replace(/^["']|["']$/g, ""))
+    .map(normalizeSearchText)
+    .filter(Boolean);
+}
+
+function normalizeSearchText(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\u3400-\u9fff]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function buildEventSearchText(event) {
+  const data = parseEventData(event);
+  const range = eventDateRange(event);
+  const colour = eventColour(event);
+  const values = [
+    event.summary,
+    event.location,
+    event.description,
+    data.address,
+    data.contact,
+    data.lock,
+    data.idFirm,
+    data.idName,
+    data.installerName,
+    data.amendCeiling ? "ceiling 天花" : "",
+    data.amendCeilingDetail,
+    data.amendPartition ? "partition 隔墙" : "",
+    data.amendPartitionDetail,
+    data.amendPelmet ? "pelmet box up l box 窗帘盒 包箱" : "",
+    data.amendPelmetDetail,
+    data.amendTimberOther ? "add timber support other 加木支撑 其他" : "",
+    data.amendTimberOtherDetail,
+    data.amendRemark,
+    data.deliveryDate,
+    data.deliveryMaterials,
+    data.deliveryRemark,
+    data.billingNumber,
+    data.continueJob ? "continue job 继续工作" : "",
+    range.start,
+    range.end,
+    range.start ? formatDateShort(range.start) : "",
+    range.end ? formatDateShort(range.end) : "",
+    eventTimeLabel(event),
+    colour?.name,
+    event.colorId
+  ];
+  return normalizeSearchText(values.filter(Boolean).join(" "));
+}
+
 
 function renderAddressHistory(foundEvents, term) {
   el.historySearchResults.innerHTML = "";
   if (!foundEvents.length) {
-    el.historySearchStatus.textContent = `No matching address found for “${term}”. / 找不到“${term}”的地址记录。`;
+    el.historySearchStatus.textContent = `No matching job detail found for “${term}”. / 找不到与“${term}”相符的工作资料。`;
     const empty = document.createElement("div");
     empty.className = "historyEmpty";
-    empty.innerHTML = "<strong>No address history / 没有地址记录</strong><br>Try a shorter part of the address. / 请尝试输入较短的地址。";
+    empty.innerHTML = "<strong>No matching job / 找不到工作</strong><br>Try fewer words, a shorter number, a name, job scope, delivery or billing number. / 请减少关键词，或输入较短号码、姓名、工作范围、送货或开单号码。";
     el.historySearchResults.appendChild(empty);
     return;
   }
@@ -1046,7 +1185,7 @@ function renderAddressHistory(foundEvents, term) {
     return newestB - newestA;
   });
 
-  el.historySearchStatus.textContent = `${foundEvents.length} record(s), ${sortedGroups.length} address(es) found. / 找到 ${foundEvents.length} 条记录、${sortedGroups.length} 个地址。`;
+  el.historySearchStatus.textContent = `${foundEvents.length} matching record(s), ${sortedGroups.length} site(s) found. / 找到 ${foundEvents.length} 条相符记录、${sortedGroups.length} 个工地。`;
   sortedGroups.forEach((group) => el.historySearchResults.appendChild(buildHistoryGroup(group)));
 }
 
@@ -1132,19 +1271,22 @@ function buildHistoryEventRow(event, data) {
   const tags = buildTrackingTags(data);
   if (tags.childElementCount) details.appendChild(tags);
   const lines = [];
+  if (data.contact) lines.push(`ID Name / ID 联系人姓名: ${data.contact}`);
+  if (data.lock) lines.push(`Lock / 门锁: ${data.lock}`);
+  if (data.idFirm) lines.push(`ID Firm / ID 公司: ${data.idFirm}`);
+  if (data.idName) lines.push(`Sales Person / 销售人员: ${data.idName}`);
   if (data.installerName) lines.push(`Installer / 安装人员: ${data.installerName}`);
   const amendments = amendmentLabels(data);
-  if (amendments.length) lines.push(`Job Scope / 工作范围: ${amendments.join(", ")}`);
+  if (amendments.length) lines.push(`Job Scope / 工作范围: ${amendments.join("; ")}`);
   if (data.amendRemark) lines.push(`Remark / 备注: ${data.amendRemark}`);
+  if (data.deliveryDate) lines.push(`Delivery date / 送货日期: ${formatDateBilingual(data.deliveryDate)}`);
   if (data.deliveryMaterials) lines.push(`Delivery material / 送货材料: ${data.deliveryMaterials}`);
   if (data.deliveryRemark) lines.push(`Delivery remark / 送货备注: ${data.deliveryRemark}`);
-  if (data.billingNumber) lines.push(`Billing no. / 开单号码: ${data.billingNumber}`);
-  if (data.idFirm) lines.push(`ID Firm / ID 公司: ${data.idFirm}`);
-  if (data.contact) lines.push(`ID Name / ID 联系人姓名: ${data.contact}`);
-  if (data.idName) lines.push(`Sales Person / 销售人员: ${data.idName}`);
+  if (data.billingNumber) lines.push(`Billing number / 开单号码: ${data.billingNumber}`);
+  lines.push(`Colour / 颜色: ${eventColour(event).name}`);
   if (lines.length) {
     const p = document.createElement("p");
-    p.textContent = lines.join(" • ");
+    p.textContent = lines.join("\n");
     details.appendChild(p);
   }
 
@@ -1253,21 +1395,46 @@ function visibleCalendarRange() {
 function eventsForDate(key) {
   return events
     .filter((event) => eventIncludesDate(event, key))
-    .sort(compareEvents);
+    .sort((a, b) => compareEvents(a, b, key));
 }
 
-function compareEvents(a, b) {
-  const aAllDay = Boolean(a.start?.date);
-  const bAllDay = Boolean(b.start?.date);
-  if (aAllDay !== bAllDay) return aAllDay ? 1 : -1;
-  return eventStartMs(a) - eventStartMs(b);
+
+function compareEvents(a, b, shownDate = "") {
+  const startA = eventStartMinutesForDate(a, shownDate);
+  const startB = eventStartMinutesForDate(b, shownDate);
+  if (startA !== startB) return startA - startB;
+
+  const colourA = eventColourSortValue(a);
+  const colourB = eventColourSortValue(b);
+  if (colourA !== colourB) return colourA - colourB;
+
+  const addressA = parseEventData(a).address || a.summary || a.location || "";
+  const addressB = parseEventData(b).address || b.summary || b.location || "";
+  return addressA.localeCompare(addressB, undefined, { numeric: true, sensitivity: "base" });
 }
+
+function eventStartMinutesForDate(event, shownDate = "") {
+  if (event.start?.date) return 0;
+  if (!event.start?.dateTime) return 24 * 60 + 1;
+  const range = eventDateRange(event);
+  if (shownDate && range.start && shownDate > range.start) return 0;
+  const parts = calendarDateTimeParts(new Date(event.start.dateTime));
+  return parts.hour * 60 + parts.minute;
+}
+
+function eventColourSortValue(event) {
+  if (!event.colorId) return 0;
+  const value = Number(event.colorId);
+  return Number.isFinite(value) ? value : 99;
+}
+
 
 function eventStartMs(event) {
   if (event.start?.dateTime) return new Date(event.start.dateTime).getTime();
-  if (event.start?.date) return dateFromKey(event.start.date).getTime();
+  if (event.start?.date) return Date.parse(`${event.start.date}T00:00:00${CONFIG.UTC_OFFSET || "+08:00"}`);
   return Number.MAX_SAFE_INTEGER;
 }
+
 
 function eventDateRange(event) {
   if (event.start?.date) {
@@ -1279,21 +1446,20 @@ function eventDateRange(event) {
   }
   if (event.start?.dateTime) {
     const startDateTime = new Date(event.start.dateTime);
-    const start = dateKey(startDateTime);
+    const start = dateKeyInCalendarZone(startDateTime);
     let end = start;
     if (event.end?.dateTime) {
       const endDateTime = new Date(event.end.dateTime);
-      end = dateKey(endDateTime);
-      const endsAtMidnight = endDateTime.getHours() === 0
-        && endDateTime.getMinutes() === 0
-        && endDateTime.getSeconds() === 0
-        && endDateTime.getMilliseconds() === 0;
+      end = dateKeyInCalendarZone(endDateTime);
+      const endParts = calendarDateTimeParts(endDateTime);
+      const endsAtMidnight = endParts.hour === 0 && endParts.minute === 0 && endParts.second === 0;
       if (endsAtMidnight && endDateTime > startDateTime && end > start) end = addDaysKey(end, -1);
     }
     return { start, end: end < start ? start : end };
   }
   return { start: "", end: "" };
 }
+
 
 function eventDateKeys(event) {
   const range = eventDateRange(event);
@@ -1321,11 +1487,11 @@ function eventChipLabel(event, shownDate = "") {
   const range = eventDateRange(event);
   const multiDay = range.start && range.start !== range.end;
   if (event.start?.date) return multiDay ? `↔ ${title}` : title;
-  const startDate = new Date(event.start.dateTime);
-  const time = startDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+  const time = timeInputValueInCalendarZone(new Date(event.start.dateTime));
   if (multiDay && shownDate && shownDate !== range.start) return `↔ ${title}`;
   return `${time} ${multiDay ? "↔ " : ""}${title}`;
 }
+
 
 function eventTimeLabel(event) {
   const range = eventDateRange(event);
@@ -1337,16 +1503,15 @@ function eventTimeLabel(event) {
   }
   if (!event.start?.dateTime) return "Time not set / 未设时间";
   const startDateTime = new Date(event.start.dateTime);
-  const start = startDateTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+  const start = timeInputValueInCalendarZone(startDateTime);
   const endDateTime = event.end?.dateTime ? new Date(event.end.dateTime) : null;
-  const end = endDateTime
-    ? endDateTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })
-    : "";
+  const end = endDateTime ? timeInputValueInCalendarZone(endDateTime) : "";
   if (multiDay && endDateTime) {
     return `${formatDateShort(range.start)} ${start} – ${formatDateShort(range.end)} ${end}`;
   }
   return end ? `${start}–${end}` : start;
 }
+
 
 function formatEventDateRangeBilingual(event) {
   const range = eventDateRange(event);
@@ -1403,7 +1568,7 @@ function resetJobForm() {
   lastFormStartDate = selectedDate;
   el.startTimeInput.value = "08:00";
   el.endTimeInput.value = "10:00";
-  el.allDayInput.checked = false;
+  el.allDayInput.checked = true;
   el.continueJobInput.checked = false;
   el.continuePeriodsList.innerHTML = "";
   el.idFirmInput.value = "";
@@ -1470,8 +1635,8 @@ function fillJobForm(event, asCopy) {
   const allDay = Boolean(event.start?.date);
   el.allDayInput.checked = allDay;
   if (!allDay && event.start?.dateTime) {
-    el.startTimeInput.value = timeInputValue(new Date(event.start.dateTime));
-    if (event.end?.dateTime) el.endTimeInput.value = timeInputValue(new Date(event.end.dateTime));
+    el.startTimeInput.value = timeInputValueInCalendarZone(new Date(event.start.dateTime));
+    if (event.end?.dateTime) el.endTimeInput.value = timeInputValueInCalendarZone(new Date(event.end.dateTime));
   }
   renderColourPicker(String(event.colorId || "default"));
 }
@@ -1783,21 +1948,12 @@ function checkedValues(container) {
 
 function buildCalendarEvent(data) {
   if (!data.date) throw new Error("Please choose a date. / 请选择日期。");
+  const privateProperties = buildPrivateProperties(data);
   const resource = {
     summary: data.address,
     description: buildDescription(data),
     location: data.address,
-    extendedProperties: {
-      private: {
-        kgCeilingApp: "1",
-        kgCeilingVersion: "1.6.2",
-        ...(data.continueJob && data.continueGroupId ? {
-          kgContinueJob: "1",
-          kgContinueGroup: data.continueGroupId,
-          kgContinueSequence: String(data.continueSequence || 1)
-        } : {})
-      }
-    }
+    extendedProperties: { private: privateProperties }
   };
 
   if (data.colourId && data.colourId !== "default") {
@@ -1812,45 +1968,75 @@ function buildCalendarEvent(data) {
     resource.end = { date: addDaysKey(endDate, 1) };
   } else {
     if (!data.startTime || !data.endTime) throw new Error("Please enter start and end time. / 请输入开始和结束时间。");
-    const start = localDateTime(data.date, data.startTime);
-    const end = localDateTime(endDate, data.endTime);
-    if (end <= start) throw new Error("The ending date and time must be after the starting date and time. / 结束日期和时间必须迟于开始日期和时间。");
-    resource.start = { dateTime: start.toISOString() };
-    resource.end = { dateTime: end.toISOString() };
+    const startText = calendarDateTimeString(data.date, data.startTime);
+    const endText = calendarDateTimeString(endDate, data.endTime);
+    if (Date.parse(endText) <= Date.parse(startText)) {
+      throw new Error("The ending date and time must be after the starting date and time. / 结束日期和时间必须迟于开始日期和时间。");
+    }
+    const timeZone = CONFIG.TIME_ZONE || "Asia/Singapore";
+    resource.start = { dateTime: startText, timeZone };
+    resource.end = { dateTime: endText, timeZone };
   }
   return resource;
 }
 
+
 function buildDescription(data) {
-  const yesNo = (value) => value ? "Yes / 是" : "No / 否";
   const lines = [
-    DATA_HEADER,
-    `Address / 地址: ${encodeField(data.address)}`,
-    `ID Name / ID 联系人姓名: ${encodeField(data.contact)}`,
-    `Lock No / 门锁号码: ${encodeField(data.lock)}`,
-    `ID Firm / ID 公司: ${encodeField(data.idFirm)}`,
-    `Sales Person / 销售人员: ${encodeField(data.idName)}`,
-    `Installer Name / 安装人员姓名: ${encodeField(data.installerName)}`,
-    `Continue Job / 继续工作: ${yesNo(data.continueJob)}`,
-    `Continue Group ID: ${data.continueGroupId || ""}`,
-    `Continue Sequence / 继续工作时段: ${data.continueSequence || 1}`,
-    `Amend Ceiling / 修改天花: ${yesNo(data.amendCeiling)}`,
-    `Amend Ceiling Detail / 天花修改详情: ${encodeField(data.amendCeilingDetail)}`,
-    `Amend Partition / 修改隔墙: ${yesNo(data.amendPartition)}`,
-    `Amend Partition Detail / 隔墙修改详情: ${encodeField(data.amendPartitionDetail)}`,
-    `Amend Pelmet Box LBox / 修改窗帘盒包箱LBox: ${yesNo(data.amendPelmet)}`,
-    `Amend Pelmet Detail / 窗帘盒包箱LBox修改详情: ${encodeField(data.amendPelmetDetail)}`,
-    `Amend Timber Other / 加木支撑其他: ${yesNo(data.amendTimberOther)}`,
-    `Amend Timber Other Detail / 木支撑其他修改详情: ${encodeField(data.amendTimberOtherDetail)}`,
-    `Amend Remark / 修改备注: ${encodeField(data.amendRemark)}`,
-    `Delivery Date / 送货日期: ${data.deliveryDate || ""}`,
-    `Delivery Materials / 送货材料: ${encodeField(data.deliveryMaterials)}`,
-    `Delivery Remark / 送货备注: ${encodeField(data.deliveryRemark)}`,
-    `Billing Number / 开单号码: ${encodeField(data.billingNumber)}`,
-    APP_MARKER
+    "*KG CEILING SITE DETAIL / KG 天花工地资料*",
+    "",
+    `*Address / 地址:* ${displayInlineValue(data.address)}`,
+    "",
+    `*Work date / 工作日期:* ${formatFormDateRange(data)}`,
+    `*Time / 时间:* ${formatFormTime(data)}`,
   ];
+
+  if (data.continueJob) {
+    lines.push(`*Continue job / 继续工作:* Yes / 是${data.continueSequence > 1 ? ` (#${data.continueSequence})` : ""}`);
+  }
+
+  lines.push("");
+  if (data.contact) lines.push(`*ID Name / ID 联系人姓名:* ${displayInlineValue(data.contact)}`);
+  if (data.lock) lines.push(`*Lock / 门锁:* ${displayInlineValue(data.lock)}`);
+  if (data.idFirm) lines.push(`*ID Firm / ID 公司:* ${displayInlineValue(data.idFirm)}`);
+  if (data.idName) lines.push(`*Sales Person / 销售人员:* ${displayInlineValue(data.idName)}`);
+
+  if (data.installerName) {
+    lines.push("");
+    lines.push(`*Installer / 安装人员:* ${displayInlineValue(data.installerName)}`);
+  }
+
+  const scopes = amendmentLabels(data);
+  if (scopes.length) {
+    lines.push("");
+    lines.push("*Job Scope / 工作范围:*");
+    scopes.forEach((item) => lines.push(`- ${displayInlineValue(item)}`));
+  }
+
+  if (data.amendRemark) {
+    lines.push("");
+    lines.push(`*Remark / 备注:* ${displayInlineValue(data.amendRemark)}`);
+  }
+
+  if (data.deliveryDate || data.deliveryMaterials || data.deliveryRemark) {
+    lines.push("");
+    lines.push("*Deliver / 送货:*");
+    if (data.deliveryDate) lines.push(`*Delivery date / 送货日期:* ${formatDateBilingual(data.deliveryDate)}`);
+    if (data.deliveryMaterials) lines.push(`*Delivery material / 送货材料:* ${displayInlineValue(data.deliveryMaterials)}`);
+    if (data.deliveryRemark) lines.push(`*Delivery remark / 送货备注:* ${displayInlineValue(data.deliveryRemark)}`);
+  }
+
+  if (data.billingNumber) {
+    lines.push("");
+    lines.push("*Billing / 开单:*");
+    lines.push(`*Billing number / 开单号码:* ${displayInlineValue(data.billingNumber)}`);
+  }
+
+  lines.push("");
+  lines.push(APP_MARKER);
   return lines.join("\n");
 }
+
 
 function encodeField(value) {
   return String(value || "").replace(/\r?\n/g, "\\n");
@@ -1858,6 +2044,184 @@ function encodeField(value) {
 
 function decodeField(value) {
   return String(value || "").replace(/\\n/g, "\n");
+}
+
+
+function displayInlineValue(value) {
+  return String(value || "")
+    .replace(/\r?\n+/g, " / ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function formatFormDateRange(data) {
+  if (!data?.date) return "Not set / 未设置";
+  const end = data.endDate || data.date;
+  return data.date === end
+    ? formatDateLongBilingual(data.date)
+    : `${formatDateLongBilingual(data.date)} → ${formatDateLongBilingual(end)}`;
+}
+
+function formatFormTime(data) {
+  if (data?.allDay) return "All day / 全天";
+  if (!data?.startTime) return "Time not set / 未设时间";
+  return data.endTime ? `${data.startTime}–${data.endTime}` : data.startTime;
+}
+
+function buildPrivateProperties(data) {
+  const privateProperties = {
+    kgCeilingApp: "1",
+    kgCeilingVersion: "1.7.0",
+    ...(data.continueJob && data.continueGroupId ? {
+      kgContinueJob: "1",
+      kgContinueGroup: data.continueGroupId,
+      kgContinueSequence: String(data.continueSequence || 1)
+    } : {})
+  };
+
+  const stored = {
+    address: data.address || "",
+    contact: data.contact || "",
+    lock: data.lock || "",
+    idFirm: data.idFirm || "",
+    idName: data.idName || "",
+    installerName: data.installerName || "",
+    continueJob: Boolean(data.continueJob),
+    continueGroupId: data.continueGroupId || "",
+    continueSequence: Number(data.continueSequence || 1),
+    amendCeiling: Boolean(data.amendCeiling),
+    amendCeilingDetail: data.amendCeilingDetail || "",
+    amendPartition: Boolean(data.amendPartition),
+    amendPartitionDetail: data.amendPartitionDetail || "",
+    amendPelmet: Boolean(data.amendPelmet),
+    amendPelmetDetail: data.amendPelmetDetail || "",
+    amendTimberOther: Boolean(data.amendTimberOther),
+    amendTimberOtherDetail: data.amendTimberOtherDetail || "",
+    amendRemark: data.amendRemark || "",
+    deliveryDate: data.deliveryDate || "",
+    deliveryMaterials: data.deliveryMaterials || "",
+    deliveryRemark: data.deliveryRemark || "",
+    billingNumber: data.billingNumber || ""
+  };
+
+  try {
+    const encoded = utf8ToBase64(JSON.stringify(stored));
+    const chunkSize = 800;
+    const chunks = [];
+    for (let index = 0; index < encoded.length; index += chunkSize) {
+      chunks.push(encoded.slice(index, index + chunkSize));
+    }
+    privateProperties.kgDataChunks = String(chunks.length);
+    chunks.forEach((chunk, index) => {
+      privateProperties[`kgData${String(index).padStart(2, "0")}`] = chunk;
+    });
+  } catch {
+    // The visible Google Calendar description remains available as a fallback.
+  }
+  return privateProperties;
+}
+
+function readPrivateEventData(event) {
+  const privateProperties = event?.extendedProperties?.private || {};
+  const count = Number(privateProperties.kgDataChunks || 0);
+  if (!count || count > 100) return null;
+  let encoded = "";
+  for (let index = 0; index < count; index += 1) {
+    encoded += privateProperties[`kgData${String(index).padStart(2, "0")}`] || "";
+  }
+  if (!encoded) return null;
+  try {
+    return JSON.parse(base64ToUtf8(encoded));
+  } catch {
+    return null;
+  }
+}
+
+function utf8ToBase64(value) {
+  const bytes = new TextEncoder().encode(String(value || ""));
+  let binary = "";
+  const block = 0x8000;
+  for (let index = 0; index < bytes.length; index += block) {
+    binary += String.fromCharCode(...bytes.subarray(index, index + block));
+  }
+  return btoa(binary);
+}
+
+function base64ToUtf8(value) {
+  const binary = atob(String(value || ""));
+  const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+function parseHumanDescription(description) {
+  const result = {};
+  const lines = String(description || "").split(/\r?\n/);
+
+  lines.forEach((rawLine) => {
+    const plain = rawLine.trim().replace(/\*/g, "");
+    if (!plain || plain === APP_MARKER || plain.endsWith(":") && /^(job scope|deliver|billing)\b/i.test(plain)) return;
+
+    if (plain.startsWith("- ")) {
+      const item = plain.slice(2).trim();
+      const splitAt = item.indexOf(":");
+      const label = (splitAt >= 0 ? item.slice(0, splitAt) : item).trim().toLowerCase();
+      const value = splitAt >= 0 ? item.slice(splitAt + 1).trim() : "";
+      if (label.startsWith("ceiling") || label.includes("天花")) {
+        result.amendCeiling = true;
+        result.amendCeilingDetail = value;
+      } else if (label.startsWith("partition") || label.includes("隔墙")) {
+        result.amendPartition = true;
+        result.amendPartitionDetail = value;
+      } else if (label.startsWith("pelmet") || label.includes("窗帘盒") || label.includes("包箱")) {
+        result.amendPelmet = true;
+        result.amendPelmetDetail = value;
+      } else if (label.startsWith("add timber") || label.includes("木支撑")) {
+        result.amendTimberOther = true;
+        result.amendTimberOtherDetail = value;
+      }
+      return;
+    }
+
+    const separator = plain.indexOf(":");
+    if (separator < 0) return;
+    const label = plain.slice(0, separator).trim().toLowerCase();
+    const value = plain.slice(separator + 1).trim();
+
+    if (label.startsWith("address") || label.includes("地址")) result.address = value;
+    else if (label.startsWith("id name") || label.includes("id 联系人姓名")) result.contact = value;
+    else if (label.startsWith("lock") || label.includes("门锁")) result.lock = value;
+    else if (label.startsWith("id firm") || label.includes("id 公司")) result.idFirm = value;
+    else if (label.startsWith("sales person") || label.includes("销售人员")) result.idName = value;
+    else if (label.startsWith("installer") || label.includes("安装人员")) result.installerName = value;
+    else if (label.startsWith("continue job") || label.includes("继续工作")) result.continueJob = parseYesNo(value);
+    else if (label.startsWith("delivery date") || label.includes("送货日期")) {
+      const parsedDate = parseDateFromDescription(value);
+      if (parsedDate) result.deliveryDate = parsedDate;
+    }
+    else if (label.startsWith("delivery material") || label.includes("送货材料")) result.deliveryMaterials = value;
+    else if (label.startsWith("delivery remark") || label.includes("送货备注")) result.deliveryRemark = value;
+    else if (label.startsWith("billing number") || label.includes("开单号码")) result.billingNumber = value;
+    else if (label.startsWith("remark") || label.includes("备注")) result.amendRemark = value;
+  });
+
+  return result;
+}
+
+function parseDateFromDescription(value) {
+  const text = String(value || "").trim();
+  const iso = text.match(/\b(\d{4}-\d{2}-\d{2})\b/);
+  if (iso) return iso[1];
+  const numeric = text.match(/\b(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})\b/);
+  if (numeric) return `${numeric[3]}-${numeric[2].padStart(2, "0")}-${numeric[1].padStart(2, "0")}`;
+  const english = text.match(/\b(\d{1,2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+(\d{4})\b/i);
+  if (english) {
+    const months = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
+    const month = months[english[2].slice(0, 3).toLowerCase()];
+    return `${english[3]}-${String(month).padStart(2, "0")}-${english[1].padStart(2, "0")}`;
+  }
+  const chinese = text.match(/(\d{4})年(\d{1,2})月(\d{1,2})日/);
+  if (chinese) return `${chinese[1]}-${chinese[2].padStart(2, "0")}-${chinese[3].padStart(2, "0")}`;
+  return "";
 }
 
 function parseEventData(event) {
@@ -1903,6 +2267,17 @@ function parseEventData(event) {
     workers: [],
     notes: ""
   };
+
+  const structuredData = readPrivateEventData(event);
+
+  if (description.includes("*KG CEILING SITE DETAIL / KG 天花工地资料*")) {
+    Object.assign(data, parseHumanDescription(description));
+    if (structuredData) Object.assign(data, structuredData);
+    if (event.summary || event.location) data.address = event.summary || event.location;
+    return data;
+  }
+
+  if (structuredData) Object.assign(data, structuredData);
 
   if (!description.includes(DATA_HEADER) && !description.includes(APP_MARKER)) {
     data.amendRemark = description.trim();
@@ -1975,6 +2350,7 @@ function parseEventData(event) {
   // Map useful legacy information into the new simple fields when possible.
   if (!data.installerName && data.foremen.length) data.installerName = data.foremen.join(", ");
   if (!data.amendRemark) data.amendRemark = data.scope || data.remove || data.notes || "";
+  if (event.summary || event.location) data.address = event.summary || event.location;
   return data;
 }
 
@@ -2065,6 +2441,59 @@ function registerServiceWorker() {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("./sw.js").catch(() => {});
   });
+}
+
+
+function calendarBoundaryString(dateValue) {
+  return `${dateValue}T00:00:00${CONFIG.UTC_OFFSET || "+08:00"}`;
+}
+
+function calendarDateTimeString(dateValue, timeValue) {
+  const safeTime = String(timeValue || "00:00").slice(0, 5);
+  return `${dateValue}T${safeTime}:00${CONFIG.UTC_OFFSET || "+08:00"}`;
+}
+
+function calendarDateTimeFromDate(date) {
+  const parts = calendarDateTimeParts(date);
+  const key = `${parts.year}-${String(parts.month).padStart(2, "0")}-${String(parts.day).padStart(2, "0")}`;
+  const time = `${String(parts.hour).padStart(2, "0")}:${String(parts.minute).padStart(2, "0")}`;
+  return calendarDateTimeString(key, time);
+}
+
+function calendarDateTimeParts(date) {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: CONFIG.TIME_ZONE || "Asia/Singapore",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23"
+  });
+  const parts = Object.fromEntries(
+    formatter.formatToParts(date)
+      .filter((part) => part.type !== "literal")
+      .map((part) => [part.type, Number(part.value)])
+  );
+  return {
+    year: parts.year,
+    month: parts.month,
+    day: parts.day,
+    hour: parts.hour,
+    minute: parts.minute,
+    second: parts.second
+  };
+}
+
+function dateKeyInCalendarZone(date) {
+  const parts = calendarDateTimeParts(date);
+  return `${parts.year}-${String(parts.month).padStart(2, "0")}-${String(parts.day).padStart(2, "0")}`;
+}
+
+function timeInputValueInCalendarZone(date) {
+  const parts = calendarDateTimeParts(date);
+  return `${String(parts.hour).padStart(2, "0")}:${String(parts.minute).padStart(2, "0")}`;
 }
 
 function startOfMonth(date) {

@@ -272,7 +272,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); box-sh
 .historyEventDate { font-weight: 900; }
 .historyEventDate small { display: block; margin-top: 3px; color: var(--muted); font-weight: 750; }
 .historyEventDetails { min-width: 0; }
-.historyEventDetails p { margin: 3px 0 0; color: var(--muted); font-size: 12px; line-height: 1.4; overflow-wrap: anywhere; }
+.historyEventDetails p { margin: 3px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; white-space: pre-wrap; }
 .historyEditBtn { min-width: 90px; }
 .historyEmpty { padding: 30px 18px; border: 1px dashed #b9c9c5; border-radius: 14px; background: #fff; text-align: center; color: var(--muted); }
 .colourPicker { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 9px; }
@@ -361,7 +361,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); box-sh
   .btnSave { min-width: 0; }
 }
 
-/* v1.6.6 editable WhatsApp copy preview */
+/* v1.6.5 editable WhatsApp copy preview */
 .whatsappPreviewModal { width: min(760px, 100%); height: min(90dvh, 820px); }
 .whatsappPreviewBody { display: flex; flex-direction: column; gap: 12px; }
 .whatsappPreviewHelp { margin: 0; padding: 10px 12px; border-radius: 12px; background: #eef8f5; color: #315a53; font-weight: 700; line-height: 1.5; }

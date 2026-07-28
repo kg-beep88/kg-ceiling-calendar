@@ -15,6 +15,11 @@ window.KG_CONFIG = {
   // 应用打开时自动刷新。
   AUTO_REFRESH_SECONDS: 60,
 
+  // Shared calendar timezone. All timed jobs are saved and shown in Singapore time.
+  // 共享日历时区。所有定时工作都使用新加坡时间保存和显示。
+  TIME_ZONE: "Asia/Singapore",
+  UTC_OFFSET: "+08:00",
+
   // Address-history search range. Change only when you need older or later records.
   // 地址历史搜索范围。只有需要更早或更后的记录时才更改。
   HISTORY_START: "2026-01-01",

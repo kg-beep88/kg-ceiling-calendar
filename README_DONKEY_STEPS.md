@@ -1,8 +1,23 @@
 # KG CEILING WORK CALENDAR — ADMIN SETUP / 管理员设置
-## VERSION 1.6.2 — SIMPLE RIGHT PANEL + BIG AMENDMENT BOXES / 版本 1.6.2 — 简化右侧栏 + 加大修改输入框
+## VERSION 1.7.0 — FULL SEARCH + SINGAPORE TIME SYNC / 版本 1.7.0 — 全资料搜索 + 新加坡时间同步
 
 This file is for the person setting up the app. Normal staff should read `USER_MANUAL_EN_CN.md`.  
-本文件给管理员设置应用使用。普通员工请阅读 `USER_MANUAL_EN_CN.md`。
+本文件给管理员设置应用使用。普通员工请阅读 `USER_MANUAL_EN_CN.md`.
+
+
+## New in v1.7.0 / v1.7.0 新功能
+
+- Search now checks every job detail, similar to Google Calendar search: address, ID name, lock number, ID firm, sales person, installer, job scope, remarks, delivery, billing number, dates, times and colours.
+- 搜索功能现在会检查所有工作资料，类似谷歌日历搜索：地址、ID 联系人、门锁号码、ID 公司、销售人员、安装人员、工作范围、备注、送货、开单号码、日期、时间和颜色。
+- Google Calendar event descriptions now use the same readable bilingual layout as the WhatsApp copy preview, with Delivery and Billing included and blank lines between main sections.
+- 谷歌日历事项说明现在使用与 WhatsApp 复制预览相同的中英文排版，并包括送货和开单，各主要部分之间有空行。
+- All timed jobs are saved and displayed in Singapore time (`Asia/Singapore`, UTC+08:00).
+- 所有定时工作都以新加坡时间（UTC+08:00）保存和显示。
+- New jobs are All-day by default. Untick All-day only when a start/end time is needed.
+- 新工作默认是全天工作。只有需要开始和结束时间时才取消全天。
+- Daily order is: start time, then Google colour, then address.
+- 每日工作排序：开始时间 → 谷歌颜色 → 地址。
+
 
 ## Current Add Job form / 目前新增工作表格
 
