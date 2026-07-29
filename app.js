@@ -83,6 +83,7 @@ let touchDragState = null;
 let touchDragGhost = null;
 let touchDragTarget = null;
 let suppressChipClickUntil = 0;
+let pendingHistoryCopyEvent = null;
 
 window.addEventListener("DOMContentLoaded", init);
 
@@ -112,7 +113,8 @@ function cacheElements() {
     "colourPicker", "deleteJobBtn", "cancelBtn",
     "saveJobBtn", "searchModal", "closeSearchBtn", "historySearchForm",
     "historySearchInput", "historySearchBtn", "historySearchStatus",
-    "historySearchResults", "doneSearchBtn", "whatsAppPreviewModal", "whatsAppPreviewTitle",
+    "historySearchResults", "doneSearchBtn", "copyDateModal", "copyDateInput", "closeCopyDateBtn",
+    "cancelCopyDateBtn", "confirmCopyDateBtn", "whatsAppPreviewModal", "whatsAppPreviewTitle",
     "closeWhatsAppPreviewBtn", "whatsAppPreviewText", "clearWhatsAppPreviewBtn",
     "cancelWhatsAppPreviewBtn", "copyWhatsAppPreviewBtn", "settingsModal", "closeSettingsBtn",
     "calendarIdText", "resetCacheBtn", "doneSettingsBtn", "toast"
@@ -140,6 +142,12 @@ function bindEvents() {
   el.doneSearchBtn.addEventListener("click", closeSearchModal);
   el.searchModal.addEventListener("click", (event) => {
     if (event.target === el.searchModal) closeSearchModal();
+  });
+  el.closeCopyDateBtn.addEventListener("click", closeCopyDateModal);
+  el.cancelCopyDateBtn.addEventListener("click", closeCopyDateModal);
+  el.confirmCopyDateBtn.addEventListener("click", confirmHistoryCopyDate);
+  el.copyDateModal.addEventListener("click", (event) => {
+    if (event.target === el.copyDateModal) closeCopyDateModal();
   });
   el.addJobBtn.addEventListener("click", () => openJobModal());
   el.whatsAppDayBtn.addEventListener("click", shareSelectedDayToWhatsApp);
@@ -178,6 +186,7 @@ function bindEvents() {
   document.addEventListener("keydown", (event) => {
     if (event.key !== "Escape") return;
     if (!el.jobModal.hidden) closeJobModal();
+    else if (!el.copyDateModal.hidden) closeCopyDateModal();
     else if (!el.searchModal.hidden) closeSearchModal();
     else if (!el.whatsAppPreviewModal.hidden) closeWhatsAppPreview();
     else if (!el.settingsModal.hidden) closeSettings();
@@ -1050,11 +1059,43 @@ async function searchAddressHistory(term) {
 
 async function fetchAllAddressEvents(term) {
   const all = await fetchAllHistoryEvents();
+  return all
+    .map((event) => ({ event, score: searchEventScore(event, term) }))
+    .filter((item) => item.score >= 0)
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return eventStartMs(b.event) - eventStartMs(a.event);
+    })
+    .map((item) => item.event);
+}
+
+function eventSearchAddress(event) {
+  const data = parseEventData(event);
+  return normalizeSearchText(data.address || event.summary || event.location || "");
+}
+
+function searchEventScore(event, term) {
   const tokens = parseSearchTokens(term);
-  return all.filter((event) => {
-    const haystack = buildEventSearchText(event);
-    return tokens.every((token) => haystack.includes(token));
+  const haystack = buildEventSearchText(event);
+  if (!tokens.length || !tokens.every((token) => haystack.includes(token))) return -1;
+
+  const address = eventSearchAddress(event);
+  const query = normalizeSearchText(term);
+  let score = 0;
+
+  // Full address phrase matches are strongest, followed by token-level address matches.
+  if (query && address === query) score += 100000;
+  else if (query && address.startsWith(query)) score += 50000;
+  else if (query && address.includes(query)) score += 25000;
+
+  tokens.forEach((token) => {
+    if (address === token) score += 5000;
+    else if (address.startsWith(token)) score += 2500;
+    else if (address.includes(token)) score += 1000;
+    else score += 10;
   });
+
+  return score;
 }
 
 function invalidateHistoryCache() {
@@ -1168,17 +1209,21 @@ function renderAddressHistory(foundEvents, term) {
     const data = parseEventData(event);
     const address = data.address || event.summary || event.location || "Untitled job / 未命名工作";
     const key = normalizeAddress(address);
-    if (!groups.has(key)) groups.set(key, { address, events: [] });
-    groups.get(key).events.push(event);
+    const score = searchEventScore(event, term);
+    if (!groups.has(key)) groups.set(key, { address, events: [], score });
+    const group = groups.get(key);
+    group.events.push(event);
+    group.score = Math.max(group.score, score);
   });
 
   const sortedGroups = Array.from(groups.values()).sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
     const newestA = Math.max(...a.events.map(eventStartMs));
     const newestB = Math.max(...b.events.map(eventStartMs));
     return newestB - newestA;
   });
 
-  el.historySearchStatus.textContent = `${foundEvents.length} matching record(s), ${sortedGroups.length} site(s) found. / 找到 ${foundEvents.length} 条相符记录、${sortedGroups.length} 个工地。`;
+  el.historySearchStatus.textContent = `${foundEvents.length} matching record(s), ${sortedGroups.length} site(s) found. Address matches are shown first. / 找到 ${foundEvents.length} 条相符记录、${sortedGroups.length} 个工地。地址相符结果优先显示。`;
   sortedGroups.forEach((group) => el.historySearchResults.appendChild(buildHistoryGroup(group)));
 }
 
@@ -1283,14 +1328,63 @@ function buildHistoryEventRow(event, data) {
     details.appendChild(p);
   }
 
+  const actions = document.createElement("div");
+  actions.className = "historyEventActions";
+
   const edit = document.createElement("button");
   edit.type = "button";
   edit.className = "btn btnSecondary historyEditBtn";
   edit.textContent = "Edit / 编辑";
   edit.addEventListener("click", () => editEventFromHistory(event));
 
-  row.append(dateWrap, details, edit);
+  const copy = document.createElement("button");
+  copy.type = "button";
+  copy.className = "btn btnPrimary historyCopyBtn";
+  copy.textContent = "Copy / 复制";
+  copy.addEventListener("click", () => openHistoryCopyDate(event));
+
+  actions.append(edit, copy);
+  row.append(dateWrap, details, actions);
   return row;
+}
+
+function openHistoryCopyDate(event) {
+  pendingHistoryCopyEvent = event;
+  el.copyDateInput.value = selectedDate || dateKey(new Date());
+  el.copyDateModal.hidden = false;
+  document.body.style.overflow = "hidden";
+  setTimeout(() => el.copyDateInput.focus(), 50);
+}
+
+function closeCopyDateModal() {
+  el.copyDateModal.hidden = true;
+  pendingHistoryCopyEvent = null;
+  if (el.jobModal.hidden && el.searchModal.hidden && el.settingsModal.hidden && el.whatsAppPreviewModal.hidden) {
+    document.body.style.overflow = "";
+  }
+}
+
+function confirmHistoryCopyDate() {
+  const event = pendingHistoryCopyEvent;
+  const targetDate = el.copyDateInput.value;
+  if (!event) {
+    closeCopyDateModal();
+    return;
+  }
+  if (!targetDate) {
+    showToast("Choose a date to copy this work to. / 请选择要复制工作的日期。", true);
+    el.copyDateInput.focus();
+    return;
+  }
+
+  // openJobModal(..., true) already makes a safe new copy: no Google event ID is reused,
+  // and fillJobForm preserves the original number of work days from the new start date.
+  pendingHistoryCopyEvent = null;
+  el.copyDateModal.hidden = true;
+  closeSearchModal();
+  selectedDate = targetDate;
+  openJobModal(event, true);
+  showToast("Copy ready. Check the details, then save. / 复制已准备好，请检查资料后保存。", false);
 }
 
 async function editEventFromHistory(event) {

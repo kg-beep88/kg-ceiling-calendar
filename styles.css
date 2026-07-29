@@ -273,7 +273,12 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); box-sh
 .historyEventDate small { display: block; margin-top: 3px; color: var(--muted); font-weight: 750; }
 .historyEventDetails { min-width: 0; }
 .historyEventDetails p { margin: 3px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; white-space: pre-wrap; }
-.historyEditBtn { min-width: 90px; }
+.historyEventActions { display: flex; flex-direction: column; gap: 8px; min-width: 110px; }
+.historyEditBtn, .historyCopyBtn { width: 100%; min-width: 100px; }
+.copyDateBackdrop { z-index: 130; }
+.copyDateModal { width: min(520px, 100%); height: auto; max-height: 92dvh; }
+.copyDateBody { display: grid; gap: 14px; }
+.copyDateHelp { margin: 0; padding: 11px 12px; border-radius: 12px; background: #eef8f5; color: #315a53; font-weight: 700; line-height: 1.5; }
 .historyEmpty { padding: 30px 18px; border: 1px dashed #b9c9c5; border-radius: 14px; background: #fff; text-align: center; color: var(--muted); }
 .colourPicker { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 9px; }
 .colourChoice { position: relative; display: grid; place-items: center; gap: 5px; min-height: 70px; padding: 8px; border: 2px solid transparent; border-radius: 12px; background: #f5f8f7; font-size: 11px; font-weight: 900; text-align: center; }
@@ -350,7 +355,8 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); box-sh
   .continueRemoveBtn { width: 100%; }
   .trackingGrid, .historySummaryGrid { grid-template-columns: 1fr; }
   .historyEventRow { grid-template-columns: 1fr; }
-  .historyEditBtn { width: 100%; }
+  .historyEventActions { width: 100%; flex-direction: row; }
+  .historyEditBtn, .historyCopyBtn { flex: 1; width: auto; }
 
   .amendChoices { grid-template-columns: 1fr; }
   .amendChoiceRow { grid-template-columns: 1fr; }

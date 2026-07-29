@@ -1,10 +1,20 @@
 # KG CEILING WORK CALENDAR — ADMIN SETUP / 管理员设置
-## VERSION 1.7.2 — FULL SEARCH + SINGAPORE TIME SYNC / 版本 1.7.2 — 全资料搜索 + 新加坡时间同步
+## VERSION 1.7.3 — ADDRESS-FIRST SEARCH + SEARCH COPY / 版本 1.7.3 — 地址优先搜索 + 搜索结果复制
 
 This file is for the person setting up the app. Normal staff should read `USER_MANUAL_EN_CN.md`.  
 - All displayed dates use one format only: **DD/MM/YYYY**, e.g. **29/07/2026**. Chinese-style date text is not shown. / 所有日期只使用 **DD/MM/YYYY**，例如 **29/07/2026**，不显示中文日期格式。
 本文件给管理员设置应用使用。普通员工请阅读 `USER_MANUAL_EN_CN.md`.
 
+
+
+## New in v1.7.3 / v1.7.3 新功能
+
+- Job Search now ranks **Address / 地址** matches first. Exact address matches come first, then address starts-with/contains matches, then matches from other saved job details.
+- 工作搜索现在会把 **地址** 相符结果优先显示：完整地址最优先，其次是地址开头/包含关键词，最后才是其他工作资料的相符结果。
+- Every search-result job now has **Copy / 复制** beside **Edit / 编辑**. Choose a new start date, review the copied job, then save it to Google Calendar.
+- 每个搜索结果现在都有 **复制** 按钮。选择新的开始日期，检查复制后的工作资料，然后保存到 Google 日历。
+- Multi-day copies keep the original number of work days automatically. Google-owned event IDs are never reused.
+- 多日工作复制时会自动保留原本的工作天数，而且不会重复使用 Google 的事项 ID。
 
 ## New in v1.7.2 / v1.7.2 新功能
 

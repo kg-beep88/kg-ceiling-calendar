@@ -1,7 +1,11 @@
-# v1.7.2 note / v1.7.2 说明
+# v1.7.3 note / v1.7.3 说明
+
+Job Search now shows **Address / 地址** matches first. Each result also has **Copy / 复制**: choose the new start date, review the copied work, then save it. Multi-day work keeps the same duration automatically.
 
 When changing an existing timed job to **All-day / 全天**, tick the All-day box and save normally. The old start/end times will be removed automatically.
 - All displayed dates use one format only: **DD/MM/YYYY**, e.g. **29/07/2026**. Chinese-style date text is not shown. / 所有日期只使用 **DD/MM/YYYY**，例如 **29/07/2026**，不显示中文日期格式。
+
+工作搜索现在会把 **地址** 相符结果优先显示。每个结果也有 **复制**：选择新的开始日期，检查复制后的工作，然后保存。多日工作会自动保留相同天数。
 
 把已有时间的工作改成 **全天工作** 时，勾选全天后直接保存。系统会自动清除旧的开始和结束时间。
 

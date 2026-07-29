@@ -1,2 +1,2 @@
-KG Ceiling Calendar v1.7.2
-Full-detail search, Singapore time sync, all-day default, Google description layout, deterministic sorting.
+KG Ceiling Calendar v1.7.3
+Address-first search ranking + Copy from search results with target-date chooser.
