@@ -1,11 +1,12 @@
 # KG CEILING WORK CALENDAR — ADMIN SETUP / 管理员设置
-## VERSION 1.7.1 — FULL SEARCH + SINGAPORE TIME SYNC / 版本 1.7.1 — 全资料搜索 + 新加坡时间同步
+## VERSION 1.7.2 — FULL SEARCH + SINGAPORE TIME SYNC / 版本 1.7.2 — 全资料搜索 + 新加坡时间同步
 
 This file is for the person setting up the app. Normal staff should read `USER_MANUAL_EN_CN.md`.  
+- All displayed dates use one format only: **DD/MM/YYYY**, e.g. **29/07/2026**. Chinese-style date text is not shown. / 所有日期只使用 **DD/MM/YYYY**，例如 **29/07/2026**，不显示中文日期格式。
 本文件给管理员设置应用使用。普通员工请阅读 `USER_MANUAL_EN_CN.md`.
 
 
-## New in v1.7.1 / v1.7.1 新功能
+## New in v1.7.2 / v1.7.2 新功能
 
 - Fixed changing a timed job to **All-day / 全天**. The app now clears the old Google Calendar time fields before saving.
 - 修复把有时间的工作改成 **全天工作** 时出现 `Invalid start time` 的问题。

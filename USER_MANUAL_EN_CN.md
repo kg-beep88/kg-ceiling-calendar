@@ -1,6 +1,7 @@
-# v1.7.1 note / v1.7.1 说明
+# v1.7.2 note / v1.7.2 说明
 
 When changing an existing timed job to **All-day / 全天**, tick the All-day box and save normally. The old start/end times will be removed automatically.
+- All displayed dates use one format only: **DD/MM/YYYY**, e.g. **29/07/2026**. Chinese-style date text is not shown. / 所有日期只使用 **DD/MM/YYYY**，例如 **29/07/2026**，不显示中文日期格式。
 
 把已有时间的工作改成 **全天工作** 时，勾选全天后直接保存。系统会自动清除旧的开始和结束时间。
 

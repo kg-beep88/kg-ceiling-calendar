@@ -506,17 +506,13 @@ function renderAll() {
 }
 
 function renderMonthTitle() {
-  const en = monthAnchor.toLocaleDateString("en-US", { month: "long", year: "numeric" });
-  const zh = `${monthAnchor.getFullYear()}年${monthAnchor.getMonth() + 1}月`;
-  el.monthTitle.textContent = `${en} / ${zh}`;
+  // Keep the calendar header simple: MM/YYYY only.
+  el.monthTitle.textContent = `${String(monthAnchor.getMonth() + 1).padStart(2, "0")}/${monthAnchor.getFullYear()}`;
 }
 
 function renderSelectedDateTitle() {
-  const date = dateFromKey(selectedDate);
-  const en = date.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
-  const weekdayZh = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"][date.getDay()];
-  const zh = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${weekdayZh}`;
-  el.selectedDateTitle.textContent = `${en} / ${zh}`;
+  // One date format everywhere in the app: DD/MM/YYYY.
+  el.selectedDateTitle.textContent = formatDateShort(selectedDate);
 }
 
 function renderCalendar() {
@@ -966,11 +962,8 @@ function buildWhatsAppSiteMessage(event, number = 0, compactHeading = false) {
 }
 
 function formatDateLongBilingual(key) {
-  if (!key) return "-";
-  const date = dateFromKey(key);
-  const en = date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-  const zh = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
-  return `${en} / ${zh}`;
+  // Kept as a compatibility helper for older code, but display only DD/MM/YYYY.
+  return formatDateShort(key);
 }
 
 function openWhatsAppPreview(text, title = "WhatsApp Preview / WhatsApp 预览") {
@@ -1350,11 +1343,7 @@ function formatDateShort(value) {
 
 function formatDateBilingual(value) {
   if (!value) return "Not set / 未设置";
-  const date = dateFromKey(value);
-  if (Number.isNaN(date.getTime())) return value;
-  const en = date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-  const zh = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
-  return `${en} / ${zh}`;
+  return formatDateShort(value);
 }
 
 function selectDate(key) {

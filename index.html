@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-GB">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -9,7 +9,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=1.7.1">
+  <link rel="stylesheet" href="styles.css?v=1.7.2">
 </head>
 <body>
   <noscript>
@@ -21,7 +21,7 @@
       <div class="brandMark" aria-hidden="true">KG</div>
       <div>
         <h1>KG Ceiling Work Calendar</h1>
-        <p>KG 天花工作日历 · v1.7.1</p>
+        <p>KG 天花工作日历 · v1.7.2</p>
       </div>
     </div>
 
@@ -152,11 +152,11 @@
             <div class="formGrid formGrid4">
               <label class="field">
                 <span>Start date / 开始日期</span>
-                <input id="dateInput" type="date" required>
+                <input id="dateInput" type="date" lang="en-GB" required>
               </label>
               <label class="field">
                 <span>End date / 结束日期</span>
-                <input id="endDateInput" type="date" required>
+                <input id="endDateInput" type="date" lang="en-GB" required>
               </label>
               <label class="field timeField">
                 <span>Start time / 开始时间</span>
@@ -250,7 +250,7 @@
             <div class="formGrid">
               <label class="field">
                 <span>Delivery date / 送货日期</span>
-                <input id="deliveryDateInput" type="date">
+                <input id="deliveryDateInput" type="date" lang="en-GB">
               </label>
               <label class="field fullField">
                 <span>Delivery material / 送货材料</span>
@@ -379,8 +379,8 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="config.js?v=1.7.1"></script>
+  <script src="config.js?v=1.7.2"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="app.js?v=1.7.1" defer></script>
+  <script src="app.js?v=1.7.2" defer></script>
 </body>
 </html>
