@@ -1,0 +1,13 @@
+KG Ceiling Calendar v1.7.4 — Test Report
+
+PASS — JavaScript syntax check (node --check app.js)
+PASS — Automatic renewal simulation before token expiry
+PASS — Google API 401 simulation renews token and retries the same request once
+PASS — Connected UI stays enabled while renewal is pending
+PASS — Existing search address ranking and search-result copy files retained
+PASS — Versioned app.js, styles.css and config.js updated to 1.7.4
+PASS — Service-worker cache name updated to v1.7.4
+PASS — No duplicate HTML IDs
+PASS — All document.getElementById/cacheElements IDs exist in index.html
+
+Important: Google can still require a manual Connect press after a page refresh, full browser close, account sign-out, revoked permission, or a browser-blocked authorization prompt.

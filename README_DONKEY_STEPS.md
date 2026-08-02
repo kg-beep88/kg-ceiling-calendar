@@ -1,5 +1,12 @@
 # KG CEILING WORK CALENDAR — ADMIN SETUP / 管理员设置
-## VERSION 1.7.3 — ADDRESS-FIRST SEARCH + SEARCH COPY / 版本 1.7.3 — 地址优先搜索 + 搜索结果复制
+
+## New in v1.7.4 / v1.7.4 新功能
+
+- Google Calendar access renews automatically before it expires while the app page remains open. / 应用页面保持开启时，会在谷歌权限过期前自动续期。
+- If Google returns an expired-session error, the app renews once and repeats the same request safely. / 如果谷歌返回会话过期，应用会自动续期一次，并安全重试同一个操作。
+- Refreshing or fully closing the browser may still require pressing Connect once because this free GitHub Pages app stores no permanent Google refresh token. / 刷新或完全关闭浏览器后，仍可能需要点击一次连接，因为免费的 GitHub Pages 应用不会永久保存谷歌刷新令牌。
+
+## VERSION 1.7.4 — AUTOMATIC GOOGLE CONNECTION RENEWAL / 版本 1.7.4 — 谷歌连接自动续期
 
 This file is for the person setting up the app. Normal staff should read `USER_MANUAL_EN_CN.md`.  
 - All displayed dates use one format only: **DD/MM/YYYY**, e.g. **29/07/2026**. Chinese-style date text is not shown. / 所有日期只使用 **DD/MM/YYYY**，例如 **29/07/2026**，不显示中文日期格式。
@@ -7,7 +14,7 @@ This file is for the person setting up the app. Normal staff should read `USER_M
 
 
 
-## New in v1.7.3 / v1.7.3 新功能
+## Also included from v1.7.3 / 继续包括 v1.7.3 功能
 
 - Job Search now ranks **Address / 地址** matches first. Exact address matches come first, then address starts-with/contains matches, then matches from other saved job details.
 - 工作搜索现在会把 **地址** 相符结果优先显示：完整地址最优先，其次是地址开头/包含关键词，最后才是其他工作资料的相符结果。

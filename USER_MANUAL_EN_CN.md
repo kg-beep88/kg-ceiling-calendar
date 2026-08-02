@@ -1,4 +1,10 @@
-# v1.7.3 note / v1.7.3 说明
+# v1.7.4 connection note / v1.7.4 连接说明
+
+After you press **Connect Google Calendar / 连接谷歌日历** once, the app automatically renews the temporary Google connection while the page remains open. You should not need to reconnect just because one hour has passed. / 点击一次 **连接谷歌日历** 后，只要页面保持开启，应用会自动续期临时谷歌连接，不会因为过了一小时就要求重新连接。
+
+Refreshing the page or fully closing the browser can still require one Connect press. / 刷新页面或完全关闭浏览器后，仍可能需要重新点击一次连接。
+
+# v1.7.3 search note / v1.7.3 搜索说明
 
 Job Search now shows **Address / 地址** matches first. Each result also has **Copy / 复制**: choose the new start date, review the copied work, then save it. Multi-day work keeps the same duration automatically.
 

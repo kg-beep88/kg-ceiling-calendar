@@ -1,4 +1,4 @@
-const CACHE_NAME = "kg-ceiling-calendar-v1.7.3-address-first-search-copy";
+const CACHE_NAME = "kg-ceiling-calendar-v1.7.4-auto-google-renew";
 const APP_FILES = [
   "./",
   "./index.html",

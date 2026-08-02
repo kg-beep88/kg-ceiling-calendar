@@ -1,2 +1,3 @@
-KG Ceiling Calendar v1.7.3
-Address-first search ranking + Copy from search results with target-date chooser.
+KG Ceiling Calendar v1.7.4
+Automatic Google connection renewal while the page remains open.
+Includes v1.7.3 address-first search ranking and Copy from search results.

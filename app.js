@@ -66,6 +66,14 @@ const el = {};
 let tokenClient = null;
 let accessToken = "";
 let tokenExpiresAt = 0;
+let tokenRefreshPromise = null;
+let tokenRefreshResolve = null;
+let tokenRefreshReject = null;
+let tokenRequestInteractive = false;
+let tokenRenewTimer = null;
+const TOKEN_RENEW_EARLY_MS = 5 * 60 * 1000;
+const TOKEN_MIN_VALIDITY_MS = 90 * 1000;
+const TOKEN_RETRY_DELAY_MS = 60 * 1000;
 let events = [];
 let monthAnchor = startOfMonth(new Date());
 let selectedDate = dateKey(new Date());
@@ -197,6 +205,9 @@ function bindEvents() {
   window.addEventListener("focus", () => {
     if (isConnected()) refreshEvents(false);
   });
+  window.addEventListener("online", () => {
+    if (isConnected()) refreshEvents(false);
+  });
 }
 
 function waitForGoogleIdentity(attempt = 0) {
@@ -229,43 +240,147 @@ function initTokenClient() {
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: clientId,
     scope: CONFIG.GOOGLE_SCOPE || "https://www.googleapis.com/auth/calendar.events",
-    callback: () => {}
+    callback: handleGoogleTokenResponse,
+    error_callback: handleGoogleTokenClientError
   });
 }
 
-function connectGoogleCalendar() {
+async function connectGoogleCalendar() {
   if (!tokenClient) {
     showToast("Google sign-in is still loading. / 谷歌登录仍在加载。", true);
     return;
   }
 
   setConnectionState("busy");
-  tokenClient.callback = async (response) => {
-    if (response.error) {
-      accessToken = "";
-      tokenExpiresAt = 0;
-      setConnectionState("off");
-      setSyncMessage(`Connection failed: ${response.error}. / 连接失败：${response.error}`, true);
-      return;
-    }
-
-    accessToken = response.access_token || "";
-    tokenExpiresAt = Date.now() + (Number(response.expires_in || 3600) * 1000);
-    setConnectionState("on");
+  try {
+    await requestGoogleAccessToken({ interactive: true });
     el.welcomeCard.hidden = true;
-    showToast("Google Calendar connected. / 谷歌日历已连接。", false);
-    startAutoRefresh();
+    showToast("Google Calendar connected. Automatic renewal is on while this page stays open. / 谷歌日历已连接；此页面保持开启时会自动续期。", false);
     await loadGoogleColourSettings();
     await refreshEvents(true);
-  };
+  } catch (error) {
+    if (!isConnected()) setConnectionState("off");
+    setSyncMessage(`Connection failed: ${error.message}. / 连接失败：${error.message}`, true);
+  }
+}
 
-  // Empty prompt means Google only asks for account/consent when necessary.
-  // 空白 prompt 表示只在必要时要求选择账号或同意权限。
-  tokenClient.requestAccessToken({ prompt: "" });
+function requestGoogleAccessToken({ interactive = false } = {}) {
+  if (!tokenClient) {
+    return Promise.reject(new Error("Google sign-in is still loading / 谷歌登录仍在加载"));
+  }
+  if (tokenRefreshPromise) return tokenRefreshPromise;
+
+  tokenRequestInteractive = Boolean(interactive);
+  if (interactive || !accessToken) setConnectionState("busy");
+
+  tokenRefreshPromise = new Promise((resolve, reject) => {
+    tokenRefreshResolve = resolve;
+    tokenRefreshReject = reject;
+  });
+  const pendingPromise = tokenRefreshPromise;
+
+  try {
+    // Empty prompt asks Google to reuse the existing account and permission when possible.
+    // 空白 prompt 会尽量沿用现有账号和已同意的权限，不重复要求用户操作。
+    tokenClient.requestAccessToken({ prompt: "" });
+  } catch (error) {
+    finishTokenRequest(false, error);
+  }
+  return pendingPromise;
+}
+
+function handleGoogleTokenResponse(response) {
+  if (response?.error || !response?.access_token) {
+    finishTokenRequest(false, new Error(response?.error || "No access token returned"));
+    return;
+  }
+
+  accessToken = response.access_token;
+  tokenExpiresAt = Date.now() + (Number(response.expires_in || 3600) * 1000);
+  setConnectionState("on");
+  el.welcomeCard.hidden = true;
+  startAutoRefresh();
+  scheduleTokenRenewal();
+  finishTokenRequest(true, accessToken);
+}
+
+function handleGoogleTokenClientError(error) {
+  const message = error?.message || error?.type || "Google authorization could not continue";
+  finishTokenRequest(false, new Error(message));
+}
+
+function finishTokenRequest(success, value) {
+  const resolve = tokenRefreshResolve;
+  const reject = tokenRefreshReject;
+  const wasInteractive = tokenRequestInteractive;
+
+  tokenRefreshPromise = null;
+  tokenRefreshResolve = null;
+  tokenRefreshReject = null;
+  tokenRequestInteractive = false;
+
+  if (success) {
+    if (resolve) resolve(value);
+    return;
+  }
+
+  const error = value instanceof Error ? value : new Error(String(value || "Google authorization failed"));
+  if (accessToken && Date.now() < tokenExpiresAt) {
+    setConnectionState("on");
+    scheduleTokenRenewal(TOKEN_RETRY_DELAY_MS);
+  } else {
+    disconnectForExpiredToken({ notify: wasInteractive });
+  }
+  if (reject) reject(error);
+}
+
+function scheduleTokenRenewal(delayOverride = null) {
+  clearTokenRenewTimer();
+  if (!accessToken || !tokenExpiresAt) return;
+
+  const calculatedDelay = tokenExpiresAt - Date.now() - TOKEN_RENEW_EARLY_MS;
+  const delay = delayOverride == null
+    ? Math.max(15000, calculatedDelay)
+    : Math.max(15000, Number(delayOverride));
+
+  tokenRenewTimer = window.setTimeout(async () => {
+    tokenRenewTimer = null;
+    if (!accessToken) return;
+    if (document.hidden) {
+      scheduleTokenRenewal(30000);
+      return;
+    }
+    try {
+      await requestGoogleAccessToken({ interactive: false });
+    } catch (error) {
+      console.warn("Automatic Google token renewal did not complete:", error);
+    }
+  }, delay);
+}
+
+function clearTokenRenewTimer() {
+  if (tokenRenewTimer) window.clearTimeout(tokenRenewTimer);
+  tokenRenewTimer = null;
+}
+
+async function ensureGoogleAccessToken() {
+  if (!accessToken) {
+    throw new Error("Google Calendar is not connected / 谷歌日历未连接");
+  }
+  if (Date.now() + TOKEN_MIN_VALIDITY_MS < tokenExpiresAt) return accessToken;
+
+  try {
+    return await requestGoogleAccessToken({ interactive: false });
+  } catch (error) {
+    // If a short amount of valid time remains, allow this request to use it.
+    if (accessToken && Date.now() < tokenExpiresAt) return accessToken;
+    throw error;
+  }
 }
 
 function isConnected() {
-  return Boolean(accessToken) && Date.now() < tokenExpiresAt;
+  // Keep the UI connected while the page is open. apiFetch renews an expiring token.
+  return Boolean(accessToken);
 }
 
 function setConnectionState(state) {
@@ -281,8 +396,8 @@ function setConnectionState(state) {
   el.connectionBadge.className = "statusBadge";
   if (connected) {
     el.connectionBadge.classList.add("statusOn");
-    el.connectionBadge.textContent = "Connected / 已连接";
-    el.connectBtn.innerHTML = '<span class="btnIcon" aria-hidden="true">G</span><span>Reconnect if needed<br><small>需要时重新连接</small></span>';
+    el.connectionBadge.textContent = "Connected · Auto renew / 已连接 · 自动续期";
+    el.connectBtn.innerHTML = '<span class="btnIcon" aria-hidden="true">G</span><span>Connected while page is open<br><small>页面开启时保持连接</small></span>';
   } else if (busy) {
     el.connectionBadge.classList.add("statusBusy");
     el.connectionBadge.textContent = "Connecting / 连接中";
@@ -293,13 +408,14 @@ function setConnectionState(state) {
   }
 }
 
-function disconnectForExpiredToken() {
+function disconnectForExpiredToken({ notify = true } = {}) {
   accessToken = "";
   tokenExpiresAt = 0;
+  clearTokenRenewTimer();
   setConnectionState("off");
   stopAutoRefresh();
-  setSyncMessage("Google session expired. Click Connect once. / 谷歌连接已过期，请点击连接一次。", true);
-  showToast("Please reconnect Google Calendar. / 请重新连接谷歌日历。", true);
+  setSyncMessage("Automatic Google reconnect could not complete. Click Connect once. / 谷歌自动重连未能完成，请点击连接一次。", true);
+  if (notify) showToast("Please reconnect Google Calendar once. / 请重新连接谷歌日历一次。", true);
 }
 
 async function loadGoogleColourSettings() {
@@ -349,14 +465,28 @@ async function apiFetch(pathOrUrl, options = {}) {
     throw new Error("Google Calendar is not connected / 谷歌日历未连接");
   }
 
+  try {
+    await ensureGoogleAccessToken();
+  } catch (error) {
+    disconnectForExpiredToken();
+    throw new Error(`Google automatic reconnect failed: ${error.message} / 谷歌自动重连失败：${error.message}`);
+  }
+
   const url = pathOrUrl.startsWith("http") ? pathOrUrl : `${API_BASE}${pathOrUrl}`;
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      ...(options.headers || {})
+  let response = await googleAuthorizedFetch(url, options);
+
+  if (response.status === 401) {
+    // The token may have expired earlier than its stated time. Renew once and retry
+    // the exact same API request without changing the calendar payload.
+    tokenExpiresAt = 0;
+    try {
+      await requestGoogleAccessToken({ interactive: false });
+      response = await googleAuthorizedFetch(url, options);
+    } catch (error) {
+      disconnectForExpiredToken();
+      throw new Error(`Google automatic reconnect failed: ${error.message} / 谷歌自动重连失败：${error.message}`);
     }
-  });
+  }
 
   if (response.status === 401) {
     disconnectForExpiredToken();
@@ -376,6 +506,16 @@ async function apiFetch(pathOrUrl, options = {}) {
 
   if (response.status === 204) return null;
   return response.json();
+}
+
+function googleAuthorizedFetch(url, options = {}) {
+  return fetch(url, {
+    ...options,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      ...(options.headers || {})
+    }
+  });
 }
 
 async function refreshEvents(showSuccess) {
