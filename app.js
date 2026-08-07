@@ -905,6 +905,7 @@ async function moveEventByDrag(eventId, sourceDate, targetDate) {
     monthAnchor = startOfMonth(dateFromKey(targetDate));
     showToast("Job moved to the new date. / 工作已移动到新日期。", false);
     await refreshEvents(false);
+    return true;
   } catch (error) {
     showToast(`Move failed: ${error.message} / 移动失败：${error.message}`, true);
     setSyncMessage("Move failed. Refresh and try again. / 移动失败，请刷新后再试。", true);
@@ -997,19 +998,36 @@ function renderDayJobs() {
     whatsAppBtn.innerHTML = "⧉ <span>WhatsApp Copy<br><small>复制单个工地</small></span>";
     whatsAppBtn.addEventListener("click", () => shareSiteToWhatsApp(event));
 
-    let deliveryBtn = null;
+    let deliveryCheckWrap = null;
     const hasDelivery = Boolean(data.deliveryDate || data.deliveryMaterials || data.deliveryRemark);
     if (hasDelivery) {
-      deliveryBtn = document.createElement("button");
-      deliveryBtn.type = "button";
-      deliveryBtn.className = `miniBtn miniDeliveryBtn${data.deliverySent ? " sent" : ""}`;
-      deliveryBtn.title = data.deliverySent ? "Delivery sent — click to undo / 已送货 — 点击取消" : "Mark delivery sent / 标记已送货";
-      deliveryBtn.setAttribute("aria-label", deliveryBtn.title);
-      deliveryBtn.innerHTML = data.deliverySent
-        ? "✓ <span>Sent<br><small>已送货</small></span>"
-        : "🚚 <span>Delivery<br><small>点已送货</small></span>";
-      deliveryBtn.disabled = !isConnected();
-      deliveryBtn.addEventListener("click", () => toggleDeliverySent(event));
+      deliveryCheckWrap = document.createElement("label");
+      deliveryCheckWrap.className = `deliveryCheckWrap${data.deliverySent ? " sent" : ""}`;
+      deliveryCheckWrap.title = data.deliverySent
+        ? "Delivery sent — untick to undo / 已送货 — 取消勾选可恢复"
+        : "Tick when delivery is sent / 送货后打勾";
+
+      const deliveryCheck = document.createElement("input");
+      deliveryCheck.type = "checkbox";
+      deliveryCheck.className = "deliverySentCheck";
+      deliveryCheck.checked = Boolean(data.deliverySent);
+      deliveryCheck.disabled = !isConnected();
+      deliveryCheck.setAttribute("aria-label", "Delivery sent / 已送货");
+
+      const deliveryCheckText = document.createElement("span");
+      deliveryCheckText.innerHTML = "Delivery<br><small>送货</small>";
+
+      deliveryCheck.addEventListener("change", async () => {
+        const previousState = !deliveryCheck.checked;
+        deliveryCheck.disabled = true;
+        const saved = await toggleDeliverySent(event, deliveryCheck.checked);
+        if (!saved && document.body.contains(deliveryCheck)) {
+          deliveryCheck.checked = previousState;
+          deliveryCheck.disabled = false;
+        }
+      });
+
+      deliveryCheckWrap.append(deliveryCheck, deliveryCheckText);
     }
 
     const deleteBtn = document.createElement("button");
@@ -1022,14 +1040,14 @@ function renderDayJobs() {
     deleteBtn.addEventListener("click", () => deleteEventFromCard(event));
 
     actions.append(editBtn, copyBtn, whatsAppBtn);
-    if (deliveryBtn) actions.appendChild(deliveryBtn);
+    if (deliveryCheckWrap) actions.appendChild(deliveryCheckWrap);
     actions.appendChild(deleteBtn);
     card.append(strip, info, actions);
     el.dayJobs.appendChild(card);
   });
 }
 
-async function toggleDeliverySent(event) {
+async function toggleDeliverySent(event, desiredState = null) {
   if (!event?.id || !isConnected()) return;
   const data = parseEventData(event);
   const hasDelivery = Boolean(data.deliveryDate || data.deliveryMaterials || data.deliveryRemark);
@@ -1038,7 +1056,7 @@ async function toggleDeliverySent(event) {
     return;
   }
 
-  data.deliverySent = !Boolean(data.deliverySent);
+  data.deliverySent = desiredState === null ? !Boolean(data.deliverySent) : Boolean(desiredState);
   setSyncMessage(data.deliverySent
     ? "Marking delivery as sent... / 正在标记已送货……"
     : "Changing delivery back to not sent... / 正在取消已送货……");
@@ -1060,6 +1078,7 @@ async function toggleDeliverySent(event) {
   } catch (error) {
     showToast(`Delivery update failed: ${error.message} / 更新送货状态失败：${error.message}`, true);
     setSyncMessage("Delivery update failed. Refresh and try again. / 送货状态更新失败，请刷新后再试。", true);
+    return false;
   }
 }
 

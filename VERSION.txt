@@ -1,4 +1,6 @@
-KG Ceiling Calendar v1.7.5
-Adds Delivery / Sent toggle on right-side job cards.
-Jobs marked delivered turn light blue.
-Includes v1.7.4 automatic Google connection renewal and v1.7.3 search improvements.
+KG Ceiling Calendar v1.7.6
+Simplifies delivery status to one checkbox on right-side job cards.
+Tick Delivery / 送货 = whole job card turns light blue.
+Untick = job card returns to normal.
+Delivery status remains saved in the Google Calendar event.
+Includes v1.7.5 delivery status storage, v1.7.4 automatic Google connection renewal, and v1.7.3 search improvements.
