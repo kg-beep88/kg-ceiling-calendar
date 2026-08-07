@@ -956,7 +956,7 @@ function renderDayJobs() {
   dayEvents.forEach((event) => {
     const data = parseEventData(event);
     const card = document.createElement("article");
-    card.className = "jobCard jobCardAddressOnly";
+    card.className = `jobCard jobCardAddressOnly${data.deliverySent ? " jobCardDeliverySent" : ""}`;
 
     const strip = document.createElement("div");
     strip.className = "jobColour";
@@ -997,6 +997,21 @@ function renderDayJobs() {
     whatsAppBtn.innerHTML = "⧉ <span>WhatsApp Copy<br><small>复制单个工地</small></span>";
     whatsAppBtn.addEventListener("click", () => shareSiteToWhatsApp(event));
 
+    let deliveryBtn = null;
+    const hasDelivery = Boolean(data.deliveryDate || data.deliveryMaterials || data.deliveryRemark);
+    if (hasDelivery) {
+      deliveryBtn = document.createElement("button");
+      deliveryBtn.type = "button";
+      deliveryBtn.className = `miniBtn miniDeliveryBtn${data.deliverySent ? " sent" : ""}`;
+      deliveryBtn.title = data.deliverySent ? "Delivery sent — click to undo / 已送货 — 点击取消" : "Mark delivery sent / 标记已送货";
+      deliveryBtn.setAttribute("aria-label", deliveryBtn.title);
+      deliveryBtn.innerHTML = data.deliverySent
+        ? "✓ <span>Sent<br><small>已送货</small></span>"
+        : "🚚 <span>Delivery<br><small>点已送货</small></span>";
+      deliveryBtn.disabled = !isConnected();
+      deliveryBtn.addEventListener("click", () => toggleDeliverySent(event));
+    }
+
     const deleteBtn = document.createElement("button");
     deleteBtn.type = "button";
     deleteBtn.className = "miniBtn miniDeleteBtn";
@@ -1006,10 +1021,46 @@ function renderDayJobs() {
     deleteBtn.disabled = !isConnected();
     deleteBtn.addEventListener("click", () => deleteEventFromCard(event));
 
-    actions.append(editBtn, copyBtn, whatsAppBtn, deleteBtn);
+    actions.append(editBtn, copyBtn, whatsAppBtn);
+    if (deliveryBtn) actions.appendChild(deliveryBtn);
+    actions.appendChild(deleteBtn);
     card.append(strip, info, actions);
     el.dayJobs.appendChild(card);
   });
+}
+
+async function toggleDeliverySent(event) {
+  if (!event?.id || !isConnected()) return;
+  const data = parseEventData(event);
+  const hasDelivery = Boolean(data.deliveryDate || data.deliveryMaterials || data.deliveryRemark);
+  if (!hasDelivery) {
+    showToast("No delivery is entered for this site. / 此工地没有填写送货资料。", true);
+    return;
+  }
+
+  data.deliverySent = !Boolean(data.deliverySent);
+  setSyncMessage(data.deliverySent
+    ? "Marking delivery as sent... / 正在标记已送货……"
+    : "Changing delivery back to not sent... / 正在取消已送货……");
+
+  try {
+    await apiFetch(`/calendars/${encodeURIComponent(activeCalendarId())}/events/${encodeURIComponent(event.id)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        description: buildDescription(data),
+        extendedProperties: { private: buildPrivateProperties(data) }
+      })
+    });
+    historyEventsFetchedAt = 0;
+    showToast(data.deliverySent
+      ? "Delivery marked sent. / 已标记送货完成。"
+      : "Delivery changed back to not sent. / 已取消送货完成。", false);
+    await refreshEvents(false);
+  } catch (error) {
+    showToast(`Delivery update failed: ${error.message} / 更新送货状态失败：${error.message}`, true);
+    setSyncMessage("Delivery update failed. Refresh and try again. / 送货状态更新失败，请刷新后再试。", true);
+  }
 }
 
 function amendmentLabels(data) {
@@ -2177,6 +2228,9 @@ function collectJobForm() {
     deliveryDate: el.deliveryDateInput.value,
     deliveryMaterials: el.deliveryMaterialsInput.value.trim(),
     deliveryRemark: el.deliveryRemarkInput.value.trim(),
+    deliverySent: (el.eventId.value && currentModalEvent && (el.deliveryDateInput.value || el.deliveryMaterialsInput.value.trim() || el.deliveryRemarkInput.value.trim()))
+      ? Boolean(parseEventData(currentModalEvent).deliverySent)
+      : false,
     billingNumber: el.billingNumberInput.value.trim(),
     continueJob: el.continueJobInput.checked,
     continueGroupId: el.continueGroupId.value.trim(),
@@ -2268,6 +2322,7 @@ function buildDescription(data) {
     if (data.deliveryDate) lines.push(`*Delivery date / 送货日期:* ${formatDateBilingual(data.deliveryDate)}`);
     if (data.deliveryMaterials) lines.push(`*Delivery material / 送货材料:* ${displayInlineValue(data.deliveryMaterials)}`);
     if (data.deliveryRemark) lines.push(`*Delivery remark / 送货备注:* ${displayInlineValue(data.deliveryRemark)}`);
+    lines.push(`*Delivery sent / 已送货:* ${data.deliverySent ? "Yes / 是" : "No / 否"}`);
   }
 
   if (data.billingNumber) {
@@ -2315,7 +2370,7 @@ function formatFormTime(data) {
 function buildPrivateProperties(data) {
   const privateProperties = {
     kgCeilingApp: "1",
-    kgCeilingVersion: "1.7.1",
+    kgCeilingVersion: "1.7.5",
     ...(data.continueJob && data.continueGroupId ? {
       kgContinueJob: "1",
       kgContinueGroup: data.continueGroupId,
@@ -2345,6 +2400,7 @@ function buildPrivateProperties(data) {
     deliveryDate: data.deliveryDate || "",
     deliveryMaterials: data.deliveryMaterials || "",
     deliveryRemark: data.deliveryRemark || "",
+    deliverySent: Boolean(data.deliverySent),
     billingNumber: data.billingNumber || ""
   };
 
@@ -2444,6 +2500,7 @@ function parseHumanDescription(description) {
     }
     else if (label.startsWith("delivery material") || label.includes("送货材料")) result.deliveryMaterials = value;
     else if (label.startsWith("delivery remark") || label.includes("送货备注")) result.deliveryRemark = value;
+    else if (label.startsWith("delivery sent") || label.includes("已送货")) result.deliverySent = parseYesNo(value);
     else if (label.startsWith("billing number") || label.includes("开单号码")) result.billingNumber = value;
     else if (label.startsWith("remark") || label.includes("备注")) result.amendRemark = value;
   });
@@ -2584,7 +2641,7 @@ function parseEventData(event) {
   data.hoardingDone = parseYesNo(get("Hoarding Done / 围板已完成", "Hoarding Done")) || Boolean(data.hoardingDoneDate);
   data.hoardingRemoveDate = get("Hoarding Removal Date / 围板拆除日期", "Hoarding Removal Date", "Hoarding Remove Date");
   data.hoardingRemoveRequired = parseYesNo(get("Hoarding Remove Required / 围板需要拆除", "Hoarding Remove Required")) || Boolean(data.hoardingRemoveDate);
-  data.deliverySent = parseYesNo(get("Delivery Sent / 已送货", "Delivery Sent")) || Boolean(data.deliveryDate || data.deliveryMaterials);
+  data.deliverySent = parseYesNo(get("Delivery Sent / 已送货", "Delivery Sent"));
   data.billedDate = get("Billed Date / 开单日期", "Billed Date");
   data.billed = Boolean(data.billingNumber) || parseYesNo(get("Billed / 已开单", "Billed")) || Boolean(data.billedDate);
   data.foremen = splitPeople(get("Foremen / 头手", "Foremen"));

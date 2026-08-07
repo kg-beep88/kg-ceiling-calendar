@@ -169,6 +169,10 @@ body.touchDragging { user-select: none; overscroll-behavior: none; }
 .miniBtn { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 54px; min-height: 42px; padding: 5px 8px; border: 1px solid var(--border); border-radius: 10px; background: #f4f7f6; font-family: inherit; font-size: 13px; font-weight: 850; line-height: 1.05; }
 .miniBtn small { font-size: 10px; font-weight: 750; }
 .miniDeleteBtn { color: #b42318; background: #fff1f0; border-color: #f7b4ad; }
+.jobCardDeliverySent { background: #e8f6ff; border-color: #9fd5ef; box-shadow: 0 4px 12px rgba(35, 126, 168, .10); }
+.jobCardDeliverySent .jobInfo h3 { color: #163f52; }
+.miniDeliveryBtn { color: #17627d; background: #eef9ff; border-color: #a8d8ec; }
+.miniDeliveryBtn.sent { color: #0b5674; background: #cfeeff; border-color: #78c4e5; }
 
 .floatingAdd { position: fixed; right: 20px; bottom: calc(20px + var(--safe-bottom)); z-index: 20; display: none; width: 64px; height: 64px; border: 0; border-radius: 50%; color: #fff; background: var(--primary); box-shadow: 0 12px 28px rgba(15, 118, 110, .38); font-size: 34px; }
 

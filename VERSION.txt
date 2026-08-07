@@ -1,3 +1,4 @@
-KG Ceiling Calendar v1.7.4
-Automatic Google connection renewal while the page remains open.
-Includes v1.7.3 address-first search ranking and Copy from search results.
+KG Ceiling Calendar v1.7.5
+Adds Delivery / Sent toggle on right-side job cards.
+Jobs marked delivered turn light blue.
+Includes v1.7.4 automatic Google connection renewal and v1.7.3 search improvements.
