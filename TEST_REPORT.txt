@@ -1,9 +1,10 @@
-KG Ceiling Calendar v1.7.6 test report
-- JavaScript syntax: PASS (node --check)
-- Duplicate HTML IDs: PASS
-- Version/cache bumped to v1.7.6: PASS
-- Delivery action simplified to checkbox: PASS
-- Checkbox checked state uses existing deliverySent Google-saved value: PASS
-- Tick/untick continues to PATCH the same Google Calendar event: PASS
-- Delivered card still turns light blue: PASS
-- Existing delivery details required before checkbox is shown: PASS
+KG Ceiling Calendar v1.7.7 test report
+
+- Delivery Sent checkbox moved into Add/Edit Job → 4. Deliver / 送货: PASS
+- Right-side job card no longer shows a Delivery checkbox: PASS
+- Checked Delivery Sent saves into Google Calendar event description/private data: PASS
+- Checked Delivery Sent makes the whole right-side job card light blue after save/sync: PASS
+- Editing an existing job loads the saved Delivery Sent checkbox state: PASS
+- Copying a job clears delivery details and Delivery Sent state, matching existing copy behaviour: PASS
+- Version/cache bumped to v1.7.7: PASS
+- JavaScript syntax check: PASS

@@ -117,7 +117,7 @@ function cacheElements() {
     "lockInput", "idFirmInput", "idNameInput", "installerNameInput", "amendCeilingInput",
     "amendCeilingDetailInput", "amendPartitionInput", "amendPartitionDetailInput",
     "amendPelmetInput", "amendPelmetDetailInput", "amendTimberOtherInput", "amendTimberOtherDetailInput", "amendRemarkInput",
-    "deliveryDateInput", "deliveryMaterialsInput", "deliveryRemarkInput", "billingNumberInput",
+    "deliveryDateInput", "deliveryMaterialsInput", "deliveryRemarkInput", "deliverySentInput", "billingNumberInput",
     "colourPicker", "deleteJobBtn", "cancelBtn",
     "saveJobBtn", "searchModal", "closeSearchBtn", "historySearchForm",
     "historySearchInput", "historySearchBtn", "historySearchStatus",
@@ -998,38 +998,6 @@ function renderDayJobs() {
     whatsAppBtn.innerHTML = "⧉ <span>WhatsApp Copy<br><small>复制单个工地</small></span>";
     whatsAppBtn.addEventListener("click", () => shareSiteToWhatsApp(event));
 
-    let deliveryCheckWrap = null;
-    const hasDelivery = Boolean(data.deliveryDate || data.deliveryMaterials || data.deliveryRemark);
-    if (hasDelivery) {
-      deliveryCheckWrap = document.createElement("label");
-      deliveryCheckWrap.className = `deliveryCheckWrap${data.deliverySent ? " sent" : ""}`;
-      deliveryCheckWrap.title = data.deliverySent
-        ? "Delivery sent — untick to undo / 已送货 — 取消勾选可恢复"
-        : "Tick when delivery is sent / 送货后打勾";
-
-      const deliveryCheck = document.createElement("input");
-      deliveryCheck.type = "checkbox";
-      deliveryCheck.className = "deliverySentCheck";
-      deliveryCheck.checked = Boolean(data.deliverySent);
-      deliveryCheck.disabled = !isConnected();
-      deliveryCheck.setAttribute("aria-label", "Delivery sent / 已送货");
-
-      const deliveryCheckText = document.createElement("span");
-      deliveryCheckText.innerHTML = "Delivery<br><small>送货</small>";
-
-      deliveryCheck.addEventListener("change", async () => {
-        const previousState = !deliveryCheck.checked;
-        deliveryCheck.disabled = true;
-        const saved = await toggleDeliverySent(event, deliveryCheck.checked);
-        if (!saved && document.body.contains(deliveryCheck)) {
-          deliveryCheck.checked = previousState;
-          deliveryCheck.disabled = false;
-        }
-      });
-
-      deliveryCheckWrap.append(deliveryCheck, deliveryCheckText);
-    }
-
     const deleteBtn = document.createElement("button");
     deleteBtn.type = "button";
     deleteBtn.className = "miniBtn miniDeleteBtn";
@@ -1039,47 +1007,10 @@ function renderDayJobs() {
     deleteBtn.disabled = !isConnected();
     deleteBtn.addEventListener("click", () => deleteEventFromCard(event));
 
-    actions.append(editBtn, copyBtn, whatsAppBtn);
-    if (deliveryCheckWrap) actions.appendChild(deliveryCheckWrap);
-    actions.appendChild(deleteBtn);
+    actions.append(editBtn, copyBtn, whatsAppBtn, deleteBtn);
     card.append(strip, info, actions);
     el.dayJobs.appendChild(card);
   });
-}
-
-async function toggleDeliverySent(event, desiredState = null) {
-  if (!event?.id || !isConnected()) return;
-  const data = parseEventData(event);
-  const hasDelivery = Boolean(data.deliveryDate || data.deliveryMaterials || data.deliveryRemark);
-  if (!hasDelivery) {
-    showToast("No delivery is entered for this site. / 此工地没有填写送货资料。", true);
-    return;
-  }
-
-  data.deliverySent = desiredState === null ? !Boolean(data.deliverySent) : Boolean(desiredState);
-  setSyncMessage(data.deliverySent
-    ? "Marking delivery as sent... / 正在标记已送货……"
-    : "Changing delivery back to not sent... / 正在取消已送货……");
-
-  try {
-    await apiFetch(`/calendars/${encodeURIComponent(activeCalendarId())}/events/${encodeURIComponent(event.id)}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        description: buildDescription(data),
-        extendedProperties: { private: buildPrivateProperties(data) }
-      })
-    });
-    historyEventsFetchedAt = 0;
-    showToast(data.deliverySent
-      ? "Delivery marked sent. / 已标记送货完成。"
-      : "Delivery changed back to not sent. / 已取消送货完成。", false);
-    await refreshEvents(false);
-  } catch (error) {
-    showToast(`Delivery update failed: ${error.message} / 更新送货状态失败：${error.message}`, true);
-    setSyncMessage("Delivery update failed. Refresh and try again. / 送货状态更新失败，请刷新后再试。", true);
-    return false;
-  }
 }
 
 function amendmentLabels(data) {
@@ -1879,6 +1810,7 @@ function resetJobForm() {
   el.deliveryDateInput.value = "";
   el.deliveryMaterialsInput.value = "";
   el.deliveryRemarkInput.value = "";
+  el.deliverySentInput.checked = false;
   el.billingNumberInput.value = "";
   renderColourPicker("default");
   el.saveJobBtn.disabled = false;
@@ -1905,6 +1837,7 @@ function fillJobForm(event, asCopy) {
   el.deliveryDateInput.value = data.deliveryDate;
   el.deliveryMaterialsInput.value = data.deliveryMaterials;
   el.deliveryRemarkInput.value = data.deliveryRemark;
+  el.deliverySentInput.checked = Boolean(data.deliverySent);
   el.billingNumberInput.value = data.billingNumber;
   el.continueJobInput.checked = data.continueJob;
   el.continueGroupId.value = data.continueGroupId;
@@ -1919,6 +1852,7 @@ function fillJobForm(event, asCopy) {
     el.deliveryDateInput.value = "";
     el.deliveryMaterialsInput.value = "";
     el.deliveryRemarkInput.value = "";
+    el.deliverySentInput.checked = false;
     el.billingNumberInput.value = "";
     el.continueJobInput.checked = false;
     el.continueGroupId.value = "";
@@ -2247,9 +2181,7 @@ function collectJobForm() {
     deliveryDate: el.deliveryDateInput.value,
     deliveryMaterials: el.deliveryMaterialsInput.value.trim(),
     deliveryRemark: el.deliveryRemarkInput.value.trim(),
-    deliverySent: (el.eventId.value && currentModalEvent && (el.deliveryDateInput.value || el.deliveryMaterialsInput.value.trim() || el.deliveryRemarkInput.value.trim()))
-      ? Boolean(parseEventData(currentModalEvent).deliverySent)
-      : false,
+    deliverySent: Boolean(el.deliverySentInput.checked),
     billingNumber: el.billingNumberInput.value.trim(),
     continueJob: el.continueJobInput.checked,
     continueGroupId: el.continueGroupId.value.trim(),

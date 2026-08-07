@@ -1,3 +1,7 @@
+# v1.7.7 Delivery Sent checkbox
+
+In Add/Edit Job, open **4. Deliver / 送货** and tick **Delivery Sent / 已送货** when delivery is complete. Save the job. The whole job card on the right turns light blue. Untick and save to return it to normal.
+
 # KG CEILING WORK CALENDAR — ADMIN SETUP / 管理员设置
 
 ## New in v1.7.4 / v1.7.4 新功能

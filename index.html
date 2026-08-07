@@ -9,7 +9,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=1.7.5">
+  <link rel="stylesheet" href="styles.css?v=1.7.7">
 </head>
 <body>
   <noscript>
@@ -21,7 +21,7 @@
       <div class="brandMark" aria-hidden="true">KG</div>
       <div>
         <h1>KG Ceiling Work Calendar</h1>
-        <p>KG 天花工作日历 · v1.7.6</p>
+        <p>KG 天花工作日历 · v1.7.7</p>
       </div>
     </div>
 
@@ -261,6 +261,10 @@
               <span>Delivery remark / 送货备注</span>
               <textarea id="deliveryRemarkInput" rows="3" placeholder="Delivery notes / 送货备注"></textarea>
             </label>
+            <label class="checkLine deliverySentFormCheck">
+              <input id="deliverySentInput" type="checkbox">
+              <span>Delivery Sent / 已送货</span>
+            </label>
           </div>
 
           <div class="formSection billingSection">
@@ -406,8 +410,8 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="config.js?v=1.7.5"></script>
+  <script src="config.js?v=1.7.7"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="app.js?v=1.7.5" defer></script>
+  <script src="app.js?v=1.7.7" defer></script>
 </body>
 </html>
