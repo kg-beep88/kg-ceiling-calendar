@@ -1,16 +1,22 @@
-KG Ceiling Calendar v1.7.10 test report
+KG Ceiling Calendar v1.7.11 test report
 
-Automated/static checks:
+Static checks completed:
 - JavaScript syntax: PASS
-- Missing eventAddressForSort helper: FIXED
-- Timed Day-view sorting: time -> Google Calendar colour -> address: PASS (code path)
-- All-day sorting uses daily Google-colour sorter: PASS (code path)
-- Versioned assets show v1.7.10: PASS
-- Service-worker cache bumped to v1.7.10: PASS
-- No duplicate HTML IDs: PASS
+- Duplicate HTML IDs: PASS (none)
+- JS-linked HTML element IDs: PASS
+- Versioned assets show v1.7.11: PASS
+- Service-worker cache bumped to v1.7.11: PASS
+- Day view fit mode class toggles from Month/Day state: PASS
+- Tablet/Desktop CSS prevents normal page scrolling in Day view: PASS
+- Day view schedule container uses available screen height: PASS
+- Right-side jobs use compact layout and 2 columns on wide desktop: PASS
+- Dense/ultra-dense mode triggers for shorter screens / many jobs: PASS
+- Phone remains scroll-friendly under 768 px: PASS
+- Existing v1.7.10 Day View colour sorting code preserved: PASS
+- Existing Google Calendar / installer / multiple delivery logic preserved: PASS
 
-Manual browser check after GitHub upload:
-1. Reset Cache once and confirm v1.7.10.
-2. Open Day view on a date with jobs.
-3. Confirm there is no `eventAddressForSort is not defined` error.
-4. Confirm same-time jobs are ordered by their Google Calendar event colour, then address.
+Important real-device check after upload:
+1. Reset Cache once and confirm v1.7.11.
+2. Test Day view on the actual tablet in landscape and portrait.
+3. Test Day view on desktop at 100% browser zoom.
+4. If a date contains an unusually large number of sites, confirm text is still comfortable to read.

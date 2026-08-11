@@ -1,4 +1,11 @@
-# v1.7.10 Day View Fix + Google Colour Sorting / 日视图修复 + 谷歌颜色排序
+# v1.7.11 Tablet/Desktop Single-Screen Day View / 平板电脑单屏日视图
+
+- Day view automatically uses a compact fit-to-screen layout on tablet and desktop.
+- Search panel is hidden while Day view is active to save vertical space; switch to Month view to use full search.
+- Phone keeps the normal scroll layout for readability.
+- When a day has many jobs, the layout automatically becomes denser so more work fits on one screen.
+
+# v1.7.11 Day View Fix + Google Colour Sorting / 日视图修复 + 谷歌颜色排序
 
 ## What changed / 更新内容
 
@@ -15,7 +22,7 @@
 
 ## Upload / 上传
 
-Replace the files in the root of GitHub repository `KGcall`, then open Settings → Reset Cache once. Confirm the app shows **v1.7.10**.
+Replace the files in the root of GitHub repository `KGcall`, then open Settings → Reset Cache once. Confirm the app shows **v1.7.11**.
 
 ---
 
@@ -177,7 +184,7 @@ This package already contains the KG Work Google Calendar ID and OAuth Client ID
 此版本已经填入管理员提供的 KG Work Google 日历 ID 和 OAuth Client ID。除非管理员有意更换 Google 项目或共享日历，否则不要修改。
 
 
-## v1.7.10 fix
+## v1.7.11 fix
 - Fixed Day view error `eventAddressForSort is not defined`.
 - Day jobs sort by **time → Google Calendar colour → address**.
 - All-day jobs also keep Google-colour ordering through the normal daily sorter.

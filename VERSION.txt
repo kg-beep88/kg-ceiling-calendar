@@ -1,2 +1,2 @@
-KG Ceiling Calendar v1.7.10
-Day View render fix + Google colour sorting
+KG Ceiling Calendar v1.7.11
+Day View Fit-to-Screen for tablet and desktop

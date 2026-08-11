@@ -1,4 +1,8 @@
-# v1.7.10 Quick User Update / 快速使用更新
+# v1.7.11 Day View Fit Screen / 日视图单屏显示
+
+On tablet or desktop, choose **Day / 日**. The app compresses the header, all-day jobs, timed jobs and right-side list so the working day fits on one screen without normal page scrolling. Phone remains scrollable.
+
+# v1.7.11 Quick User Update / 快速使用更新
 
 ## Day View / 日视图
 - Choose **Day / 日**. Only work times appear; empty hours are hidden.

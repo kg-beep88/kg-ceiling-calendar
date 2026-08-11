@@ -668,6 +668,7 @@ function renderAll() {
 
 function renderCalendarViewControls() {
   const isDay = calendarViewMode === "day";
+  document.body.classList.toggle("dayFitMode", isDay);
   el.monthViewPanel.hidden = isDay;
   el.dayViewPanel.hidden = !isDay;
   el.monthViewBtn.classList.toggle("active", !isDay);
@@ -813,6 +814,7 @@ function renderDaySchedule() {
     none.className = "dayNoTimedJobs";
     none.textContent = "No timed work on this date / 此日期没有定时工作";
     el.dayTimeline.appendChild(none);
+    updateDayFitDensity();
     return;
   }
 
@@ -842,6 +844,8 @@ function renderDaySchedule() {
 
     el.dayTimeline.appendChild(section);
   });
+
+  updateDayFitDensity();
 }
 
 function buildDayCompactJobRow(calendarEvent, segment = null) {
@@ -1239,6 +1243,7 @@ function renderDayJobs() {
       ? "<strong>No job on this date / 此日期没有工作</strong>Press Add Job to create one. / 点击新增工作建立项目。"
       : "<strong>Connect Google Calendar / 连接谷歌日历</strong>Your jobs will appear here. / 工作会显示在这里。";
     el.dayJobs.appendChild(empty);
+    updateDayFitDensity();
     return;
   }
 
@@ -1306,7 +1311,28 @@ function renderDayJobs() {
     card.append(strip, info, actions);
     el.dayJobs.appendChild(card);
   });
+  updateDayFitDensity();
 }
+
+function updateDayFitDensity() {
+  const isDay = calendarViewMode === "day";
+  document.body.classList.toggle("dayFitMode", isDay);
+  document.body.classList.remove("dayFitDense", "dayFitUltra");
+  if (!isDay || window.innerWidth < 768) return;
+
+  const leftRows = document.querySelectorAll("#dayViewPanel .dayCompactJobRow").length;
+  const rightRows = el.dayJobs ? el.dayJobs.querySelectorAll(".jobCard").length : 0;
+  const height = window.innerHeight || 800;
+
+  const ultra = height < 690 || leftRows > 18 || rightRows > 16;
+  const dense = ultra || height < 820 || leftRows > 12 || rightRows > 10;
+  document.body.classList.toggle("dayFitDense", dense);
+  document.body.classList.toggle("dayFitUltra", ultra);
+}
+
+window.addEventListener("resize", () => {
+  if (calendarViewMode === "day") updateDayFitDensity();
+});
 
 function amendmentLabels(data) {
   const labels = [];
@@ -2872,7 +2898,7 @@ function formatFormTime(data) {
 function buildPrivateProperties(data) {
   const privateProperties = {
     kgCeilingApp: "1",
-    kgCeilingVersion: "1.7.10",
+    kgCeilingVersion: "1.7.11",
     ...(data.continueJob && data.continueGroupId ? {
       kgContinueJob: "1",
       kgContinueGroup: data.continueGroupId,

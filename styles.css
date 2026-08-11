@@ -477,3 +477,280 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); box-sh
 }
 .jobDeliveryDates { margin: -1px 0 7px; color: #3f6d7f; font-size: 11px; font-weight: 800; line-height: 1.3; }
 .jobCardDeliverySent .jobDeliveryDates { color: #1f637d; }
+
+/* v1.7.11 tablet + desktop Day View: fit the whole working day on one screen */
+@media (min-width: 768px) {
+  body.dayFitMode {
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  body.dayFitMode .topbar {
+    position: relative;
+    min-height: 54px;
+    padding: 6px 12px;
+    gap: 10px;
+  }
+  body.dayFitMode .brandMark {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    font-size: 14px;
+  }
+  body.dayFitMode .brand h1 { font-size: 17px; }
+  body.dayFitMode .brand p { margin-top: 1px; font-size: 11px; }
+  body.dayFitMode .topActions { gap: 6px; }
+  body.dayFitMode .topActions .btn,
+  body.dayFitMode .topActions .iconBtn {
+    min-height: 34px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+  }
+  body.dayFitMode .statusBadge { min-height: 28px; padding: 4px 8px; font-size: 11px; }
+
+  body.dayFitMode .appShell {
+    height: calc(100vh - 55px);
+    min-height: 0;
+    padding: 6px 8px 8px;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 6px;
+    overflow: hidden;
+  }
+  body.dayFitMode .welcomeCard,
+  body.dayFitMode .searchCard,
+  body.dayFitMode .appShell > footer {
+    display: none !important;
+  }
+
+  body.dayFitMode .toolbar {
+    margin: 0;
+    min-height: 46px;
+    padding: 4px 7px;
+    gap: 6px;
+  }
+  body.dayFitMode .toolbarGroup { gap: 5px; }
+  body.dayFitMode .toolbar .btn,
+  body.dayFitMode .toolbar .iconBtn,
+  body.dayFitMode .viewSwitchBtn {
+    min-height: 34px;
+  }
+  body.dayFitMode .toolbar .btn { padding: 5px 10px; font-size: 12px; }
+  body.dayFitMode .toolbar .iconBtn { width: 36px; font-size: 22px; }
+  body.dayFitMode .calendarHeading { gap: 3px; min-width: 160px; }
+  body.dayFitMode .monthTitle { font-size: 19px; }
+  body.dayFitMode .viewSwitch { padding: 2px; }
+  body.dayFitMode .viewSwitchBtn { min-width: 58px; padding: 3px 9px; font-size: 12px; }
+
+  body.dayFitMode .mainGrid {
+    min-height: 0;
+    height: 100%;
+    grid-template-columns: minmax(0, 1.62fr) minmax(270px, .68fr);
+    gap: 7px;
+    align-items: stretch;
+  }
+  body.dayFitMode .calendarPanel,
+  body.dayFitMode .dayPanel {
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+    border-radius: 12px;
+  }
+  body.dayFitMode .dayViewPanel {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  body.dayFitMode .dayViewPanel[hidden] { display: none; }
+  body.dayFitMode .dayViewGuide {
+    flex: 0 0 auto;
+    padding: 5px 8px;
+    gap: 6px;
+    min-height: 30px;
+  }
+  body.dayFitMode .dayViewGuide strong { font-size: 15px; }
+  body.dayFitMode .dayViewGuide span { font-size: 10px; }
+
+  body.dayFitMode .allDayBand { flex: 0 0 auto; }
+  body.dayFitMode .allDayBandLabel { padding: 4px 8px; font-size: 12px; }
+  body.dayFitMode .allDayBandLabel small { font-size: 10px; }
+  body.dayFitMode .allDayEvents {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 3px 6px;
+    padding: 4px 6px;
+  }
+
+  body.dayFitMode .dayTimelineScroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    height: auto;
+    overflow: hidden;
+  }
+  body.dayFitMode .dayTimeline {
+    height: 100% !important;
+    padding: 4px 6px;
+    overflow: hidden;
+  }
+  body.dayFitMode .dayTimeGroup { gap: 3px; margin-bottom: 5px; }
+  body.dayFitMode .dayTimeGroupLabel {
+    padding: 3px 7px;
+    border-radius: 6px;
+    font-size: 14px;
+    line-height: 1.05;
+  }
+  body.dayFitMode .dayCompactJobRow {
+    grid-template-columns: minmax(145px, 185px) minmax(0, 1fr);
+    gap: 4px;
+  }
+  body.dayFitMode .dayCompactMeta {
+    gap: 2px;
+    padding: 3px 5px;
+    border-radius: 6px;
+  }
+  body.dayFitMode .dayCompactIdName small,
+  body.dayFitMode .dayInstallerField span { font-size: 8px; }
+  body.dayFitMode .dayCompactIdName strong { font-size: 10px; line-height: 1.05; }
+  body.dayFitMode .dayInstallerField { gap: 1px; }
+  body.dayFitMode .dayInstallerInput {
+    min-height: 24px;
+    padding: 2px 5px;
+    border-radius: 5px;
+    font-size: 10px;
+  }
+  body.dayFitMode .dayCompactMain { gap: 2px; }
+  body.dayFitMode .dayCompactAddress {
+    min-height: 30px;
+    padding: 4px 7px;
+    border-radius: 6px;
+    font-size: 11px;
+    line-height: 1.05;
+    overflow-x: hidden;
+    text-overflow: ellipsis;
+  }
+  body.dayFitMode .dayCompactDelivery { gap: 2px; }
+  body.dayFitMode .dayDeliveryTag {
+    padding: 2px 5px;
+    font-size: 8px;
+    line-height: 1.05;
+  }
+
+  body.dayFitMode .dayPanel {
+    position: static;
+    max-height: none;
+    display: flex;
+    flex-direction: column;
+  }
+  body.dayFitMode .dayPanelHead {
+    flex: 0 0 auto;
+    padding: 6px 7px;
+    gap: 5px;
+  }
+  body.dayFitMode .dayPanelHead h2 { font-size: 16px; }
+  body.dayFitMode .eyebrow { font-size: 9px; }
+  body.dayFitMode .dayPanelActions { gap: 4px; }
+  body.dayFitMode .dayPanelActions .btn {
+    min-height: 32px;
+    padding: 4px 7px;
+    font-size: 10px;
+  }
+  body.dayFitMode .dayPanelActions .btn small { font-size: 8px; }
+  body.dayFitMode .syncMessage {
+    flex: 0 0 auto;
+    margin: 4px 5px 0;
+    padding: 4px 6px;
+    border-radius: 6px;
+    font-size: 9px;
+  }
+  body.dayFitMode .dayJobs {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 5px;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-auto-rows: min-content;
+    align-content: start;
+    gap: 4px;
+  }
+  body.dayFitMode .jobCard {
+    grid-template-columns: 5px minmax(0, 1fr);
+    gap: 5px;
+    margin: 0;
+    padding: 5px;
+    border-radius: 8px;
+    box-shadow: none;
+  }
+  body.dayFitMode .jobCardAddressOnly .jobInfo h3 {
+    margin: 0;
+    font-size: 11px;
+    line-height: 1.12;
+  }
+  body.dayFitMode .jobDeliveryDates {
+    margin: 1px 0 0;
+    font-size: 8px;
+    line-height: 1.1;
+  }
+  body.dayFitMode .jobActions {
+    grid-column: 2;
+    gap: 2px;
+    padding-top: 2px;
+    flex-wrap: nowrap;
+  }
+  body.dayFitMode .miniBtn {
+    min-width: 0;
+    min-height: 25px;
+    padding: 2px 4px;
+    border-radius: 6px;
+    gap: 2px;
+    font-size: 9px;
+    line-height: 1;
+  }
+  body.dayFitMode .miniBtn small { display: none; }
+
+  body.dayFitDense .dayViewGuide span { display: none; }
+  body.dayFitDense .allDayEvents { gap: 2px 4px; padding: 3px 5px; }
+  body.dayFitDense .dayTimeGroup { gap: 2px; margin-bottom: 3px; }
+  body.dayFitDense .dayTimeGroupLabel { padding: 2px 6px; font-size: 12px; }
+  body.dayFitDense .dayCompactJobRow { grid-template-columns: 132px minmax(0, 1fr); gap: 3px; }
+  body.dayFitDense .dayCompactMeta { padding: 2px 4px; }
+  body.dayFitDense .dayCompactIdName strong { font-size: 9px; }
+  body.dayFitDense .dayInstallerInput { min-height: 21px; font-size: 9px; }
+  body.dayFitDense .dayCompactAddress { min-height: 26px; padding: 3px 6px; font-size: 10px; }
+  body.dayFitDense .dayDeliveryTag { padding: 1px 4px; font-size: 7px; }
+  body.dayFitDense .jobCard { padding: 4px; gap: 4px; }
+  body.dayFitDense .jobCardAddressOnly .jobInfo h3 { font-size: 10px; }
+  body.dayFitDense .miniBtn { min-height: 22px; font-size: 8px; padding: 1px 3px; }
+
+  body.dayFitUltra .brand p,
+  body.dayFitUltra .syncMessage,
+  body.dayFitUltra .dayCompactIdName small,
+  body.dayFitUltra .dayInstallerField span,
+  body.dayFitUltra .jobDeliveryDates { display: none; }
+  body.dayFitUltra .topbar { min-height: 46px; padding-top: 3px; padding-bottom: 3px; }
+  body.dayFitUltra .appShell { height: calc(100vh - 47px); }
+  body.dayFitUltra .allDayEvents { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  body.dayFitUltra .dayCompactJobRow { grid-template-columns: 112px minmax(0, 1fr); }
+  body.dayFitUltra .dayCompactMeta { gap: 1px; padding: 2px 3px; }
+  body.dayFitUltra .dayCompactIdName strong { font-size: 8px; }
+  body.dayFitUltra .dayInstallerInput { min-height: 18px; padding: 1px 3px; font-size: 8px; }
+  body.dayFitUltra .dayCompactAddress { min-height: 22px; padding: 2px 5px; font-size: 9px; }
+  body.dayFitUltra .dayDeliveryTag { font-size: 6.5px; }
+  body.dayFitUltra .dayPanelHead { padding: 4px 5px; }
+  body.dayFitUltra .jobCard { padding: 3px; }
+  body.dayFitUltra .jobCardAddressOnly .jobInfo h3 { font-size: 9px; }
+  body.dayFitUltra .jobActions { padding-top: 1px; }
+  body.dayFitUltra .miniBtn { min-height: 19px; font-size: 7px; }
+}
+
+@media (min-width: 1150px) {
+  body.dayFitMode .dayJobs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Keep phone behaviour scroll-friendly and readable. */
+@media (max-width: 767px) {
+  body.dayFitMode { height: auto; overflow: visible; }
+}
