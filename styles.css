@@ -105,7 +105,12 @@ button:disabled { cursor: not-allowed; opacity: .52; }
 .toolbar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 14px; margin-bottom: 16px; padding: 12px; }
 .toolbarGroup { display: flex; align-items: center; gap: 8px; }
 .toolbarRight { justify-content: flex-end; }
+.calendarHeading { display: grid; justify-items: center; gap: 8px; min-width: 220px; }
 .monthTitle { margin: 0; text-align: center; font-size: clamp(18px, 2.3vw, 27px); }
+.viewSwitch { display: inline-flex; padding: 3px; border: 1px solid var(--border); border-radius: 12px; background: #edf3f1; }
+.viewSwitchBtn { min-width: 76px; min-height: 42px; padding: 5px 13px; border: 0; border-radius: 9px; background: transparent; color: #4b5f5a; font-family: inherit; font-weight: 900; line-height: 1.05; cursor: pointer; }
+.viewSwitchBtn small { font-size: 10px; }
+.viewSwitchBtn.active { color: #fff; background: var(--primary); box-shadow: 0 3px 9px rgba(15,118,110,.22); }
 
 .mainGrid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(330px, .75fr); gap: 16px; align-items: start; }
 .calendarPanel { overflow: hidden; }
@@ -138,6 +143,31 @@ button:disabled { cursor: not-allowed; opacity: .52; }
 .eventChip { display: block; width: 100%; padding: 5px 7px; border: 0; border-radius: 7px; color: #1d2523; font-family: inherit; font-size: 12px; font-weight: 850; line-height: 1.25; text-align: left; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; cursor: grab; touch-action: none; }
 .eventChip:active { cursor: grabbing; }
 .eventChip.dragging { opacity: .42; transform: scale(.98); }
+
+
+.dayViewPanel[hidden] { display: none; }
+.dayViewGuide { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 11px 14px; border-bottom: 1px solid var(--border); background: #f8fbfa; }
+.dayViewGuide strong { font-size: 17px; }
+.dayViewGuide span { color: var(--muted); font-size: 12px; font-weight: 750; }
+.allDayBand { display: grid; grid-template-columns: 72px minmax(0, 1fr); min-height: 54px; border-bottom: 1px solid var(--border); background: #fff; }
+.allDayBandLabel { display: grid; place-content: center; padding: 8px 6px; border-right: 1px solid var(--border); color: var(--muted); font-size: 12px; font-weight: 900; text-align: center; line-height: 1.1; }
+.allDayBandLabel small { font-size: 10px; }
+.allDayEvents { display: grid; gap: 4px; padding: 7px 8px; }
+.allDayEmpty { align-self: center; padding: 6px 8px; color: #899994; font-size: 12px; font-weight: 750; }
+.dayAllDayChip { width: 100%; min-height: 28px; padding: 4px 8px; border: 0; border-radius: 6px; font-family: inherit; font-size: 12px; font-weight: 850; text-align: left; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; }
+.dayAllDayChip:disabled, .dayTimedEvent:disabled { cursor: default; opacity: 1; }
+.dayTimelineScroll { position: relative; height: min(66vh, 690px); min-height: 430px; overflow-y: auto; overflow-x: hidden; background: #fff; scrollbar-gutter: stable; }
+.dayTimeline { position: relative; min-width: 0; background: #fff; }
+.dayHourRow { position: absolute; left: 0; right: 0; border-top: 1px solid #dbe5e2; pointer-events: none; }
+.dayHourLabel { position: absolute; top: -8px; left: 0; width: 65px; padding-right: 7px; color: #687b76; background: #fff; font-size: 10px; font-weight: 800; text-align: right; line-height: 16px; }
+.dayTimelineCanvas { position: absolute; top: 0; left: 72px; right: 8px; }
+.dayTimelineCanvas::before { content: ""; position: absolute; inset: 0 auto 0 0; border-left: 1px solid #dbe5e2; }
+.dayTimedEvent { --lane: 0; --lanes: 1; position: absolute; z-index: 2; left: calc((100% / var(--lanes)) * var(--lane) + 2px); width: calc((100% / var(--lanes)) - 4px); min-height: 32px; padding: 5px 7px; border: 1px solid rgba(255,255,255,.85); border-radius: 7px; box-shadow: 0 2px 6px rgba(24,56,50,.14); font-family: inherit; text-align: left; overflow: hidden; cursor: pointer; }
+.dayTimedEvent:hover { z-index: 4; filter: brightness(.98); box-shadow: 0 5px 12px rgba(24,56,50,.22); }
+.dayTimedAddress { display: block; font-size: 12px; font-weight: 900; line-height: 1.25; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.dayTimedTime { display: block; margin-top: 2px; font-size: 10px; font-weight: 800; line-height: 1.15; opacity: .95; }
+.dayNowLine { position: absolute; z-index: 5; left: 0; right: 0; height: 2px; background: #e53935; pointer-events: none; }
+.dayNowDot { position: absolute; left: -5px; top: -4px; width: 10px; height: 10px; border-radius: 50%; background: #e53935; }
 .touchDragGhost { position: fixed; z-index: 500; width: min(240px, 65vw); pointer-events: none; opacity: .94; box-shadow: 0 12px 28px rgba(0,0,0,.28); transform: rotate(1.5deg); }
 body.touchDragging { user-select: none; overscroll-behavior: none; }
 .moreEvents { color: var(--muted); font-size: 11px; font-weight: 850; padding-left: 4px; }
@@ -297,7 +327,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); box-sh
   .topbar { align-items: flex-start; }
   .statusBadge { display: none; }
   .toolbar { grid-template-columns: 1fr auto; }
-  .monthTitle { grid-column: 1 / -1; grid-row: 1; }
+  .calendarHeading { grid-column: 1 / -1; grid-row: 1; }
   .toolbarGroup { grid-row: 2; }
   .toolbarRight { grid-column: 2; }
   .mainGrid { grid-template-columns: 1fr; }
@@ -328,7 +358,19 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); box-sh
   .addressSearchForm .btn, .historySearchBar .btn { width: 100%; }
   .toolbar { gap: 8px; padding: 9px; }
   .toolbarRight .btnSecondary { display: none; }
+  .calendarHeading { width: 100%; min-width: 0; }
+  .viewSwitch { width: 100%; max-width: 280px; }
+  .viewSwitchBtn { flex: 1; min-width: 0; }
   .calendarPanel { border-radius: 14px; box-shadow: 0 5px 18px rgba(27,57,52,.08); }
+  .dayViewGuide { align-items: flex-start; padding: 9px 10px; }
+  .allDayBand { grid-template-columns: 58px minmax(0, 1fr); }
+  .allDayBandLabel { font-size: 10px; }
+  .dayTimelineScroll { height: 62vh; min-height: 400px; }
+  .dayHourLabel { width: 51px; font-size: 9px; }
+  .dayTimelineCanvas { left: 57px; right: 4px; }
+  .dayTimedEvent { padding: 4px 5px; }
+  .dayTimedAddress { font-size: 10px; }
+  .dayTimedTime { font-size: 9px; }
   .dragHelp { justify-content: flex-start; padding: 7px 8px; font-size: 10px; }
   .weekdayRow > div { padding: 7px 2px; font-size: 10px; }
   .calendarGrid { grid-auto-rows: minmax(70px, auto); }

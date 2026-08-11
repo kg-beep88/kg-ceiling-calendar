@@ -9,7 +9,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=1.7.7">
+  <link rel="stylesheet" href="styles.css?v=1.7.8">
 </head>
 <body>
   <noscript>
@@ -21,7 +21,7 @@
       <div class="brandMark" aria-hidden="true">KG</div>
       <div>
         <h1>KG Ceiling Work Calendar</h1>
-        <p>KG 天花工作日历 · v1.7.7</p>
+        <p>KG 天花工作日历 · v1.7.8</p>
       </div>
     </div>
 
@@ -72,7 +72,13 @@
         <button id="todayBtn" class="btn btnSecondary" type="button">Today / 今天</button>
         <button id="nextMonthBtn" class="iconBtn" type="button" aria-label="Next month / 下个月">›</button>
       </div>
-      <h2 id="monthTitle" class="monthTitle">Month / 月份</h2>
+      <div class="calendarHeading">
+        <h2 id="monthTitle" class="monthTitle">Month / 月份</h2>
+        <div class="viewSwitch" role="group" aria-label="Calendar view / 日历视图">
+          <button id="monthViewBtn" class="viewSwitchBtn active" type="button" aria-pressed="true">Month<br><small>月</small></button>
+          <button id="dayViewBtn" class="viewSwitchBtn" type="button" aria-pressed="false">Day<br><small>日</small></button>
+        </div>
+      </div>
       <div class="toolbarGroup toolbarRight">
         <button id="openGoogleBtn" class="btn btnSecondary" type="button">Open Google Calendar / 打开谷歌日历</button>
         <button id="settingsBtn" class="iconBtn" type="button" aria-label="Settings / 设置">⚙</button>
@@ -81,20 +87,36 @@
 
     <section class="mainGrid">
       <div class="calendarPanel card">
-        <div class="dragHelp" role="note">
-          <strong>Move a job: drag its coloured bar to another date.</strong>
-          <span>移动工作：把彩色工作条拖到另一个日期。手机请长按后拖动。</span>
+        <div id="monthViewPanel">
+          <div class="dragHelp" role="note">
+            <strong>Move a job: drag its coloured bar to another date.</strong>
+            <span>移动工作：把彩色工作条拖到另一个日期。手机请长按后拖动。</span>
+          </div>
+          <div class="weekdayRow" aria-hidden="true">
+            <div>Sun<br><small>日</small></div>
+            <div>Mon<br><small>一</small></div>
+            <div>Tue<br><small>二</small></div>
+            <div>Wed<br><small>三</small></div>
+            <div>Thu<br><small>四</small></div>
+            <div>Fri<br><small>五</small></div>
+            <div>Sat<br><small>六</small></div>
+          </div>
+          <div id="calendarGrid" class="calendarGrid" role="grid" aria-label="Work calendar / 工作日历"></div>
         </div>
-        <div class="weekdayRow" aria-hidden="true">
-          <div>Sun<br><small>日</small></div>
-          <div>Mon<br><small>一</small></div>
-          <div>Tue<br><small>二</small></div>
-          <div>Wed<br><small>三</small></div>
-          <div>Thu<br><small>四</small></div>
-          <div>Fri<br><small>五</small></div>
-          <div>Sat<br><small>六</small></div>
+
+        <div id="dayViewPanel" class="dayViewPanel" hidden aria-label="Day schedule / 当天时间表">
+          <div class="dayViewGuide">
+            <strong id="dayViewWeekday">Day / 日</strong>
+            <span>Jobs are placed at their Google Calendar time. / 工作按谷歌日历时间显示。</span>
+          </div>
+          <div class="allDayBand">
+            <div class="allDayBandLabel">All day<br><small>全天</small></div>
+            <div id="dayAllDayEvents" class="allDayEvents"></div>
+          </div>
+          <div id="dayTimelineScroll" class="dayTimelineScroll">
+            <div id="dayTimeline" class="dayTimeline" role="grid" aria-label="24 hour schedule / 24 小时时间表"></div>
+          </div>
         </div>
-        <div id="calendarGrid" class="calendarGrid" role="grid" aria-label="Work calendar / 工作日历"></div>
       </div>
 
       <aside class="dayPanel card">
@@ -410,8 +432,8 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="config.js?v=1.7.7"></script>
+  <script src="config.js?v=1.7.8"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="app.js?v=1.7.7" defer></script>
+  <script src="app.js?v=1.7.8" defer></script>
 </body>
 </html>

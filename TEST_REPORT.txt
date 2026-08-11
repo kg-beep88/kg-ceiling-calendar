@@ -1,10 +1,18 @@
-KG Ceiling Calendar v1.7.7 test report
+KG Ceiling Calendar v1.7.8 test report
 
-- Delivery Sent checkbox moved into Add/Edit Job → 4. Deliver / 送货: PASS
-- Right-side job card no longer shows a Delivery checkbox: PASS
-- Checked Delivery Sent saves into Google Calendar event description/private data: PASS
-- Checked Delivery Sent makes the whole right-side job card light blue after save/sync: PASS
-- Editing an existing job loads the saved Delivery Sent checkbox state: PASS
-- Copying a job clears delivery details and Delivery Sent state, matching existing copy behaviour: PASS
-- Version/cache bumped to v1.7.7: PASS
-- JavaScript syntax check: PASS
+- JavaScript syntax (node --check): PASS
+- Duplicate HTML IDs: PASS (none)
+- All JavaScript cached element IDs exist in HTML: PASS
+- Month / 月 and Day / 日 view buttons added: PASS
+- Month view keeps existing 42-day calendar and drag/drop code: PASS
+- Day view renders 24-hour time axis: PASS
+- All-day events render in a separate top band: PASS
+- Timed events render by selected-date start/end minutes: PASS
+- Multi-day timed event day-segment calculation: PASS
+- Overlapping timed events receive side-by-side lanes: PASS
+- Day view arrows move one day; Month view arrows move one month: PASS
+- Today button works in both views: PASS
+- Day view choice persists in localStorage: PASS
+- Singapore timezone helpers reused for day placement: PASS
+- Existing right-side job cards, Delivery Sent light-blue status, Edit, Copy, WhatsApp and Delete code retained: PASS
+- Versioned assets and service-worker cache bumped to v1.7.8: PASS

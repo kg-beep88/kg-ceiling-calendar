@@ -77,6 +77,9 @@ const TOKEN_RETRY_DELAY_MS = 60 * 1000;
 let events = [];
 let monthAnchor = startOfMonth(new Date());
 let selectedDate = dateKey(new Date());
+let calendarViewMode = loadCalendarViewMode();
+let dayViewAutoScrollDate = "";
+const DAY_HOUR_HEIGHT = 64;
 let autoRefreshTimer = null;
 let toastTimer = null;
 let currentModalEvent = null;
@@ -108,8 +111,9 @@ function init() {
 function cacheElements() {
   const ids = [
     "connectionBadge", "connectBtn", "refreshBtn", "welcomeCard", "prevMonthBtn",
-    "todayBtn", "nextMonthBtn", "monthTitle", "openGoogleBtn", "settingsBtn",
-    "calendarGrid", "selectedDateTitle", "addJobBtn", "whatsAppDayBtn", "syncMessage", "dayJobs",
+    "todayBtn", "nextMonthBtn", "monthTitle", "monthViewBtn", "dayViewBtn", "openGoogleBtn", "settingsBtn",
+    "monthViewPanel", "dayViewPanel", "calendarGrid", "dayViewWeekday", "dayAllDayEvents", "dayTimelineScroll", "dayTimeline",
+    "selectedDateTitle", "addJobBtn", "whatsAppDayBtn", "syncMessage", "dayJobs",
     "floatingAddBtn", "addressSearchForm", "addressSearchInput", "addressSearchBtn",
     "jobModal", "jobModalTitle", "closeModalBtn", "jobForm", "eventId", "continueGroupId", "addressInput",
     "dateInput", "endDateInput", "startTimeInput", "endTimeInput", "allDayInput", "continueJobInput",
@@ -133,8 +137,10 @@ function cacheElements() {
 function bindEvents() {
   el.connectBtn.addEventListener("click", connectGoogleCalendar);
   el.refreshBtn.addEventListener("click", () => refreshEvents(true));
-  el.prevMonthBtn.addEventListener("click", () => changeMonth(-1));
-  el.nextMonthBtn.addEventListener("click", () => changeMonth(1));
+  el.prevMonthBtn.addEventListener("click", () => navigateCalendar(-1));
+  el.nextMonthBtn.addEventListener("click", () => navigateCalendar(1));
+  el.monthViewBtn.addEventListener("click", () => setCalendarView("month"));
+  el.dayViewBtn.addEventListener("click", () => setCalendarView("day"));
   el.todayBtn.addEventListener("click", goToday);
   el.openGoogleBtn.addEventListener("click", () => window.open("https://calendar.google.com/calendar/u/0/r", "_blank", "noopener"));
   el.settingsBtn.addEventListener("click", openSettings);
@@ -648,15 +654,31 @@ function setSyncMessage(message, isError) {
 }
 
 function renderAll() {
+  renderCalendarViewControls();
   renderMonthTitle();
-  renderCalendar();
+  if (calendarViewMode === "day") renderDaySchedule();
+  else renderCalendar();
   renderSelectedDateTitle();
   renderDayJobs();
 }
 
+function renderCalendarViewControls() {
+  const isDay = calendarViewMode === "day";
+  el.monthViewPanel.hidden = isDay;
+  el.dayViewPanel.hidden = !isDay;
+  el.monthViewBtn.classList.toggle("active", !isDay);
+  el.dayViewBtn.classList.toggle("active", isDay);
+  el.monthViewBtn.setAttribute("aria-pressed", String(!isDay));
+  el.dayViewBtn.setAttribute("aria-pressed", String(isDay));
+  el.prevMonthBtn.setAttribute("aria-label", isDay ? "Previous day / 前一天" : "Previous month / 上个月");
+  el.nextMonthBtn.setAttribute("aria-label", isDay ? "Next day / 后一天" : "Next month / 下个月");
+}
+
 function renderMonthTitle() {
-  // Keep the calendar header simple: MM/YYYY only.
-  el.monthTitle.textContent = `${String(monthAnchor.getMonth() + 1).padStart(2, "0")}/${monthAnchor.getFullYear()}`;
+  // Month view uses MM/YYYY; Day view uses the app-wide DD/MM/YYYY format.
+  el.monthTitle.textContent = calendarViewMode === "day"
+    ? formatDateShort(selectedDate)
+    : `${String(monthAnchor.getMonth() + 1).padStart(2, "0")}/${monthAnchor.getFullYear()}`;
 }
 
 function renderSelectedDateTitle() {
@@ -733,6 +755,194 @@ function renderCalendar() {
     el.calendarGrid.appendChild(cell);
     cursor.setDate(cursor.getDate() + 1);
   }
+}
+
+
+function renderDaySchedule() {
+  const key = selectedDate;
+  const chosen = dateFromKey(key);
+  const dayNames = [
+    "Sunday / 星期日", "Monday / 星期一", "Tuesday / 星期二", "Wednesday / 星期三",
+    "Thursday / 星期四", "Friday / 星期五", "Saturday / 星期六"
+  ];
+  el.dayViewWeekday.textContent = dayNames[chosen.getDay()];
+  el.dayAllDayEvents.innerHTML = "";
+  el.dayTimeline.innerHTML = "";
+
+  const dayEvents = eventsForDate(key);
+  const allDayEvents = dayEvents.filter((event) => Boolean(event.start?.date));
+  const timedEvents = dayEvents.filter((event) => Boolean(event.start?.dateTime));
+
+  if (!allDayEvents.length) {
+    const none = document.createElement("span");
+    none.className = "allDayEmpty";
+    none.textContent = "No all-day job / 没有全天工作";
+    el.dayAllDayEvents.appendChild(none);
+  } else {
+    allDayEvents.forEach((calendarEvent) => {
+      const data = parseEventData(calendarEvent);
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "dayAllDayChip";
+      const colour = eventColour(calendarEvent);
+      chip.style.background = colour.background;
+      chip.style.color = colour.foreground;
+      const range = eventDateRange(calendarEvent);
+      const prefix = range.start !== range.end ? "↔ " : "";
+      chip.textContent = `${prefix}${data.address || calendarEvent.summary || "Job / 工作"}`;
+      chip.title = "Click to edit / 点击编辑";
+      chip.disabled = !isConnected();
+      chip.addEventListener("click", () => openJobModal(calendarEvent));
+      el.dayAllDayEvents.appendChild(chip);
+    });
+  }
+
+  const totalHeight = 24 * DAY_HOUR_HEIGHT;
+  el.dayTimeline.style.height = `${totalHeight}px`;
+
+  for (let hour = 0; hour < 24; hour += 1) {
+    const row = document.createElement("div");
+    row.className = "dayHourRow";
+    row.style.top = `${hour * DAY_HOUR_HEIGHT}px`;
+    row.style.height = `${DAY_HOUR_HEIGHT}px`;
+
+    const label = document.createElement("span");
+    label.className = "dayHourLabel";
+    label.textContent = formatHourAxis(hour);
+    row.appendChild(label);
+    el.dayTimeline.appendChild(row);
+  }
+
+  const canvas = document.createElement("div");
+  canvas.className = "dayTimelineCanvas";
+  canvas.style.height = `${totalHeight}px`;
+  el.dayTimeline.appendChild(canvas);
+
+  const segments = timedEvents
+    .map((event) => {
+      const minutes = eventSegmentMinutesForDate(event, key);
+      return minutes ? { event, ...minutes } : null;
+    })
+    .filter(Boolean);
+
+  layoutDayEventSegments(segments).forEach((segment) => {
+    const calendarEvent = segment.event;
+    const data = parseEventData(calendarEvent);
+    const colour = eventColour(calendarEvent);
+    const block = document.createElement("button");
+    block.type = "button";
+    block.className = "dayTimedEvent";
+    block.style.top = `${(segment.start / 60) * DAY_HOUR_HEIGHT}px`;
+    block.style.height = `${Math.max(((segment.end - segment.start) / 60) * DAY_HOUR_HEIGHT, 32)}px`;
+    const laneWidth = 100 / Math.max(1, segment.lanes);
+    block.style.left = `calc(${laneWidth * segment.lane}% + 2px)`;
+    block.style.width = `calc(${laneWidth}% - 4px)`;
+    block.style.background = colour.background;
+    block.style.color = colour.foreground;
+    block.disabled = !isConnected();
+    block.title = `${data.address || calendarEvent.summary || "Job / 工作"} • ${formatMinutes12Hour(segment.start)}–${formatMinutes12Hour(segment.end)}`;
+
+    const address = document.createElement("strong");
+    address.className = "dayTimedAddress";
+    address.textContent = data.address || calendarEvent.summary || "Job / 工作";
+    const timing = document.createElement("span");
+    timing.className = "dayTimedTime";
+    timing.textContent = `${formatMinutes12Hour(segment.start)} – ${formatMinutes12Hour(segment.end)}`;
+    block.append(address, timing);
+    block.addEventListener("click", () => openJobModal(calendarEvent));
+    canvas.appendChild(block);
+  });
+
+  if (key === dateKeyInCalendarZone(new Date())) {
+    const now = calendarDateTimeParts(new Date());
+    const minute = now.hour * 60 + now.minute;
+    const line = document.createElement("div");
+    line.className = "dayNowLine";
+    line.style.top = `${(minute / 60) * DAY_HOUR_HEIGHT}px`;
+    const dot = document.createElement("span");
+    dot.className = "dayNowDot";
+    line.appendChild(dot);
+    canvas.appendChild(line);
+  }
+
+  if (dayViewAutoScrollDate !== key) {
+    dayViewAutoScrollDate = key;
+    const earliest = segments.length
+      ? Math.min(...segments.map((segment) => segment.start))
+      : (key === dateKeyInCalendarZone(new Date())
+          ? calendarDateTimeParts(new Date()).hour * 60
+          : 8 * 60);
+    const targetMinute = Math.max(0, earliest - 60);
+    window.requestAnimationFrame(() => {
+      el.dayTimelineScroll.scrollTop = (targetMinute / 60) * DAY_HOUR_HEIGHT;
+    });
+  }
+}
+
+function eventSegmentMinutesForDate(event, key) {
+  if (!event?.start?.dateTime || !eventIncludesDate(event, key)) return null;
+  const startDate = new Date(event.start.dateTime);
+  const startKey = dateKeyInCalendarZone(startDate);
+  const startParts = calendarDateTimeParts(startDate);
+  let start = key === startKey ? startParts.hour * 60 + startParts.minute : 0;
+
+  let end = Math.min(1440, start + 60);
+  if (event.end?.dateTime) {
+    const endDate = new Date(event.end.dateTime);
+    const endKey = dateKeyInCalendarZone(endDate);
+    const endParts = calendarDateTimeParts(endDate);
+    end = key < endKey ? 1440 : endParts.hour * 60 + endParts.minute;
+  }
+
+  start = Math.max(0, Math.min(1439, start));
+  end = Math.max(start + 1, Math.min(1440, end));
+  return { start, end };
+}
+
+function layoutDayEventSegments(segments) {
+  const sorted = [...segments].sort((a, b) => a.start - b.start || a.end - b.end);
+  const result = [];
+  let cluster = [];
+  let clusterEnd = -1;
+
+  const flushCluster = () => {
+    if (!cluster.length) return;
+    const laneEnds = [];
+    cluster.forEach((segment) => {
+      let lane = laneEnds.findIndex((end) => end <= segment.start);
+      if (lane < 0) lane = laneEnds.length;
+      laneEnds[lane] = segment.end;
+      segment.lane = lane;
+    });
+    const lanes = Math.max(1, laneEnds.length);
+    cluster.forEach((segment) => result.push({ ...segment, lanes }));
+    cluster = [];
+    clusterEnd = -1;
+  };
+
+  sorted.forEach((segment) => {
+    if (cluster.length && segment.start >= clusterEnd) flushCluster();
+    cluster.push(segment);
+    clusterEnd = Math.max(clusterEnd, segment.end);
+  });
+  flushCluster();
+  return result;
+}
+
+function formatHourAxis(hour) {
+  const suffix = hour < 12 ? "AM" : "PM";
+  const value = hour % 12 || 12;
+  return `${value} ${suffix}`;
+}
+
+function formatMinutes12Hour(minutes) {
+  if (minutes >= 1440) return "12am";
+  const safe = Math.max(0, Math.min(1439, minutes));
+  const hour = Math.floor(safe / 60);
+  const minute = safe % 60;
+  const suffix = hour < 12 ? "am" : "pm";
+  const value = hour % 12 || 12;
+  return minute ? `${value}:${String(minute).padStart(2, "0")}${suffix}` : `${value}${suffix}`;
 }
 
 function beginNativeDrag(event, eventId, sourceDate) {
@@ -1581,8 +1791,26 @@ function formatDateBilingual(value) {
   return formatDateShort(value);
 }
 
+function loadCalendarViewMode() {
+  try {
+    return localStorage.getItem("kgCalendarViewMode") === "day" ? "day" : "month";
+  } catch {
+    return "month";
+  }
+}
+
+function setCalendarView(mode) {
+  const nextMode = mode === "day" ? "day" : "month";
+  if (calendarViewMode === nextMode) return;
+  calendarViewMode = nextMode;
+  if (calendarViewMode === "day") dayViewAutoScrollDate = "";
+  try { localStorage.setItem("kgCalendarViewMode", calendarViewMode); } catch {}
+  renderAll();
+}
+
 function selectDate(key) {
   selectedDate = key;
+  dayViewAutoScrollDate = "";
   const chosen = dateFromKey(key);
   if (chosen.getMonth() !== monthAnchor.getMonth() || chosen.getFullYear() !== monthAnchor.getFullYear()) {
     monthAnchor = startOfMonth(chosen);
@@ -1591,9 +1819,29 @@ function selectDate(key) {
   renderAll();
 }
 
+function navigateCalendar(delta) {
+  if (calendarViewMode === "day") {
+    const oldMonthKey = `${monthAnchor.getFullYear()}-${monthAnchor.getMonth()}`;
+    selectedDate = addDaysKey(selectedDate, delta);
+    dayViewAutoScrollDate = "";
+    const chosen = dateFromKey(selectedDate);
+    const newMonthKey = `${chosen.getFullYear()}-${chosen.getMonth()}`;
+    if (newMonthKey !== oldMonthKey) {
+      monthAnchor = startOfMonth(chosen);
+      renderAll();
+      if (isConnected()) refreshEvents(false);
+      return;
+    }
+    renderAll();
+    return;
+  }
+  changeMonth(delta);
+}
+
 function changeMonth(delta) {
   monthAnchor = new Date(monthAnchor.getFullYear(), monthAnchor.getMonth() + delta, 1);
   selectedDate = dateKey(monthAnchor);
+  dayViewAutoScrollDate = "";
   renderAll();
   if (isConnected()) refreshEvents(false);
 }
@@ -1602,6 +1850,7 @@ function goToday() {
   const today = new Date();
   monthAnchor = startOfMonth(today);
   selectedDate = dateKey(today);
+  dayViewAutoScrollDate = "";
   renderAll();
   if (isConnected()) refreshEvents(false);
 }
@@ -2321,7 +2570,7 @@ function formatFormTime(data) {
 function buildPrivateProperties(data) {
   const privateProperties = {
     kgCeilingApp: "1",
-    kgCeilingVersion: "1.7.5",
+    kgCeilingVersion: "1.7.8",
     ...(data.continueJob && data.continueGroupId ? {
       kgContinueJob: "1",
       kgContinueGroup: data.continueGroupId,

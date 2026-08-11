@@ -37,9 +37,20 @@ This manual is only for normal users. The administrator will prepare Google Cale
 
 ## 2. Check the calendar / 查看日历
 
-- Click a date to see jobs for that day. / 点击日期查看当天工作。
-- Use Previous, Today and Next to move between months. / 使用上个月、今天、下个月切换月份。
-- Each coloured bar is one job. / 每一条彩色工作条代表一个工作。
+At the top of the calendar choose **Month / 月** or **Day / 日**. / 在日历上方选择 **Month / 月** 或 **Day / 日**。
+
+### Month / 月
+- Shows the normal monthly calendar. / 显示正常的整月日历。
+- Click a date to select that day. / 点击日期选择当天。
+- Use the left/right arrows to move one month at a time. / 使用左右箭头逐月切换。
+
+### Day / 日
+- Shows only the selected date with time down the left side, similar to Google Calendar Day view. / 只显示所选日期，左边显示时间，类似 Google 日历的日视图。
+- **All day / 全天** jobs are shown at the top. / **全天**工作显示在顶部。
+- Timed jobs are placed at their start/end time. Overlapping jobs appear side by side. / 有时间的工作按开始和结束时间显示；时间重叠的工作会并排显示。
+- Use the left/right arrows to move one day at a time. / 使用左右箭头逐日切换。
+
+- Each coloured bar uses its Google Calendar colour. / 每一条工作使用对应的 Google 日历颜色。
 - Press **Refresh / 刷新** when you need the latest changes from other users. / 需要查看其他人的最新修改时点击刷新。
 
 ---

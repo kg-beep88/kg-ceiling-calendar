@@ -1,3 +1,15 @@
+# v1.7.8 Month + Day view / 月视图 + 日视图
+
+Use the new **Month / 月** and **Day / 日** buttons above the calendar.
+
+- **Month / 月** keeps the normal monthly calendar.
+- **Day / 日** shows the selected date as a 24-hour schedule with time down the left.
+- All-day jobs stay in the **All day / 全天** band at the top.
+- Timed jobs appear at their Google Calendar start/end time and use the same Google colour.
+- If timed jobs overlap, they appear side by side.
+- In Day view, the left/right arrow buttons move one day at a time. In Month view, they move one month at a time.
+- The chosen Month/Day view is remembered on that device.
+
 # v1.7.7 Delivery Sent checkbox
 
 In Add/Edit Job, open **4. Deliver / 送货** and tick **Delivery Sent / 已送货** when delivery is complete. Save the job. The whole job card on the right turns light blue. Untick and save to return it to normal.
