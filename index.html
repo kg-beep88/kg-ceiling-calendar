@@ -9,7 +9,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=1.7.8">
+  <link rel="stylesheet" href="styles.css?v=1.7.9">
 </head>
 <body>
   <noscript>
@@ -21,7 +21,7 @@
       <div class="brandMark" aria-hidden="true">KG</div>
       <div>
         <h1>KG Ceiling Work Calendar</h1>
-        <p>KG 天花工作日历 · v1.7.8</p>
+        <p>KG 天花工作日历 · v1.7.9</p>
       </div>
     </div>
 
@@ -107,14 +107,14 @@
         <div id="dayViewPanel" class="dayViewPanel" hidden aria-label="Day schedule / 当天时间表">
           <div class="dayViewGuide">
             <strong id="dayViewWeekday">Day / 日</strong>
-            <span>Jobs are placed at their Google Calendar time. / 工作按谷歌日历时间显示。</span>
+            <span>Only work times are shown. Installer can be entered here. / 只显示有工作的时间，可直接填写安装人员。</span>
           </div>
           <div class="allDayBand">
             <div class="allDayBandLabel">All day<br><small>全天</small></div>
             <div id="dayAllDayEvents" class="allDayEvents"></div>
           </div>
           <div id="dayTimelineScroll" class="dayTimelineScroll">
-            <div id="dayTimeline" class="dayTimeline" role="grid" aria-label="24 hour schedule / 24 小时时间表"></div>
+            <div id="dayTimeline" class="dayTimeline" role="grid" aria-label="Work time schedule / 工作时间表"></div>
           </div>
         </div>
       </div>
@@ -269,24 +269,33 @@
 
           <div class="formSection deliverySection">
             <h3>4. Deliver / 送货</h3>
-            <div class="formGrid">
-              <label class="field">
-                <span>Delivery date / 送货日期</span>
-                <input id="deliveryDateInput" type="date" lang="en-GB">
-              </label>
-              <label class="field fullField">
-                <span>Delivery material / 送货材料</span>
-                <textarea id="deliveryMaterialsInput" rows="4" placeholder="Fill in the items yourself / 自己填写送货物品"></textarea>
-              </label>
+            <p class="deliverySyncHint">Same address = same delivery list on every work date. / 相同地址的所有工作日期会显示同一份送货记录。</p>
+            <div id="deliveryRows" class="deliveryRows">
+              <div class="deliveryRow" data-delivery-row>
+                <div class="deliveryRowHead">
+                  <strong data-delivery-title>Delivery 1 / 送货 1</strong>
+                </div>
+                <div class="formGrid">
+                  <label class="field">
+                    <span>Delivery date / 送货日期</span>
+                    <input id="deliveryDateInput" data-delivery-date type="date" lang="en-GB">
+                  </label>
+                  <label class="field fullField">
+                    <span>Delivery material / 送货材料</span>
+                    <textarea id="deliveryMaterialsInput" data-delivery-materials rows="3" placeholder="Fill in the items yourself / 自己填写送货物品"></textarea>
+                  </label>
+                </div>
+                <label class="field fullField">
+                  <span>Delivery remark / 送货备注</span>
+                  <textarea id="deliveryRemarkInput" data-delivery-remark rows="2" placeholder="Delivery notes / 送货备注"></textarea>
+                </label>
+                <label class="checkLine deliverySentFormCheck">
+                  <input id="deliverySentInput" data-delivery-sent type="checkbox">
+                  <span>Delivery Sent / 已送货</span>
+                </label>
+              </div>
             </div>
-            <label class="field fullField">
-              <span>Delivery remark / 送货备注</span>
-              <textarea id="deliveryRemarkInput" rows="3" placeholder="Delivery notes / 送货备注"></textarea>
-            </label>
-            <label class="checkLine deliverySentFormCheck">
-              <input id="deliverySentInput" type="checkbox">
-              <span>Delivery Sent / 已送货</span>
-            </label>
+            <button id="addDeliveryBtn" class="btn btnSecondary btnSmall addDeliveryBtn" type="button">＋ Add another delivery / 增加送货</button>
           </div>
 
           <div class="formSection billingSection">
@@ -432,8 +441,8 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="config.js?v=1.7.8"></script>
+  <script src="config.js?v=1.7.9"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="app.js?v=1.7.8" defer></script>
+  <script src="app.js?v=1.7.9" defer></script>
 </body>
 </html>

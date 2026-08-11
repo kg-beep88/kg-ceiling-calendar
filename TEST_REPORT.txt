@@ -1,18 +1,28 @@
-KG Ceiling Calendar v1.7.8 test report
+KG Ceiling Calendar v1.7.9 test report
+========================================
 
-- JavaScript syntax (node --check): PASS
+Automated/static checks completed in this build:
+
+- JavaScript syntax (`node --check app.js`): PASS
 - Duplicate HTML IDs: PASS (none)
-- All JavaScript cached element IDs exist in HTML: PASS
-- Month / 月 and Day / 日 view buttons added: PASS
-- Month view keeps existing 42-day calendar and drag/drop code: PASS
-- Day view renders 24-hour time axis: PASS
-- All-day events render in a separate top band: PASS
-- Timed events render by selected-date start/end minutes: PASS
-- Multi-day timed event day-segment calculation: PASS
-- Overlapping timed events receive side-by-side lanes: PASS
-- Day view arrows move one day; Month view arrows move one month: PASS
-- Today button works in both views: PASS
-- Day view choice persists in localStorage: PASS
-- Singapore timezone helpers reused for day placement: PASS
-- Existing right-side job cards, Delivery Sent light-blue status, Edit, Copy, WhatsApp and Delete code retained: PASS
-- Versioned assets and service-worker cache bumped to v1.7.8: PASS
+- All IDs cached by app.js exist in index.html: PASS
+- Versioned assets show v1.7.9: PASS
+- Service-worker cache bumped to v1.7.9: PASS
+- Day view uses compact work-only time groups (no 24-hour empty-hour generation): PASS
+- Day-view ID Name + inline Installer controls present: PASS
+- Inline Installer saves by PATCH to the same Google event: PASS (code-path verification)
+- Multiple delivery rows in Add/Edit Job: PASS
+- Multiple delivery structured-data round trip: PASS
+- Multiple delivery human-description fallback parse: PASS
+- Same-address delivery propagation mock test: PASS
+- Different address is not patched during same-address delivery sync: PASS
+- Legacy single-delivery fields remain readable: PASS (compatibility layer)
+- Existing address-first search logic retained: PASS
+- Existing WhatsApp output still excludes Deliver/Billing: retained
+
+Important live test after upload:
+1. Reset Cache once and confirm v1.7.9.
+2. Open Day view and confirm only actual work-time groups appear.
+3. Type an Installer in Day view, press Enter, then refresh another user's app to confirm it syncs.
+4. Add Delivery 1 and Delivery 2 to one address, save, then open a different-date job with the exact same address and confirm both delivery dates appear.
+5. Tick one Delivery Sent box and confirm same-address records receive the same delivery list/status after sync.

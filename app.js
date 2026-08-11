@@ -95,6 +95,8 @@ let touchDragGhost = null;
 let touchDragTarget = null;
 let suppressChipClickUntil = 0;
 let pendingHistoryCopyEvent = null;
+let sharedDeliveriesLoadedForAddress = "";
+let sharedDeliveryLoadRequest = 0;
 
 window.addEventListener("DOMContentLoaded", init);
 
@@ -121,7 +123,7 @@ function cacheElements() {
     "lockInput", "idFirmInput", "idNameInput", "installerNameInput", "amendCeilingInput",
     "amendCeilingDetailInput", "amendPartitionInput", "amendPartitionDetailInput",
     "amendPelmetInput", "amendPelmetDetailInput", "amendTimberOtherInput", "amendTimberOtherDetailInput", "amendRemarkInput",
-    "deliveryDateInput", "deliveryMaterialsInput", "deliveryRemarkInput", "deliverySentInput", "billingNumberInput",
+    "deliveryRows", "addDeliveryBtn", "deliveryDateInput", "deliveryMaterialsInput", "deliveryRemarkInput", "deliverySentInput", "billingNumberInput",
     "colourPicker", "deleteJobBtn", "cancelBtn",
     "saveJobBtn", "searchModal", "closeSearchBtn", "historySearchForm",
     "historySearchInput", "historySearchBtn", "historySearchStatus",
@@ -173,6 +175,8 @@ function bindEvents() {
   el.allDayInput.addEventListener("change", updateTimeFieldState);
   el.continueJobInput.addEventListener("change", () => updateContinueJobState(true));
   el.addContinuePeriodBtn.addEventListener("click", () => addContinuePeriodRow());
+  el.addDeliveryBtn.addEventListener("click", () => addDeliveryRow());
+  el.addressInput.addEventListener("change", () => loadSharedDeliveriesIntoForm(el.addressInput.value));
   el.dateInput.addEventListener("change", handleStartDateChange);
   el.endDateInput.addEventListener("change", handleEndDateChange);
   document.addEventListener("pointermove", handleTouchDragMove, { passive: false });
@@ -771,7 +775,14 @@ function renderDaySchedule() {
 
   const dayEvents = eventsForDate(key);
   const allDayEvents = dayEvents.filter((event) => Boolean(event.start?.date));
-  const timedEvents = dayEvents.filter((event) => Boolean(event.start?.dateTime));
+  const timedSegments = dayEvents
+    .filter((event) => Boolean(event.start?.dateTime))
+    .map((event) => {
+      const minutes = eventSegmentMinutesForDate(event, key);
+      return minutes ? { event, ...minutes } : null;
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.start - b.start || a.end - b.end || eventAddressForSort(a.event).localeCompare(eventAddressForSort(b.event)));
 
   if (!allDayEvents.length) {
     const none = document.createElement("span");
@@ -780,102 +791,156 @@ function renderDaySchedule() {
     el.dayAllDayEvents.appendChild(none);
   } else {
     allDayEvents.forEach((calendarEvent) => {
-      const data = parseEventData(calendarEvent);
-      const chip = document.createElement("button");
-      chip.type = "button";
-      chip.className = "dayAllDayChip";
-      const colour = eventColour(calendarEvent);
-      chip.style.background = colour.background;
-      chip.style.color = colour.foreground;
-      const range = eventDateRange(calendarEvent);
-      const prefix = range.start !== range.end ? "↔ " : "";
-      chip.textContent = `${prefix}${data.address || calendarEvent.summary || "Job / 工作"}`;
-      chip.title = "Click to edit / 点击编辑";
-      chip.disabled = !isConnected();
-      chip.addEventListener("click", () => openJobModal(calendarEvent));
-      el.dayAllDayEvents.appendChild(chip);
+      el.dayAllDayEvents.appendChild(buildDayCompactJobRow(calendarEvent));
     });
   }
 
-  const totalHeight = 24 * DAY_HOUR_HEIGHT;
-  el.dayTimeline.style.height = `${totalHeight}px`;
-
-  for (let hour = 0; hour < 24; hour += 1) {
-    const row = document.createElement("div");
-    row.className = "dayHourRow";
-    row.style.top = `${hour * DAY_HOUR_HEIGHT}px`;
-    row.style.height = `${DAY_HOUR_HEIGHT}px`;
-
-    const label = document.createElement("span");
-    label.className = "dayHourLabel";
-    label.textContent = formatHourAxis(hour);
-    row.appendChild(label);
-    el.dayTimeline.appendChild(row);
+  if (!timedSegments.length) {
+    const none = document.createElement("div");
+    none.className = "dayNoTimedJobs";
+    none.textContent = "No timed work on this date / 此日期没有定时工作";
+    el.dayTimeline.appendChild(none);
+    return;
   }
 
-  const canvas = document.createElement("div");
-  canvas.className = "dayTimelineCanvas";
-  canvas.style.height = `${totalHeight}px`;
-  el.dayTimeline.appendChild(canvas);
-
-  const segments = timedEvents
-    .map((event) => {
-      const minutes = eventSegmentMinutesForDate(event, key);
-      return minutes ? { event, ...minutes } : null;
-    })
-    .filter(Boolean);
-
-  layoutDayEventSegments(segments).forEach((segment) => {
-    const calendarEvent = segment.event;
-    const data = parseEventData(calendarEvent);
-    const colour = eventColour(calendarEvent);
-    const block = document.createElement("button");
-    block.type = "button";
-    block.className = "dayTimedEvent";
-    block.style.top = `${(segment.start / 60) * DAY_HOUR_HEIGHT}px`;
-    block.style.height = `${Math.max(((segment.end - segment.start) / 60) * DAY_HOUR_HEIGHT, 32)}px`;
-    const laneWidth = 100 / Math.max(1, segment.lanes);
-    block.style.left = `calc(${laneWidth * segment.lane}% + 2px)`;
-    block.style.width = `calc(${laneWidth}% - 4px)`;
-    block.style.background = colour.background;
-    block.style.color = colour.foreground;
-    block.disabled = !isConnected();
-    block.title = `${data.address || calendarEvent.summary || "Job / 工作"} • ${formatMinutes12Hour(segment.start)}–${formatMinutes12Hour(segment.end)}`;
-
-    const address = document.createElement("strong");
-    address.className = "dayTimedAddress";
-    address.textContent = data.address || calendarEvent.summary || "Job / 工作";
-    const timing = document.createElement("span");
-    timing.className = "dayTimedTime";
-    timing.textContent = `${formatMinutes12Hour(segment.start)} – ${formatMinutes12Hour(segment.end)}`;
-    block.append(address, timing);
-    block.addEventListener("click", () => openJobModal(calendarEvent));
-    canvas.appendChild(block);
+  const grouped = [];
+  timedSegments.forEach((segment) => {
+    const groupKey = `${segment.start}-${segment.end}`;
+    let group = grouped[grouped.length - 1];
+    if (!group || group.key !== groupKey) {
+      group = { key: groupKey, start: segment.start, end: segment.end, items: [] };
+      grouped.push(group);
+    }
+    group.items.push(segment);
   });
 
-  if (key === dateKeyInCalendarZone(new Date())) {
-    const now = calendarDateTimeParts(new Date());
-    const minute = now.hour * 60 + now.minute;
-    const line = document.createElement("div");
-    line.className = "dayNowLine";
-    line.style.top = `${(minute / 60) * DAY_HOUR_HEIGHT}px`;
-    const dot = document.createElement("span");
-    dot.className = "dayNowDot";
-    line.appendChild(dot);
-    canvas.appendChild(line);
+  grouped.forEach((group) => {
+    const section = document.createElement("section");
+    section.className = "dayTimeGroup";
+
+    const label = document.createElement("div");
+    label.className = "dayTimeGroupLabel";
+    label.textContent = `${formatMinutes12Hour(group.start)} – ${formatMinutes12Hour(group.end)}`;
+    section.appendChild(label);
+
+    group.items.forEach((segment) => {
+      section.appendChild(buildDayCompactJobRow(segment.event, segment));
+    });
+
+    el.dayTimeline.appendChild(section);
+  });
+}
+
+function buildDayCompactJobRow(calendarEvent, segment = null) {
+  const data = parseEventData(calendarEvent);
+  const row = document.createElement("div");
+  row.className = "dayCompactJobRow";
+
+  const meta = document.createElement("div");
+  meta.className = "dayCompactMeta";
+
+  const idName = document.createElement("div");
+  idName.className = "dayCompactIdName";
+  const idLabel = document.createElement("small");
+  idLabel.textContent = "ID Name / ID 联系人姓名";
+  const idValue = document.createElement("strong");
+  idValue.textContent = data.contact || "—";
+  idName.append(idLabel, idValue);
+
+  const installerLabel = document.createElement("label");
+  installerLabel.className = "dayInstallerField";
+  const installerText = document.createElement("span");
+  installerText.textContent = "Installer / 安装人员";
+  const installer = document.createElement("input");
+  installer.type = "text";
+  installer.className = "dayInstallerInput";
+  installer.placeholder = "Enter installer / 输入安装人员";
+  installer.value = data.installerName || "";
+  installer.dataset.original = installer.value;
+  installer.disabled = !isConnected();
+  installer.addEventListener("click", (event) => event.stopPropagation());
+  installer.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      installer.blur();
+    }
+  });
+  installer.addEventListener("blur", () => saveInlineInstaller(calendarEvent, installer));
+  installerLabel.append(installerText, installer);
+  meta.append(idName, installerLabel);
+
+  const main = document.createElement("div");
+  main.className = "dayCompactMain";
+  const address = document.createElement("button");
+  address.type = "button";
+  address.className = "dayCompactAddress";
+  const colour = eventColour(calendarEvent);
+  address.style.background = colour.background;
+  address.style.color = colour.foreground;
+  address.textContent = data.address || calendarEvent.summary || "Job / 工作";
+  address.title = segment
+    ? `${address.textContent} • ${formatMinutes12Hour(segment.start)}–${formatMinutes12Hour(segment.end)}`
+    : address.textContent;
+  address.disabled = !isConnected();
+  address.addEventListener("click", () => openJobModal(calendarEvent));
+  main.appendChild(address);
+
+  const deliveries = getDeliveryEntries(data);
+  if (deliveries.length) {
+    const deliveryWrap = document.createElement("div");
+    deliveryWrap.className = "dayCompactDelivery";
+    deliveries.forEach((delivery, index) => {
+      const tag = document.createElement("span");
+      tag.className = `dayDeliveryTag${delivery.sent ? " sent" : ""}`;
+      const dateText = delivery.date ? formatDateShort(delivery.date) : "No date / 无日期";
+      tag.textContent = `Deliver ${index + 1} / 送货 ${index + 1}: ${dateText}${delivery.sent ? " ✓" : ""}`;
+      if (delivery.materials || delivery.remark) {
+        tag.title = [delivery.materials, delivery.remark].filter(Boolean).join(" • ");
+      }
+      deliveryWrap.appendChild(tag);
+    });
+    main.appendChild(deliveryWrap);
   }
 
-  if (dayViewAutoScrollDate !== key) {
-    dayViewAutoScrollDate = key;
-    const earliest = segments.length
-      ? Math.min(...segments.map((segment) => segment.start))
-      : (key === dateKeyInCalendarZone(new Date())
-          ? calendarDateTimeParts(new Date()).hour * 60
-          : 8 * 60);
-    const targetMinute = Math.max(0, earliest - 60);
-    window.requestAnimationFrame(() => {
-      el.dayTimelineScroll.scrollTop = (targetMinute / 60) * DAY_HOUR_HEIGHT;
+  row.append(meta, main);
+  return row;
+}
+
+async function saveInlineInstaller(calendarEvent, input) {
+  if (!calendarEvent?.id || !isConnected()) return;
+  const nextValue = input.value.trim();
+  const original = input.dataset.original || "";
+  if (nextValue === original) return;
+
+  input.disabled = true;
+  input.classList.add("saving");
+  try {
+    const data = jobDataWithEventTiming(calendarEvent);
+    data.installerName = nextValue;
+    const description = buildDescription(data);
+    const privateProperties = {
+      ...(calendarEvent.extendedProperties?.private || {}),
+      ...buildPrivateProperties(data)
+    };
+    const calendarId = encodeURIComponent(CONFIG.CALENDAR_ID || "primary");
+    await apiFetch(`/calendars/${calendarId}/events/${encodeURIComponent(calendarEvent.id)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ description, extendedProperties: { private: privateProperties } })
     });
+    calendarEvent.description = description;
+    calendarEvent.extendedProperties = calendarEvent.extendedProperties || {};
+    calendarEvent.extendedProperties.private = privateProperties;
+    input.dataset.original = nextValue;
+    invalidateHistoryCache();
+    saveCachedEvents();
+    showToast("Installer saved and synced. / 安装人员已保存并同步。", false);
+  } catch (error) {
+    input.value = original;
+    showToast(`Installer save failed: ${error.message} / 安装人员保存失败：${error.message}`, true);
+  } finally {
+    input.disabled = !isConnected();
+    input.classList.remove("saving");
   }
 }
 
@@ -1178,6 +1243,13 @@ function renderDayJobs() {
     const title = document.createElement("h3");
     title.textContent = data.address || event.summary || "Untitled job / 未命名工作";
     info.appendChild(title);
+    const deliveries = getDeliveryEntries(data);
+    if (deliveries.length) {
+      const deliveryDates = document.createElement("div");
+      deliveryDates.className = "jobDeliveryDates";
+      deliveryDates.textContent = `Deliver / 送货: ${deliveries.map((item) => `${item.date ? formatDateShort(item.date) : "No date / 无日期"}${item.sent ? " ✓" : ""}`).join(", ")}`;
+      info.appendChild(deliveryDates);
+    }
 
     const actions = document.createElement("div");
     actions.className = "jobActions";
@@ -1247,8 +1319,10 @@ function buildTrackingTags(data) {
     wrap.appendChild(tag);
   };
   if (data.continueJob) add(`Continue job${data.continueSequence > 1 ? ` #${data.continueSequence}` : ""} / 继续工作`, "info");
-  if (data.deliveryDate || data.deliveryMaterials) {
-    add(`Delivery${data.deliveryDate ? `: ${formatDateShort(data.deliveryDate)}` : ""} / 送货`, "good");
+  const deliveries = getDeliveryEntries(data);
+  if (deliveries.length) {
+    const dates = deliveries.map((item) => item.date ? formatDateShort(item.date) : "No date / 无日期").join(", ");
+    add(`Deliver / 送货: ${dates}`, deliveries.every((item) => item.sent) ? "good" : "info");
   }
   if (data.billingNumber) add(`Billing #${data.billingNumber} / 开单号码`, "good");
   return wrap;
@@ -1527,6 +1601,7 @@ function buildEventSearchText(event) {
     data.amendTimberOther ? "add timber support other 加木支撑 其他" : "",
     data.amendTimberOtherDetail,
     data.amendRemark,
+    ...getDeliveryEntries(data).flatMap((item) => [item.date, item.materials, item.remark, item.sent ? "delivery sent 已送货" : "delivery pending 未送货"]),
     data.deliveryDate,
     data.deliveryMaterials,
     data.deliveryRemark,
@@ -1582,10 +1657,8 @@ function buildHistoryGroup(group) {
   const sorted = [...group.events].sort((a, b) => eventStartMs(b) - eventStartMs(a));
   const records = sorted.map((event) => ({ event, data: parseEventData(event) }));
   const workDates = uniqueDateValues(records.flatMap(({ event }) => eventDateKeys(event)));
-  const deliveries = records
-    .filter(({ data }) => data.deliveryDate || data.deliveryMaterials)
-    .map(({ data, event }) => ({ date: data.deliveryDate || eventDateKey(event), materials: data.deliveryMaterials, remark: data.deliveryRemark }))
-    .sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  const deliveries = mergeDeliveryLists(records.flatMap(({ data }) => getDeliveryEntries(data)))
+    .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
   const billingNumbers = Array.from(new Set(records.map(({ data }) => data.billingNumber).filter(Boolean)));
   const latestId = records.find(({ data }) => data.idFirm || data.contact || data.idName)?.data || {};
   const installerNames = Array.from(new Set(records.map(({ data }) => data.installerName).filter(Boolean)));
@@ -1606,7 +1679,7 @@ function buildHistoryGroup(group) {
   head.appendChild(headText);
 
   const deliveryText = deliveries.length
-    ? deliveries.map((item) => `${item.date ? formatDateShort(item.date) : "No date / 无日期"}: ${item.materials || "Material not entered / 未填写材料"}${item.remark ? ` — ${item.remark}` : ""}`).join("\n")
+    ? deliveries.map((item, index) => `#${index + 1} ${item.date ? formatDateShort(item.date) : "No date / 无日期"}${item.sent ? " ✓" : ""}: ${item.materials || "Material not entered / 未填写材料"}${item.remark ? ` — ${item.remark}` : ""}`).join("\n")
     : "None / 无";
 
   const summary = document.createElement("div");
@@ -1668,9 +1741,15 @@ function buildHistoryEventRow(event, data) {
   const amendments = amendmentLabels(data);
   if (amendments.length) lines.push(`Job Scope / 工作范围: ${amendments.join("; ")}`);
   if (data.amendRemark) lines.push(`Remark / 备注: ${data.amendRemark}`);
-  if (data.deliveryDate) lines.push(`Delivery date / 送货日期: ${formatDateBilingual(data.deliveryDate)}`);
-  if (data.deliveryMaterials) lines.push(`Delivery material / 送货材料: ${data.deliveryMaterials}`);
-  if (data.deliveryRemark) lines.push(`Delivery remark / 送货备注: ${data.deliveryRemark}`);
+  getDeliveryEntries(data).forEach((delivery, index) => {
+    const detail = [
+      delivery.date ? formatDateBilingual(delivery.date) : "No date / 无日期",
+      delivery.sent ? "Sent / 已送货" : "Not sent / 未送货",
+      delivery.materials || "",
+      delivery.remark || ""
+    ].filter(Boolean).join(" · ");
+    lines.push(`Delivery ${index + 1} / 送货 ${index + 1}: ${detail}`);
+  });
   if (data.billingNumber) lines.push(`Billing number / 开单号码: ${data.billingNumber}`);
   lines.push(`Colour / 颜色: ${eventColour(event).name}`);
   if (lines.length) {
@@ -2056,10 +2135,8 @@ function resetJobForm() {
   el.amendTimberOtherInput.checked = false;
   el.amendTimberOtherDetailInput.value = "";
   el.amendRemarkInput.value = "";
-  el.deliveryDateInput.value = "";
-  el.deliveryMaterialsInput.value = "";
-  el.deliveryRemarkInput.value = "";
-  el.deliverySentInput.checked = false;
+  resetDeliveryRows();
+  sharedDeliveriesLoadedForAddress = "";
   el.billingNumberInput.value = "";
   renderColourPicker("default");
   el.saveJobBtn.disabled = false;
@@ -2083,10 +2160,8 @@ function fillJobForm(event, asCopy) {
   el.amendTimberOtherInput.checked = data.amendTimberOther;
   el.amendTimberOtherDetailInput.value = data.amendTimberOtherDetail || "";
   el.amendRemarkInput.value = data.amendRemark;
-  el.deliveryDateInput.value = data.deliveryDate;
-  el.deliveryMaterialsInput.value = data.deliveryMaterials;
-  el.deliveryRemarkInput.value = data.deliveryRemark;
-  el.deliverySentInput.checked = Boolean(data.deliverySent);
+  renderDeliveryRows(getDeliveryEntries(data));
+  sharedDeliveriesLoadedForAddress = "";
   el.billingNumberInput.value = data.billingNumber;
   el.continueJobInput.checked = data.continueJob;
   el.continueGroupId.value = data.continueGroupId;
@@ -2098,10 +2173,8 @@ function fillJobForm(event, asCopy) {
   el.endDateInput.value = asCopy ? addDaysKey(formStartDate, originalDaySpan) : originalRange.end;
   lastFormStartDate = formStartDate;
   if (asCopy) {
-    el.deliveryDateInput.value = "";
-    el.deliveryMaterialsInput.value = "";
-    el.deliveryRemarkInput.value = "";
-    el.deliverySentInput.checked = false;
+    renderDeliveryRows([]);
+    sharedDeliveriesLoadedForAddress = "";
     el.billingNumberInput.value = "";
     el.continueJobInput.checked = false;
     el.continueGroupId.value = "";
@@ -2115,6 +2188,7 @@ function fillJobForm(event, asCopy) {
     if (event.end?.dateTime) el.endTimeInput.value = timeInputValueInCalendarZone(new Date(event.end.dateTime));
   }
   renderColourPicker(String(event.colorId || "default"));
+  if (!asCopy) loadSharedDeliveriesIntoForm(data.address || event.summary || "");
 }
 
 function handleStartDateChange() {
@@ -2239,9 +2313,7 @@ function continuationData(baseData, period, sequence) {
     endDate: period.end || period.start,
     continueJob: true,
     continueSequence: sequence,
-    deliveryDate: "",
-    deliveryMaterials: "",
-    deliveryRemark: "",
+    deliveries: getDeliveryEntries(baseData),
     billingNumber: ""
   };
 }
@@ -2286,6 +2358,11 @@ async function saveJob(event) {
   if (!isConnected()) {
     disconnectForExpiredToken();
     return;
+  }
+
+  const enteredAddress = el.addressInput.value.trim();
+  if (enteredAddress && normalizeAddressKey(enteredAddress) !== sharedDeliveriesLoadedForAddress) {
+    await loadSharedDeliveriesIntoForm(enteredAddress);
   }
 
   const formData = collectJobForm();
@@ -2354,10 +2431,15 @@ async function saveJob(event) {
       }
     }
 
+    const deliverySync = await syncDeliveriesAcrossSameAddress(formData.address, formData.deliveries);
+
     const message = extraCreated
       ? `Saved with ${extraCreated} continuation period(s). / 已保存，并新增 ${extraCreated} 个继续工作时段。`
       : (eventId ? "Job updated in both calendars. / 工作已在两边更新。" : "Job saved to Google Calendar. / 工作已保存到谷歌日历。");
-    showToast(message, false);
+    const deliveryMessage = deliverySync.failed
+      ? `${message} Delivery sync missed ${deliverySync.failed} job(s). / ${message} 有 ${deliverySync.failed} 个工作未能同步送货资料。`
+      : (deliverySync.updated ? `${message} Delivery synced to same address. / 送货资料已同步到相同地址。` : message);
+    showToast(deliveryMessage, Boolean(deliverySync.failed));
     selectedDate = formData.date;
     monthAnchor = startOfMonth(dateFromKey(formData.date));
     closeJobModal();
@@ -2405,8 +2487,208 @@ function validateContinuePeriods(data) {
   }
 }
 
-function collectJobForm() {
+function normalizeAddressKey(value) {
+  return normalizeSearchText(value);
+}
+
+function normalizeDeliveryEntry(entry = {}) {
   return {
+    date: String(entry.date || entry.deliveryDate || "").trim(),
+    materials: String(entry.materials || entry.deliveryMaterials || "").trim(),
+    remark: String(entry.remark || entry.deliveryRemark || "").trim(),
+    sent: Boolean(entry.sent ?? entry.deliverySent)
+  };
+}
+
+function getDeliveryEntries(data = {}) {
+  const structured = Array.isArray(data.deliveries)
+    ? data.deliveries.map(normalizeDeliveryEntry).filter((item) => item.date || item.materials || item.remark || item.sent)
+    : [];
+  if (structured.length) return structured;
+  const legacy = normalizeDeliveryEntry({
+    date: data.deliveryDate,
+    materials: data.deliveryMaterials,
+    remark: data.deliveryRemark,
+    sent: data.deliverySent
+  });
+  return legacy.date || legacy.materials || legacy.remark || legacy.sent ? [legacy] : [];
+}
+
+function applyDeliveryCompatibility(data = {}) {
+  const deliveries = getDeliveryEntries(data);
+  data.deliveries = deliveries;
+  const first = deliveries[0] || { date: "", materials: "", remark: "", sent: false };
+  data.deliveryDate = first.date;
+  data.deliveryMaterials = first.materials;
+  data.deliveryRemark = first.remark;
+  data.deliverySent = deliveries.some((item) => item.sent);
+  return data;
+}
+
+function deliveryEntryKey(entry) {
+  const item = normalizeDeliveryEntry(entry);
+  return [item.date, normalizeSearchText(item.materials), normalizeSearchText(item.remark)].join("|");
+}
+
+function mergeDeliveryLists(...lists) {
+  const merged = new Map();
+  lists.flat().forEach((raw) => {
+    const item = normalizeDeliveryEntry(raw);
+    if (!item.date && !item.materials && !item.remark && !item.sent) return;
+    const key = deliveryEntryKey(item);
+    if (!merged.has(key)) merged.set(key, item);
+    else if (item.sent) merged.get(key).sent = true;
+  });
+  return Array.from(merged.values()).sort((a, b) => {
+    if (a.date && b.date && a.date !== b.date) return a.date.localeCompare(b.date);
+    if (a.date && !b.date) return -1;
+    if (!a.date && b.date) return 1;
+    return deliveryEntryKey(a).localeCompare(deliveryEntryKey(b));
+  });
+}
+
+function resetDeliveryRows() {
+  el.deliveryDateInput.value = "";
+  el.deliveryMaterialsInput.value = "";
+  el.deliveryRemarkInput.value = "";
+  el.deliverySentInput.checked = false;
+  Array.from(el.deliveryRows.querySelectorAll('[data-delivery-row]')).slice(1).forEach((row) => row.remove());
+  updateDeliveryRowNumbers();
+}
+
+function addDeliveryRow(entry = {}) {
+  const item = normalizeDeliveryEntry(entry);
+  const row = document.createElement("div");
+  row.className = "deliveryRow";
+  row.dataset.deliveryRow = "1";
+  row.innerHTML = `
+    <div class="deliveryRowHead">
+      <strong data-delivery-title>Delivery / 送货</strong>
+      <button type="button" class="deliveryRemoveBtn">Remove / 删除</button>
+    </div>
+    <div class="formGrid">
+      <label class="field"><span>Delivery date / 送货日期</span><input data-delivery-date type="date" lang="en-GB"></label>
+      <label class="field fullField"><span>Delivery material / 送货材料</span><textarea data-delivery-materials rows="3" placeholder="Fill in the items yourself / 自己填写送货物品"></textarea></label>
+    </div>
+    <label class="field fullField"><span>Delivery remark / 送货备注</span><textarea data-delivery-remark rows="2" placeholder="Delivery notes / 送货备注"></textarea></label>
+    <label class="checkLine deliverySentFormCheck"><input data-delivery-sent type="checkbox"><span>Delivery Sent / 已送货</span></label>`;
+  row.querySelector('[data-delivery-date]').value = item.date;
+  row.querySelector('[data-delivery-materials]').value = item.materials;
+  row.querySelector('[data-delivery-remark]').value = item.remark;
+  row.querySelector('[data-delivery-sent]').checked = item.sent;
+  row.querySelector('.deliveryRemoveBtn').addEventListener('click', () => {
+    row.remove();
+    updateDeliveryRowNumbers();
+  });
+  el.deliveryRows.appendChild(row);
+  updateDeliveryRowNumbers();
+}
+
+function updateDeliveryRowNumbers() {
+  el.deliveryRows.querySelectorAll('[data-delivery-row]').forEach((row, index) => {
+    const title = row.querySelector('[data-delivery-title]');
+    if (title) title.textContent = `Delivery ${index + 1} / 送货 ${index + 1}`;
+  });
+}
+
+function renderDeliveryRows(deliveries = []) {
+  resetDeliveryRows();
+  const items = deliveries.map(normalizeDeliveryEntry).filter((item) => item.date || item.materials || item.remark || item.sent);
+  if (!items.length) return;
+  el.deliveryDateInput.value = items[0].date;
+  el.deliveryMaterialsInput.value = items[0].materials;
+  el.deliveryRemarkInput.value = items[0].remark;
+  el.deliverySentInput.checked = items[0].sent;
+  items.slice(1).forEach((item) => addDeliveryRow(item));
+  updateDeliveryRowNumbers();
+}
+
+function collectDeliveryRows() {
+  return Array.from(el.deliveryRows.querySelectorAll('[data-delivery-row]')).map((row) => normalizeDeliveryEntry({
+    date: row.querySelector('[data-delivery-date]')?.value || "",
+    materials: row.querySelector('[data-delivery-materials]')?.value || "",
+    remark: row.querySelector('[data-delivery-remark]')?.value || "",
+    sent: Boolean(row.querySelector('[data-delivery-sent]')?.checked)
+  })).filter((item) => item.date || item.materials || item.remark || item.sent);
+}
+
+async function loadSharedDeliveriesIntoForm(address) {
+  const key = normalizeAddressKey(address);
+  if (!key || !isConnected()) return;
+  const requestId = ++sharedDeliveryLoadRequest;
+  const currentRows = sharedDeliveriesLoadedForAddress && sharedDeliveriesLoadedForAddress !== key
+    ? []
+    : collectDeliveryRows();
+  try {
+    const all = await fetchAllHistoryEvents(false);
+    if (requestId !== sharedDeliveryLoadRequest || normalizeAddressKey(el.addressInput.value) !== key || el.jobModal.hidden) return;
+    const shared = [];
+    all.forEach((calendarEvent) => {
+      const data = parseEventData(calendarEvent);
+      if (normalizeAddressKey(data.address || calendarEvent.summary || calendarEvent.location || "") !== key) return;
+      shared.push(...getDeliveryEntries(data));
+    });
+    renderDeliveryRows(mergeDeliveryLists(shared, currentRows));
+    sharedDeliveriesLoadedForAddress = key;
+  } catch {
+    // Keep the delivery rows already on screen if history cannot be loaded.
+  }
+}
+
+function deliverySignature(deliveries) {
+  return JSON.stringify(mergeDeliveryLists(deliveries).map((item) => [item.date, item.materials, item.remark, item.sent]));
+}
+
+async function syncDeliveriesAcrossSameAddress(address, deliveries) {
+  const key = normalizeAddressKey(address);
+  if (!key) return { updated: 0, failed: 0 };
+  const target = mergeDeliveryLists(deliveries);
+  const targetSignature = deliverySignature(target);
+  const all = await fetchAllHistoryEvents(true);
+  const calendarId = encodeURIComponent(CONFIG.CALENDAR_ID || "primary");
+  let updated = 0;
+  let failed = 0;
+
+  for (const calendarEvent of all) {
+    if (!calendarEvent?.id) continue;
+    const ownedByApp = calendarEvent?.extendedProperties?.private?.kgCeilingApp === "1"
+      || String(calendarEvent.description || "").includes(APP_MARKER)
+      || String(calendarEvent.description || "").includes(DATA_HEADER);
+    if (!ownedByApp) continue;
+    const data = parseEventData(calendarEvent);
+    if (normalizeAddressKey(data.address || calendarEvent.summary || calendarEvent.location || "") !== key) continue;
+    if (deliverySignature(getDeliveryEntries(data)) === targetSignature) continue;
+
+    data.deliveries = target.map((item) => ({ ...item }));
+    applyDeliveryCompatibility(data);
+    const timedData = jobDataWithEventTiming(calendarEvent);
+    timedData.deliveries = data.deliveries;
+    applyDeliveryCompatibility(timedData);
+    const privateProperties = {
+      ...(calendarEvent.extendedProperties?.private || {}),
+      ...buildPrivateProperties(timedData)
+    };
+    const description = buildDescription(timedData);
+    try {
+      await apiFetch(`/calendars/${calendarId}/events/${encodeURIComponent(calendarEvent.id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description, extendedProperties: { private: privateProperties } })
+      });
+      calendarEvent.description = description;
+      calendarEvent.extendedProperties = calendarEvent.extendedProperties || {};
+      calendarEvent.extendedProperties.private = privateProperties;
+      updated += 1;
+    } catch {
+      failed += 1;
+    }
+  }
+  invalidateHistoryCache();
+  return { updated, failed };
+}
+
+function collectJobForm() {
+  const data = {
     address: el.addressInput.value.trim(),
     date: el.dateInput.value,
     endDate: el.endDateInput.value || el.dateInput.value,
@@ -2427,10 +2709,7 @@ function collectJobForm() {
     amendTimberOther: el.amendTimberOtherInput.checked || Boolean(el.amendTimberOtherDetailInput.value.trim()),
     amendTimberOtherDetail: el.amendTimberOtherDetailInput.value.trim(),
     amendRemark: el.amendRemarkInput.value.trim(),
-    deliveryDate: el.deliveryDateInput.value,
-    deliveryMaterials: el.deliveryMaterialsInput.value.trim(),
-    deliveryRemark: el.deliveryRemarkInput.value.trim(),
-    deliverySent: Boolean(el.deliverySentInput.checked),
+    deliveries: collectDeliveryRows(),
     billingNumber: el.billingNumberInput.value.trim(),
     continueJob: el.continueJobInput.checked,
     continueGroupId: el.continueGroupId.value.trim(),
@@ -2438,6 +2717,7 @@ function collectJobForm() {
     continuePeriods: collectContinuePeriods(),
     colourId: el.colourPicker.querySelector('input[name="jobColour"]:checked')?.value || "default"
   };
+  return applyDeliveryCompatibility(data);
 }
 
 function checkedValues(container) {
@@ -2516,13 +2796,17 @@ function buildDescription(data) {
     lines.push(`*Remark / 备注:* ${displayInlineValue(data.amendRemark)}`);
   }
 
-  if (data.deliveryDate || data.deliveryMaterials || data.deliveryRemark) {
+  const deliveries = getDeliveryEntries(data);
+  if (deliveries.length) {
     lines.push("");
     lines.push("*Deliver / 送货:*");
-    if (data.deliveryDate) lines.push(`*Delivery date / 送货日期:* ${formatDateBilingual(data.deliveryDate)}`);
-    if (data.deliveryMaterials) lines.push(`*Delivery material / 送货材料:* ${displayInlineValue(data.deliveryMaterials)}`);
-    if (data.deliveryRemark) lines.push(`*Delivery remark / 送货备注:* ${displayInlineValue(data.deliveryRemark)}`);
-    lines.push(`*Delivery sent / 已送货:* ${data.deliverySent ? "Yes / 是" : "No / 否"}`);
+    deliveries.forEach((delivery, index) => {
+      lines.push(`*Delivery ${index + 1} / 送货 ${index + 1}:*`);
+      if (delivery.date) lines.push(`*Delivery ${index + 1} date / 第${index + 1}次送货日期:* ${formatDateBilingual(delivery.date)}`);
+      if (delivery.materials) lines.push(`*Delivery ${index + 1} material / 第${index + 1}次送货材料:* ${displayInlineValue(delivery.materials)}`);
+      if (delivery.remark) lines.push(`*Delivery ${index + 1} remark / 第${index + 1}次送货备注:* ${displayInlineValue(delivery.remark)}`);
+      lines.push(`*Delivery ${index + 1} sent / 第${index + 1}次已送货:* ${delivery.sent ? "Yes / 是" : "No / 否"}`);
+    });
   }
 
   if (data.billingNumber) {
@@ -2570,7 +2854,7 @@ function formatFormTime(data) {
 function buildPrivateProperties(data) {
   const privateProperties = {
     kgCeilingApp: "1",
-    kgCeilingVersion: "1.7.8",
+    kgCeilingVersion: "1.7.9",
     ...(data.continueJob && data.continueGroupId ? {
       kgContinueJob: "1",
       kgContinueGroup: data.continueGroupId,
@@ -2597,6 +2881,7 @@ function buildPrivateProperties(data) {
     amendTimberOther: Boolean(data.amendTimberOther),
     amendTimberOtherDetail: data.amendTimberOtherDetail || "",
     amendRemark: data.amendRemark || "",
+    deliveries: getDeliveryEntries(data),
     deliveryDate: data.deliveryDate || "",
     deliveryMaterials: data.deliveryMaterials || "",
     deliveryRemark: data.deliveryRemark || "",
@@ -2687,6 +2972,22 @@ function parseHumanDescription(description) {
     const label = plain.slice(0, separator).trim().toLowerCase();
     const value = plain.slice(separator + 1).trim();
 
+    const deliveryNumbered = label.match(/^delivery\s+(\d+)\s+(date|material|remark|sent)/i);
+    const deliveryChinese = label.match(/^第(\d+)次(送货日期|送货材料|送货备注|已送货)/);
+    if (deliveryNumbered || deliveryChinese) {
+      const index = Math.max(0, Number((deliveryNumbered || deliveryChinese)[1]) - 1);
+      result.deliveries = Array.isArray(result.deliveries) ? result.deliveries : [];
+      result.deliveries[index] = result.deliveries[index] || { date: "", materials: "", remark: "", sent: false };
+      const kind = deliveryNumbered ? deliveryNumbered[2].toLowerCase() : deliveryChinese[2];
+      if (kind === "date" || kind === "送货日期") {
+        const parsedDate = parseDateFromDescription(value);
+        if (parsedDate) result.deliveries[index].date = parsedDate;
+      } else if (kind === "material" || kind === "送货材料") result.deliveries[index].materials = value;
+      else if (kind === "remark" || kind === "送货备注") result.deliveries[index].remark = value;
+      else result.deliveries[index].sent = parseYesNo(value);
+      return;
+    }
+
     if (label.startsWith("address") || label.includes("地址")) result.address = value;
     else if (label.startsWith("id name") || label.includes("id 联系人姓名")) result.contact = value;
     else if (label.startsWith("lock") || label.includes("门锁")) result.lock = value;
@@ -2746,6 +3047,7 @@ function parseEventData(event) {
     amendTimberOther: false,
     amendTimberOtherDetail: "",
     amendRemark: "",
+    deliveries: [],
     deliveryDate: "",
     deliveryMaterials: "",
     deliveryRemark: "",
@@ -2775,14 +3077,14 @@ function parseEventData(event) {
     Object.assign(data, parseHumanDescription(description));
     if (structuredData) Object.assign(data, structuredData);
     if (event.summary || event.location) data.address = event.summary || event.location;
-    return data;
+    return applyDeliveryCompatibility(data);
   }
 
   if (structuredData) Object.assign(data, structuredData);
 
   if (!description.includes(DATA_HEADER) && !description.includes(APP_MARKER)) {
     data.amendRemark = description.trim();
-    return data;
+    return applyDeliveryCompatibility(data);
   }
 
   const map = new Map();
@@ -2852,7 +3154,7 @@ function parseEventData(event) {
   if (!data.installerName && data.foremen.length) data.installerName = data.foremen.join(", ");
   if (!data.amendRemark) data.amendRemark = data.scope || data.remove || data.notes || "";
   if (event.summary || event.location) data.address = event.summary || event.location;
-  return data;
+  return applyDeliveryCompatibility(data);
 }
 
 function splitPeople(value) {

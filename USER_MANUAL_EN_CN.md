@@ -1,3 +1,19 @@
+# v1.7.9 Quick User Update / 快速使用更新
+
+## Day View / 日视图
+- Choose **Day / 日**. Only work times appear; empty hours are hidden.
+- The large time heading shows the work time.
+- **ID Name** appears on the left.
+- Type the **Installer / 安装人员** directly in the box. Press Enter or tap/click outside to save it to Google Calendar.
+
+## Multiple Delivery / 多次送货
+- Open Add/Edit Job → **4. Deliver / 送货**.
+- Fill Delivery 1. Press **+ Add another delivery / 增加送货** for Delivery 2, 3, etc.
+- Jobs with the **same exact address** share the same delivery list on all work dates.
+- Tick **Delivery Sent / 已送货** separately for each delivery.
+
+---
+
 # v1.7.4 connection note / v1.7.4 连接说明
 
 After you press **Connect Google Calendar / 连接谷歌日历** once, the app automatically renews the temporary Google connection while the page remains open. You should not need to reconnect just because one hour has passed. / 点击一次 **连接谷歌日历** 后，只要页面保持开启，应用会自动续期临时谷歌连接，不会因为过了一小时就要求重新连接。

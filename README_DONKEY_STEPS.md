@@ -1,4 +1,25 @@
-# v1.7.8 Month + Day view / 月视图 + 日视图
+# v1.7.9 Compact Day View + Shared Delivery / 简洁日视图 + 同地址送货同步
+
+## What changed / 更新内容
+
+1. **Day view hides empty hours.** Only time slots that actually have work are shown. / 日视图隐藏没有工作的时间，只显示有工作的时间。
+2. **Time is bigger.** / 时间字体更大。
+3. **Timed jobs use a full-width address bar** instead of narrow side-by-side boxes. / 定时工作改成横向完整地址工作条。
+4. **ID Name is shown on the left** of each Day-view job. / 每个日视图工作左边显示 ID Name。
+5. **Installer can be typed directly in Day view.** Press Enter or click away; it saves to the Google Calendar event so other users see it after sync. / 可在日视图直接填写安装人员，按 Enter 或点开后自动保存到谷歌日历。
+6. **Multiple deliveries** are supported in Add/Edit Job → Deliver. Press “+ Add another delivery”. / 同一工地可增加多次送货。
+7. **Same exact address shares one delivery list across all work dates.** Saving a job synchronizes the delivery list to all KG Calendar jobs with the same address. / 相同地址的所有工作日期同步同一份送货记录。
+8. Day view and the selected-date job card show every shared delivery date. / 日视图和右侧工作卡会显示全部送货日期。
+9. If any delivery is marked Sent, the right-side job card keeps the existing light-blue delivery indication. / 任何一次送货勾选已送货后，右侧工作卡会保持浅蓝色提示。
+10. Existing WhatsApp output still excludes delivery/billing. / WhatsApp 输出仍不显示送货及开单资料。
+
+## Upload / 上传
+
+Replace the files in the root of GitHub repository `KGcall`, then open Settings → Reset Cache once. Confirm the app shows **v1.7.9**.
+
+---
+
+# Previous v1.7.8 notes / 之前 v1.7.8 说明
 
 Use the new **Month / 月** and **Day / 日** buttons above the calendar.
 
