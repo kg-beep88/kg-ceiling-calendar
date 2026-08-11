@@ -853,16 +853,10 @@ function buildDayCompactJobRow(calendarEvent, segment = null) {
   const row = document.createElement("div");
   row.className = "dayCompactJobRow";
 
+  // Keep the installer editable on the left, but place the ID Name directly
+  // beside the coloured address so the day schedule can be read in one row.
   const meta = document.createElement("div");
-  meta.className = "dayCompactMeta";
-
-  const idName = document.createElement("div");
-  idName.className = "dayCompactIdName";
-  const idLabel = document.createElement("small");
-  idLabel.textContent = "ID Name / ID 联系人姓名";
-  const idValue = document.createElement("strong");
-  idValue.textContent = data.contact || "—";
-  idName.append(idLabel, idValue);
+  meta.className = "dayCompactMeta dayCompactInstallerMeta";
 
   const installerLabel = document.createElement("label");
   installerLabel.className = "dayInstallerField";
@@ -884,10 +878,14 @@ function buildDayCompactJobRow(calendarEvent, segment = null) {
   });
   installer.addEventListener("blur", () => saveInlineInstaller(calendarEvent, installer));
   installerLabel.append(installerText, installer);
-  meta.append(idName, installerLabel);
+  meta.append(installerLabel);
 
   const main = document.createElement("div");
   main.className = "dayCompactMain";
+
+  const addressLine = document.createElement("div");
+  addressLine.className = "dayCompactAddressLine";
+
   const address = document.createElement("button");
   address.type = "button";
   address.className = "dayCompactAddress";
@@ -900,7 +898,17 @@ function buildDayCompactJobRow(calendarEvent, segment = null) {
     : address.textContent;
   address.disabled = !isConnected();
   address.addEventListener("click", () => openJobModal(calendarEvent));
-  main.appendChild(address);
+
+  const idName = document.createElement("div");
+  idName.className = "dayCompactIdBeside";
+  const idLabel = document.createElement("small");
+  idLabel.textContent = "ID Name / ID 联系人姓名";
+  const idValue = document.createElement("strong");
+  idValue.textContent = data.contact || "—";
+  idName.append(idLabel, idValue);
+
+  addressLine.append(address, idName);
+  main.appendChild(addressLine);
 
   const deliveries = getDeliveryEntries(data);
   if (deliveries.length) {
@@ -2898,7 +2906,7 @@ function formatFormTime(data) {
 function buildPrivateProperties(data) {
   const privateProperties = {
     kgCeilingApp: "1",
-    kgCeilingVersion: "1.7.11",
+    kgCeilingVersion: "1.7.12",
     ...(data.continueJob && data.continueGroupId ? {
       kgContinueJob: "1",
       kgContinueGroup: data.continueGroupId,

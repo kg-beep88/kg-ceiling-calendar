@@ -1,3 +1,7 @@
+# v1.7.12 Quick Update / 快速更新
+
+In Day View, read each job as one row: Installer on the left, full address plus ID Name beside it. All-day jobs also use the same row style. / 日视图中每个工作以一行显示：左边安装人员，地址旁显示 ID 联系人。全天工作也使用相同行格式。
+
 # v1.7.11 Day View Fit Screen / 日视图单屏显示
 
 On tablet or desktop, choose **Day / 日**. The app compresses the header, all-day jobs, timed jobs and right-side list so the working day fits on one screen without normal page scrolling. Phone remains scrollable.

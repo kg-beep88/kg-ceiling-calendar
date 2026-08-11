@@ -1,3 +1,11 @@
+# v1.7.12 Day View Row Readability / 日视图完整行显示
+
+- Day View hides Selected date / 已选日期 on the right.
+- ID Name / ID 联系人姓名 is shown beside the address.
+- Address and ID text are not cut off.
+- All-day jobs use full-width row layout like timed jobs.
+- Month View keeps the Selected date panel.
+
 # v1.7.11 Tablet/Desktop Single-Screen Day View / 平板电脑单屏日视图
 
 - Day view automatically uses a compact fit-to-screen layout on tablet and desktop.

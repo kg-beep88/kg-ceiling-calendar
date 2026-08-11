@@ -1,2 +1,2 @@
-KG Ceiling Calendar v1.7.11
-Day View Fit-to-Screen for tablet and desktop
+KG Ceiling Calendar v1.7.12
+Day View: ID beside address, full text, all-day rows

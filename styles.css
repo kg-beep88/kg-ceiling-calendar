@@ -754,3 +754,141 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); box-sh
 @media (max-width: 767px) {
   body.dayFitMode { height: auto; overflow: visible; }
 }
+
+/* v1.7.12 Day view readability: no selected-date block, ID beside address, no cut text, all-day rows */
+body.dayFitMode .dayPanelHead > div:first-child {
+  display: none !important;
+}
+body.dayFitMode .dayPanelHead {
+  justify-content: flex-end;
+}
+
+/* All-day work uses the same full-width row pattern as timed work. */
+.allDayBand {
+  display: grid;
+  gap: 7px;
+  padding: 8px;
+  border-bottom: 1px solid var(--border);
+  background: #fff;
+}
+.allDayBandLabel {
+  display: block;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 9px;
+  background: #eef5f3;
+  color: #173f38;
+  font-size: 20px;
+  font-weight: 950;
+  line-height: 1.15;
+  text-align: left;
+}
+.allDayEvents {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 7px;
+  padding: 0;
+}
+
+.dayCompactInstallerMeta {
+  align-content: center;
+}
+.dayCompactAddressLine {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(175px, 235px);
+  gap: 7px;
+  min-width: 0;
+  align-items: stretch;
+}
+.dayCompactIdBeside {
+  display: grid;
+  align-content: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 7px 9px;
+  border: 1px solid #d7e3e0;
+  border-radius: 9px;
+  background: #f9fbfa;
+}
+.dayCompactIdBeside small {
+  color: #6b7e79;
+  font-size: 10px;
+  font-weight: 800;
+}
+.dayCompactIdBeside strong {
+  color: #183d36;
+  font-size: 13px;
+  line-height: 1.2;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* Never hide or ellipsize the address in Day view. */
+.dayCompactAddress {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+@media (min-width: 768px) {
+  body.dayFitMode .allDayBand {
+    flex: 0 0 auto;
+    gap: 3px;
+    padding: 4px 6px;
+  }
+  body.dayFitMode .allDayBandLabel {
+    padding: 3px 7px;
+    border-radius: 6px;
+    font-size: 14px;
+    line-height: 1.05;
+  }
+  body.dayFitMode .allDayEvents {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 3px;
+    padding: 0;
+  }
+  body.dayFitMode .dayCompactAddressLine {
+    grid-template-columns: minmax(0, 1fr) minmax(150px, 205px);
+    gap: 4px;
+  }
+  body.dayFitMode .dayCompactIdBeside {
+    padding: 3px 5px;
+    border-radius: 6px;
+  }
+  body.dayFitMode .dayCompactIdBeside small { font-size: 8px; }
+  body.dayFitMode .dayCompactIdBeside strong { font-size: 10px; line-height: 1.05; }
+  body.dayFitMode .dayCompactAddress {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    line-height: 1.12;
+  }
+
+  body.dayFitDense .allDayEvents,
+  body.dayFitUltra .allDayEvents {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  body.dayFitDense .dayCompactAddressLine {
+    grid-template-columns: minmax(0, 1fr) minmax(135px, 180px);
+    gap: 3px;
+  }
+  body.dayFitDense .dayCompactIdBeside { padding: 2px 4px; }
+  body.dayFitDense .dayCompactIdBeside strong { font-size: 9px; }
+  body.dayFitUltra .dayCompactAddressLine {
+    grid-template-columns: minmax(0, 1fr) minmax(115px, 155px);
+  }
+  body.dayFitUltra .dayCompactIdBeside { padding: 2px 3px; }
+  body.dayFitUltra .dayCompactIdBeside small { display: block; font-size: 7px; }
+  body.dayFitUltra .dayCompactIdBeside strong { font-size: 8px; }
+}
+
+@media (max-width: 767px) {
+  .dayCompactAddressLine {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .dayCompactIdBeside {
+    padding: 6px 8px;
+  }
+}

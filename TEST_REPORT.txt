@@ -1,22 +1,12 @@
-KG Ceiling Calendar v1.7.11 test report
+KG Ceiling Calendar v1.7.12 test report
 
-Static checks completed:
 - JavaScript syntax: PASS
-- Duplicate HTML IDs: PASS (none)
-- JS-linked HTML element IDs: PASS
-- Versioned assets show v1.7.11: PASS
-- Service-worker cache bumped to v1.7.11: PASS
-- Day view fit mode class toggles from Month/Day state: PASS
-- Tablet/Desktop CSS prevents normal page scrolling in Day view: PASS
-- Day view schedule container uses available screen height: PASS
-- Right-side jobs use compact layout and 2 columns on wide desktop: PASS
-- Dense/ultra-dense mode triggers for shorter screens / many jobs: PASS
-- Phone remains scroll-friendly under 768 px: PASS
-- Existing v1.7.10 Day View colour sorting code preserved: PASS
-- Existing Google Calendar / installer / multiple delivery logic preserved: PASS
-
-Important real-device check after upload:
-1. Reset Cache once and confirm v1.7.11.
-2. Test Day view on the actual tablet in landscape and portrait.
-3. Test Day view on desktop at 100% browser zoom.
-4. If a date contains an unusually large number of sites, confirm text is still comfortable to read.
+- Duplicate HTML IDs: PASS
+- Referenced HTML IDs present: PASS
+- Versioned assets show v1.7.12: PASS
+- Service-worker cache bumped to v1.7.12: PASS
+- Day View Selected date block hidden: PASS
+- ID Name rendered beside address: PASS
+- Day View address no ellipsis/cut: PASS
+- All-day jobs forced to one full-width row each: PASS
+- Existing Google colour/time sorting logic retained: PASS
