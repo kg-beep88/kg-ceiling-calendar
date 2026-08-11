@@ -1,4 +1,4 @@
-const CACHE_NAME = "kg-ceiling-calendar-v1.7.13-full-day-no-sidebar";
+const CACHE_NAME = "kg-ceiling-calendar-v1.7.14-day-whatsapp-beside-address";
 const APP_FILES = [
   "./",
   "./index.html",

@@ -1,9 +1,9 @@
-# v1.7.13 Day View Full Width / 日视图全宽
+# v1.7.14 Day View WhatsApp Copy / 日视图单个工地复制
 
-1. In Day View, the old right-side job list is hidden.
-2. WhatsApp Copy Day and Add Job are moved to the Day View heading.
-3. The day schedule uses the full width.
-4. The schedule no longer clips later events. Every event for the selected day is rendered.
-5. If a screen is too short for an unusually busy day, the page can scroll instead of hiding work.
-6. Month View keeps the normal right-side selected-date panel.
-7. After upload to GitHub Pages, use Settings → Reset Cache once and confirm v1.7.13.
+1. Upload all files to the root of GitHub repository `KGcall`.
+2. Open the KG Calendar website.
+3. Settings → Reset Cache once.
+4. Confirm version v1.7.14.
+5. Open Day View.
+6. Each row now shows Address → WhatsApp Copy / 复制单个工地 → ID Name.
+7. Press WhatsApp Copy to open the existing editable single-site WhatsApp preview.

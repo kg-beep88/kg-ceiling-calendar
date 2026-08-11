@@ -903,6 +903,17 @@ function buildDayCompactJobRow(calendarEvent, segment = null) {
   address.disabled = !isConnected();
   address.addEventListener("click", () => openJobModal(calendarEvent));
 
+  const whatsAppBtn = document.createElement("button");
+  whatsAppBtn.type = "button";
+  whatsAppBtn.className = "dayCompactWhatsAppBtn";
+  whatsAppBtn.title = "WhatsApp Copy Site / 复制单个工地";
+  whatsAppBtn.setAttribute("aria-label", "WhatsApp Copy Site / 复制单个工地");
+  whatsAppBtn.innerHTML = "<strong>WhatsApp Copy</strong><small>复制单个工地</small>";
+  whatsAppBtn.addEventListener("click", (event) => {
+    event.stopPropagation();
+    shareSiteToWhatsApp(calendarEvent);
+  });
+
   const idName = document.createElement("div");
   idName.className = "dayCompactIdBeside";
   const idLabel = document.createElement("small");
@@ -911,7 +922,7 @@ function buildDayCompactJobRow(calendarEvent, segment = null) {
   idValue.textContent = data.contact || "—";
   idName.append(idLabel, idValue);
 
-  addressLine.append(address, idName);
+  addressLine.append(address, whatsAppBtn, idName);
   main.appendChild(addressLine);
 
   const deliveries = getDeliveryEntries(data);
@@ -2912,7 +2923,7 @@ function formatFormTime(data) {
 function buildPrivateProperties(data) {
   const privateProperties = {
     kgCeilingApp: "1",
-    kgCeilingVersion: "1.7.13",
+    kgCeilingVersion: "1.7.14",
     ...(data.continueJob && data.continueGroupId ? {
       kgContinueJob: "1",
       kgContinueGroup: data.continueGroupId,

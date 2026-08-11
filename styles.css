@@ -795,11 +795,33 @@ body.dayFitMode .dayPanelHead {
 }
 .dayCompactAddressLine {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(175px, 235px);
+  grid-template-columns: minmax(0, 1fr) auto minmax(175px, 235px);
   gap: 7px;
   min-width: 0;
   align-items: stretch;
 }
+.dayCompactWhatsAppBtn {
+  align-self: stretch;
+  min-width: 116px;
+  padding: 5px 9px;
+  border: 1px solid #b8ddd0;
+  border-radius: 9px;
+  background: #effaf5;
+  color: #087443;
+  font: inherit;
+  font-weight: 900;
+  line-height: 1.05;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.dayCompactWhatsAppBtn strong,
+.dayCompactWhatsAppBtn small {
+  display: block;
+}
+.dayCompactWhatsAppBtn strong { font-size: 11px; }
+.dayCompactWhatsAppBtn small { font-size: 9px; margin-top: 2px; }
+.dayCompactWhatsAppBtn:hover { background: #e3f6ed; }
+.dayCompactWhatsAppBtn:focus-visible { outline: 3px solid rgba(8,116,67,.22); outline-offset: 1px; }
 .dayCompactIdBeside {
   display: grid;
   align-content: center;
@@ -850,9 +872,16 @@ body.dayFitMode .dayPanelHead {
     padding: 0;
   }
   body.dayFitMode .dayCompactAddressLine {
-    grid-template-columns: minmax(0, 1fr) minmax(150px, 205px);
+    grid-template-columns: minmax(0, 1fr) auto minmax(150px, 205px);
     gap: 4px;
   }
+  body.dayFitMode .dayCompactWhatsAppBtn {
+    min-width: 98px;
+    padding: 3px 6px;
+    border-radius: 6px;
+  }
+  body.dayFitMode .dayCompactWhatsAppBtn strong { font-size: 9px; }
+  body.dayFitMode .dayCompactWhatsAppBtn small { font-size: 7px; }
   body.dayFitMode .dayCompactIdBeside {
     padding: 3px 5px;
     border-radius: 6px;
@@ -871,14 +900,18 @@ body.dayFitMode .dayPanelHead {
     grid-template-columns: minmax(0, 1fr) !important;
   }
   body.dayFitDense .dayCompactAddressLine {
-    grid-template-columns: minmax(0, 1fr) minmax(135px, 180px);
+    grid-template-columns: minmax(0, 1fr) auto minmax(135px, 180px);
     gap: 3px;
   }
   body.dayFitDense .dayCompactIdBeside { padding: 2px 4px; }
   body.dayFitDense .dayCompactIdBeside strong { font-size: 9px; }
   body.dayFitUltra .dayCompactAddressLine {
-    grid-template-columns: minmax(0, 1fr) minmax(115px, 155px);
+    grid-template-columns: minmax(0, 1fr) auto minmax(115px, 155px);
   }
+  body.dayFitDense .dayCompactWhatsAppBtn { min-width: 88px; padding: 2px 4px; }
+  body.dayFitUltra .dayCompactWhatsAppBtn { min-width: 80px; padding: 2px 3px; }
+  body.dayFitUltra .dayCompactWhatsAppBtn strong { font-size: 8px; }
+  body.dayFitUltra .dayCompactWhatsAppBtn small { font-size: 6.5px; }
   body.dayFitUltra .dayCompactIdBeside { padding: 2px 3px; }
   body.dayFitUltra .dayCompactIdBeside small { display: block; font-size: 7px; }
   body.dayFitUltra .dayCompactIdBeside strong { font-size: 8px; }
@@ -888,12 +921,17 @@ body.dayFitMode .dayPanelHead {
   .dayCompactAddressLine {
     grid-template-columns: minmax(0, 1fr);
   }
+  .dayCompactWhatsAppBtn {
+    width: 100%;
+    min-width: 0;
+    min-height: 38px;
+  }
   .dayCompactIdBeside {
     padding: 6px 8px;
   }
 }
 
-/* v1.7.13 Day view: full-width schedule, no duplicated right panel, never clip events */
+/* v1.7.14 Day view: full-width schedule, no duplicated right panel, never clip events */
 .dayViewTopActions {
   display: flex;
   align-items: center;
@@ -974,7 +1012,7 @@ body.dayFitMode .dayTimeline {
     grid-template-columns: minmax(125px, 165px) minmax(0, 1fr);
   }
   body.dayFitMode .dayCompactAddressLine {
-    grid-template-columns: minmax(0, 1fr) minmax(190px, 250px);
+    grid-template-columns: minmax(0, 1fr) auto minmax(190px, 250px);
   }
 
   /* Dense modes should still show complete rows; no clipping. */
@@ -984,7 +1022,7 @@ body.dayFitMode .dayTimeline {
   }
   body.dayFitDense .dayCompactAddressLine,
   body.dayFitUltra .dayCompactAddressLine {
-    grid-template-columns: minmax(0, 1fr) minmax(165px, 220px);
+    grid-template-columns: minmax(0, 1fr) auto minmax(165px, 220px);
   }
   body.dayFitUltra .dayCompactAddress {
     min-height: 20px;

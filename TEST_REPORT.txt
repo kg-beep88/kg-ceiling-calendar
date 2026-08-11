@@ -1,10 +1,10 @@
-KG Ceiling Calendar v1.7.13 test report
-- Day View right-side duplicated job list hidden: PASS
-- Day View full-width main schedule: PASS
-- Day timeline max-height/overflow clipping removed: PASS
-- Page can grow so later time groups are not hidden: PASS
-- Day View Add Job button retained at top: PASS
-- Day View WhatsApp Copy Day button retained at top: PASS
-- Month View right-side panel retained: PASS
-- Versioned assets v1.7.13: PASS
+KG Ceiling Calendar v1.7.14 test report
+
+- JavaScript syntax: PASS
+- Day View WhatsApp button created per job row: PASS
+- Single-site WhatsApp preview function reused: PASS
+- All-day and timed rows use the same job-row builder: PASS
+- Address remains flexible/full-width: PASS
+- ID Name remains beside the job: PASS
+- Versioned assets v1.7.14: PASS
 - Service-worker cache bumped: PASS

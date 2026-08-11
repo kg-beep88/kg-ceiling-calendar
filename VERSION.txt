@@ -1,2 +1,2 @@
-KG Ceiling Calendar v1.7.13
-Day View full-width + show every event
+KG Ceiling Calendar v1.7.14
+Day View: WhatsApp Copy beside every address
