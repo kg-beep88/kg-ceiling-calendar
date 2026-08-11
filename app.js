@@ -115,7 +115,7 @@ function cacheElements() {
     "connectionBadge", "connectBtn", "refreshBtn", "welcomeCard", "prevMonthBtn",
     "todayBtn", "nextMonthBtn", "monthTitle", "monthViewBtn", "dayViewBtn", "openGoogleBtn", "settingsBtn",
     "monthViewPanel", "dayViewPanel", "calendarGrid", "dayViewWeekday", "dayAllDayEvents", "dayTimelineScroll", "dayTimeline",
-    "selectedDateTitle", "addJobBtn", "whatsAppDayBtn", "syncMessage", "dayJobs",
+    "dayAddJobBtn", "dayWhatsAppDayBtn", "selectedDateTitle", "addJobBtn", "whatsAppDayBtn", "syncMessage", "dayJobs",
     "floatingAddBtn", "addressSearchForm", "addressSearchInput", "addressSearchBtn",
     "jobModal", "jobModalTitle", "closeModalBtn", "jobForm", "eventId", "continueGroupId", "addressInput",
     "dateInput", "endDateInput", "startTimeInput", "endTimeInput", "allDayInput", "continueJobInput",
@@ -167,6 +167,8 @@ function bindEvents() {
   });
   el.addJobBtn.addEventListener("click", () => openJobModal());
   el.whatsAppDayBtn.addEventListener("click", shareSelectedDayToWhatsApp);
+  el.dayAddJobBtn.addEventListener("click", () => openJobModal());
+  el.dayWhatsAppDayBtn.addEventListener("click", shareSelectedDayToWhatsApp);
   el.floatingAddBtn.addEventListener("click", () => openJobModal());
   el.closeModalBtn.addEventListener("click", closeJobModal);
   el.cancelBtn.addEventListener("click", closeJobModal);
@@ -400,6 +402,8 @@ function setConnectionState(state) {
   el.refreshBtn.disabled = !connected;
   el.addJobBtn.disabled = !connected;
   el.whatsAppDayBtn.disabled = !connected;
+  el.dayAddJobBtn.disabled = !connected;
+  el.dayWhatsAppDayBtn.disabled = !connected;
   el.floatingAddBtn.disabled = !connected;
   el.addressSearchBtn.disabled = !connected;
 
@@ -1244,6 +1248,8 @@ function renderDayJobs() {
   el.dayJobs.innerHTML = "";
   const dayEvents = eventsForDate(selectedDate);
   el.whatsAppDayBtn.disabled = !isConnected() || dayEvents.length === 0;
+  el.dayWhatsAppDayBtn.disabled = !isConnected() || dayEvents.length === 0;
+  el.dayAddJobBtn.disabled = !isConnected();
   if (!dayEvents.length) {
     const empty = document.createElement("div");
     empty.className = "emptyState";
@@ -2906,7 +2912,7 @@ function formatFormTime(data) {
 function buildPrivateProperties(data) {
   const privateProperties = {
     kgCeilingApp: "1",
-    kgCeilingVersion: "1.7.12",
+    kgCeilingVersion: "1.7.13",
     ...(data.continueJob && data.continueGroupId ? {
       kgContinueJob: "1",
       kgContinueGroup: data.continueGroupId,

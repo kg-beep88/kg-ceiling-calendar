@@ -892,3 +892,116 @@ body.dayFitMode .dayPanelHead {
     padding: 6px 8px;
   }
 }
+
+/* v1.7.13 Day view: full-width schedule, no duplicated right panel, never clip events */
+.dayViewTopActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+  margin-left: auto;
+}
+.dayViewTopActions .btn {
+  min-height: 38px;
+  padding: 6px 11px;
+  font-size: 11px;
+}
+.dayViewTopActions .btn small { font-size: 8px; }
+
+/* The red-marked right-side list is hidden only in Day View. */
+body.dayFitMode .dayPanel {
+  display: none !important;
+}
+body.dayFitMode .mainGrid {
+  grid-template-columns: minmax(0, 1fr) !important;
+  height: auto !important;
+  min-height: 0 !important;
+  align-items: start;
+}
+body.dayFitMode .calendarPanel {
+  width: 100%;
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+
+/* Do not force the Day View into a clipped 100vh box. Compact it first, then
+   allow the page itself to grow if a very busy day still needs more height. */
+body.dayFitMode {
+  height: auto !important;
+  min-height: 100vh;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+body.dayFitMode .appShell {
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+  display: block !important;
+}
+body.dayFitMode .toolbar {
+  margin-bottom: 6px;
+}
+body.dayFitMode .dayViewPanel {
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+body.dayFitMode .dayTimelineScroll {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+  scrollbar-gutter: auto;
+}
+body.dayFitMode .dayTimeline {
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+
+/* Use the extra width to keep address + ID details readable. */
+@media (min-width: 768px) {
+  body.dayFitMode .dayViewGuide {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+  }
+  body.dayFitMode .dayViewGuide > span {
+    justify-self: center;
+  }
+  body.dayFitMode .dayCompactJobRow {
+    grid-template-columns: minmax(125px, 165px) minmax(0, 1fr);
+  }
+  body.dayFitMode .dayCompactAddressLine {
+    grid-template-columns: minmax(0, 1fr) minmax(190px, 250px);
+  }
+
+  /* Dense modes should still show complete rows; no clipping. */
+  body.dayFitDense .dayCompactJobRow,
+  body.dayFitUltra .dayCompactJobRow {
+    grid-template-columns: minmax(110px, 145px) minmax(0, 1fr);
+  }
+  body.dayFitDense .dayCompactAddressLine,
+  body.dayFitUltra .dayCompactAddressLine {
+    grid-template-columns: minmax(0, 1fr) minmax(165px, 220px);
+  }
+  body.dayFitUltra .dayCompactAddress {
+    min-height: 20px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+  }
+  body.dayFitUltra .allDayBand,
+  body.dayFitUltra .dayTimeline {
+    overflow: visible !important;
+  }
+}
+
+@media (max-width: 767px) {
+  body.dayFitMode .mainGrid { grid-template-columns: minmax(0, 1fr) !important; }
+  .dayViewTopActions {
+    width: 100%;
+    justify-content: stretch;
+  }
+  .dayViewTopActions .btn { flex: 1 1 0; }
+}

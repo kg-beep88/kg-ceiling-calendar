@@ -1,4 +1,4 @@
-const CACHE_NAME = "kg-ceiling-calendar-v1.7.12-day-row-readability";
+const CACHE_NAME = "kg-ceiling-calendar-v1.7.13-full-day-no-sidebar";
 const APP_FILES = [
   "./",
   "./index.html",

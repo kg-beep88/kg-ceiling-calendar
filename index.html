@@ -9,7 +9,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=1.7.12">
+  <link rel="stylesheet" href="styles.css?v=1.7.13">
 </head>
 <body>
   <noscript>
@@ -21,7 +21,7 @@
       <div class="brandMark" aria-hidden="true">KG</div>
       <div>
         <h1>KG Ceiling Work Calendar</h1>
-        <p>KG 天花工作日历 · v1.7.12</p>
+        <p>KG 天花工作日历 · v1.7.13</p>
       </div>
     </div>
 
@@ -108,6 +108,14 @@
           <div class="dayViewGuide">
             <strong id="dayViewWeekday">Day / 日</strong>
             <span>Only work times are shown. Installer can be entered here. / 只显示有工作的时间，可直接填写安装人员。</span>
+            <div class="dayViewTopActions">
+              <button id="dayWhatsAppDayBtn" class="btn btnWhatsApp" type="button" disabled>
+                WhatsApp Copy Day<br><small>复制当天全部</small>
+              </button>
+              <button id="dayAddJobBtn" class="btn btnPrimary" type="button" disabled>
+                ＋ Add Job<br><small>新增工作</small>
+              </button>
+            </div>
           </div>
           <div class="allDayBand">
             <div class="allDayBandLabel">All day / 全天</div>
@@ -441,8 +449,8 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="config.js?v=1.7.12"></script>
+  <script src="config.js?v=1.7.13"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="app.js?v=1.7.12" defer></script>
+  <script src="app.js?v=1.7.13" defer></script>
 </body>
 </html>

@@ -1,2 +1,2 @@
-KG Ceiling Calendar v1.7.12
-Day View: ID beside address, full text, all-day rows
+KG Ceiling Calendar v1.7.13
+Day View full-width + show every event
