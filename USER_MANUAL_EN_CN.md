@@ -1,4 +1,4 @@
-# v1.7.9 Quick User Update / 快速使用更新
+# v1.7.10 Quick User Update / 快速使用更新
 
 ## Day View / 日视图
 - Choose **Day / 日**. Only work times appear; empty hours are hidden.
@@ -322,3 +322,7 @@ Jobs are automatically arranged by:
 
 All-day jobs are treated as starting at the beginning of the day.  
 全天工作会排在当天开始的位置。
+
+
+## Day view order / 日视图排序
+Jobs are arranged by **time → Google Calendar colour → address**. / 工作按 **时间 → 谷歌日历颜色 → 地址** 排列。

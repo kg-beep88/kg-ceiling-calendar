@@ -1,4 +1,4 @@
-const CACHE_NAME = "kg-ceiling-calendar-v1.7.9-compact-day-shared-delivery";
+const CACHE_NAME = "kg-ceiling-calendar-v1.7.10-day-sort-fix";
 const APP_FILES = [
   "./",
   "./index.html",

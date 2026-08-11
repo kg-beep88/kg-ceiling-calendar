@@ -1,2 +1,2 @@
-KG Ceiling Calendar v1.7.9
-Compact Day View + Shared Multiple Delivery
+KG Ceiling Calendar v1.7.10
+Day View render fix + Google colour sorting

@@ -1,28 +1,16 @@
-KG Ceiling Calendar v1.7.9 test report
-========================================
+KG Ceiling Calendar v1.7.10 test report
 
-Automated/static checks completed in this build:
+Automated/static checks:
+- JavaScript syntax: PASS
+- Missing eventAddressForSort helper: FIXED
+- Timed Day-view sorting: time -> Google Calendar colour -> address: PASS (code path)
+- All-day sorting uses daily Google-colour sorter: PASS (code path)
+- Versioned assets show v1.7.10: PASS
+- Service-worker cache bumped to v1.7.10: PASS
+- No duplicate HTML IDs: PASS
 
-- JavaScript syntax (`node --check app.js`): PASS
-- Duplicate HTML IDs: PASS (none)
-- All IDs cached by app.js exist in index.html: PASS
-- Versioned assets show v1.7.9: PASS
-- Service-worker cache bumped to v1.7.9: PASS
-- Day view uses compact work-only time groups (no 24-hour empty-hour generation): PASS
-- Day-view ID Name + inline Installer controls present: PASS
-- Inline Installer saves by PATCH to the same Google event: PASS (code-path verification)
-- Multiple delivery rows in Add/Edit Job: PASS
-- Multiple delivery structured-data round trip: PASS
-- Multiple delivery human-description fallback parse: PASS
-- Same-address delivery propagation mock test: PASS
-- Different address is not patched during same-address delivery sync: PASS
-- Legacy single-delivery fields remain readable: PASS (compatibility layer)
-- Existing address-first search logic retained: PASS
-- Existing WhatsApp output still excludes Deliver/Billing: retained
-
-Important live test after upload:
-1. Reset Cache once and confirm v1.7.9.
-2. Open Day view and confirm only actual work-time groups appear.
-3. Type an Installer in Day view, press Enter, then refresh another user's app to confirm it syncs.
-4. Add Delivery 1 and Delivery 2 to one address, save, then open a different-date job with the exact same address and confirm both delivery dates appear.
-5. Tick one Delivery Sent box and confirm same-address records receive the same delivery list/status after sync.
+Manual browser check after GitHub upload:
+1. Reset Cache once and confirm v1.7.10.
+2. Open Day view on a date with jobs.
+3. Confirm there is no `eventAddressForSort is not defined` error.
+4. Confirm same-time jobs are ordered by their Google Calendar event colour, then address.

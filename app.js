@@ -782,7 +782,20 @@ function renderDaySchedule() {
       return minutes ? { event, ...minutes } : null;
     })
     .filter(Boolean)
-    .sort((a, b) => a.start - b.start || a.end - b.end || eventAddressForSort(a.event).localeCompare(eventAddressForSort(b.event)));
+    .sort((a, b) => {
+      if (a.start !== b.start) return a.start - b.start;
+      if (a.end !== b.end) return a.end - b.end;
+
+      const colourA = eventColourSortValue(a.event);
+      const colourB = eventColourSortValue(b.event);
+      if (colourA !== colourB) return colourA - colourB;
+
+      return eventAddressForSort(a.event).localeCompare(
+        eventAddressForSort(b.event),
+        undefined,
+        { numeric: true, sensitivity: "base" }
+      );
+    });
 
   if (!allDayEvents.length) {
     const none = document.createElement("span");
@@ -1980,6 +1993,11 @@ function eventColourSortValue(event) {
   return Number.isFinite(value) ? value : 99;
 }
 
+function eventAddressForSort(event) {
+  const data = parseEventData(event);
+  return String(data.address || event?.summary || event?.location || "").trim();
+}
+
 
 function eventStartMs(event) {
   if (event.start?.dateTime) return new Date(event.start.dateTime).getTime();
@@ -2854,7 +2872,7 @@ function formatFormTime(data) {
 function buildPrivateProperties(data) {
   const privateProperties = {
     kgCeilingApp: "1",
-    kgCeilingVersion: "1.7.9",
+    kgCeilingVersion: "1.7.10",
     ...(data.continueJob && data.continueGroupId ? {
       kgContinueJob: "1",
       kgContinueGroup: data.continueGroupId,
