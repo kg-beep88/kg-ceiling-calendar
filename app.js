@@ -27,7 +27,7 @@ const APP_MARKER = "#KGCEILING";
 const DATA_HEADER = "[KG CEILING APP DATA / KG 天花应用资料]";
 const VEHICLE_OPTIONS = [
   "YN8209T",
-  "YP8209B",
+  "YP8289B",
   "YQ6498Y",
   "GBE6680Y",
   "GBG8121X",
