@@ -1390,4 +1390,138 @@ body.dayFitMode .dayTimeline {
     padding-right: 3px;
   }
 }
-\n\n/* v1.7.18 — Search is available in Day View + compact Month delivery status rails. */\n\n/* Bring the same Month search function into Day View, but keep it compact so it\n   does not take over the working schedule. */\nbody.dayFitMode .searchCard {\n  display: block !important;\n  width: min(100%, 710px);\n  max-width: 710px;\n  margin: 0 0 6px;\n  padding: 6px 8px;\n}\nbody.dayFitMode .searchCard .searchIntro { display: none !important; }\nbody.dayFitMode .searchCard .addressSearchForm {\n  grid-template-columns: minmax(0, 1fr) auto;\n  gap: 6px;\n}\nbody.dayFitMode .searchCard .searchField span {\n  font-size: 9px;\n  line-height: 1.05;\n}\nbody.dayFitMode .searchCard .searchField input {\n  min-height: 36px;\n  padding: 5px 8px;\n  font-size: 12px;\n}\nbody.dayFitMode .searchCard .addressSearchForm .btn {\n  min-width: 112px;\n  min-height: 36px;\n  padding: 4px 8px;\n  font-size: 10px;\n}\nbody.dayFitMode .searchCard .addressSearchForm .btn small { font-size: 8px; }\n\n/* Month calendar address bars: light blue = Material, dark blue = Delivery Sent. */\n.eventChip.monthEventMaterialStatus,\n.eventChip.monthEventDeliverySent {\n  position: relative;\n  isolation: isolate;\n}\n.eventChip.monthEventMaterialStatus::before,\n.eventChip.monthEventDeliverySent::after {\n  content: "";\n  position: absolute;\n  top: 0;\n  bottom: 0;\n  width: 5mm;\n  z-index: 2;\n  pointer-events: none;\n}\n.eventChip.monthEventMaterialStatus::before {\n  right: 0;\n  background: #8fd7f4;\n}\n.eventChip.monthEventDeliverySent::after {\n  right: 0;\n  background: #174f9b;\n}\n.eventChip.monthEventMaterialStatus.monthEventDeliverySent::before { right: 5mm; }\n.eventChip.monthEventMaterialStatus.monthEventDeliverySent { padding-right: calc(10mm + 7px); }\n.eventChip.monthEventMaterialStatus:not(.monthEventDeliverySent),\n.eventChip.monthEventDeliverySent:not(.monthEventMaterialStatus) {\n  padding-right: calc(5mm + 7px);\n}\n.eventChip.monthEventDeliverySent::after,\n.eventChip.monthEventMaterialStatus:not(.monthEventDeliverySent)::before {\n  border-radius: 0 7px 7px 0;\n}\n\n/* Month selected-date cards use the same status rails and no delivery sentence. */\n.jobCard.monthCardMaterialStatus,\n.jobCard.monthCardDeliverySent {\n  position: relative;\n  overflow: hidden;\n}\n.jobCard.monthCardMaterialStatus::before,\n.jobCard.monthCardDeliverySent::after {\n  content: "";\n  position: absolute;\n  top: 0;\n  bottom: 0;\n  width: 5mm;\n  z-index: 2;\n  pointer-events: none;\n}\n.jobCard.monthCardMaterialStatus::before {\n  right: 0;\n  background: #8fd7f4;\n}\n.jobCard.monthCardDeliverySent::after {\n  right: 0;\n  background: #174f9b;\n}\n.jobCard.monthCardMaterialStatus.monthCardDeliverySent::before { right: 5mm; }\n.jobCard.monthCardMaterialStatus.monthCardDeliverySent { padding-right: calc(10mm + 12px); }\n.jobCard.monthCardMaterialStatus:not(.monthCardDeliverySent),\n.jobCard.monthCardDeliverySent:not(.monthCardMaterialStatus) {\n  padding-right: calc(5mm + 12px);\n}\n.jobCard.monthCardDeliverySent::after,\n.jobCard.monthCardMaterialStatus:not(.monthCardDeliverySent)::before {\n  border-radius: 0 14px 14px 0;\n}\n\n@media (max-width: 700px) {\n  body.dayFitMode .searchCard {\n    width: 100%;\n    max-width: 100%;\n    padding: 5px 6px;\n  }\n  body.dayFitMode .searchCard .addressSearchForm {\n    grid-template-columns: minmax(0, 1fr) 90px;\n    gap: 4px;\n  }\n  body.dayFitMode .searchCard .searchField span { display: none; }\n  body.dayFitMode .searchCard .searchField input {\n    min-height: 34px;\n    font-size: 11px;\n  }\n  body.dayFitMode .searchCard .addressSearchForm .btn {\n    width: 90px;\n    min-width: 90px;\n    min-height: 34px;\n    padding: 3px 5px;\n    font-size: 9px;\n  }\n}\n
+
+
+/* Day/Month search + compact Month delivery status rails. */
+
+/* Bring the same Month search function into Day View, but keep it compact so it
+   does not take over the working schedule. */
+body.dayFitMode .searchCard {
+  display: block !important;
+  width: min(100%, 710px);
+  max-width: 710px;
+  margin: 0 0 6px;
+  padding: 6px 8px;
+}
+body.dayFitMode .searchCard .searchIntro { display: none !important; }
+body.dayFitMode .searchCard .addressSearchForm {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+}
+body.dayFitMode .searchCard .searchField span {
+  font-size: 9px;
+  line-height: 1.05;
+}
+body.dayFitMode .searchCard .searchField input {
+  min-height: 36px;
+  padding: 5px 8px;
+  font-size: 12px;
+}
+body.dayFitMode .searchCard .addressSearchForm .btn {
+  min-width: 112px;
+  min-height: 36px;
+  padding: 4px 8px;
+  font-size: 10px;
+}
+body.dayFitMode .searchCard .addressSearchForm .btn small { font-size: 8px; }
+
+/* Month calendar address bars: light blue = Material, dark blue = Delivery Sent. */
+.eventChip.monthEventMaterialStatus,
+.eventChip.monthEventDeliverySent {
+  position: relative;
+  isolation: isolate;
+}
+.eventChip.monthEventMaterialStatus::before,
+.eventChip.monthEventDeliverySent::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 5mm;
+  z-index: 2;
+  pointer-events: none;
+}
+.eventChip.monthEventMaterialStatus::before {
+  right: 0;
+  background: #8fd7f4;
+}
+.eventChip.monthEventDeliverySent::after {
+  right: 0;
+  background: #174f9b;
+}
+.eventChip.monthEventMaterialStatus.monthEventDeliverySent::before { right: 5mm; }
+.eventChip.monthEventMaterialStatus.monthEventDeliverySent { padding-right: calc(10mm + 7px); }
+.eventChip.monthEventMaterialStatus:not(.monthEventDeliverySent),
+.eventChip.monthEventDeliverySent:not(.monthEventMaterialStatus) {
+  padding-right: calc(5mm + 7px);
+}
+.eventChip.monthEventDeliverySent::after,
+.eventChip.monthEventMaterialStatus:not(.monthEventDeliverySent)::before {
+  border-radius: 0 7px 7px 0;
+}
+
+/* Month selected-date cards use the same status rails and no delivery sentence. */
+.jobCard.monthCardMaterialStatus,
+.jobCard.monthCardDeliverySent {
+  position: relative;
+  overflow: hidden;
+}
+.jobCard.monthCardMaterialStatus::before,
+.jobCard.monthCardDeliverySent::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 5mm;
+  z-index: 2;
+  pointer-events: none;
+}
+.jobCard.monthCardMaterialStatus::before {
+  right: 0;
+  background: #8fd7f4;
+}
+.jobCard.monthCardDeliverySent::after {
+  right: 0;
+  background: #174f9b;
+}
+.jobCard.monthCardMaterialStatus.monthCardDeliverySent::before { right: 5mm; }
+.jobCard.monthCardMaterialStatus.monthCardDeliverySent { padding-right: calc(10mm + 12px); }
+.jobCard.monthCardMaterialStatus:not(.monthCardDeliverySent),
+.jobCard.monthCardDeliverySent:not(.monthCardMaterialStatus) {
+  padding-right: calc(5mm + 12px);
+}
+.jobCard.monthCardDeliverySent::after,
+.jobCard.monthCardMaterialStatus:not(.monthCardDeliverySent)::before {
+  border-radius: 0 14px 14px 0;
+}
+
+@media (max-width: 700px) {
+  body.dayFitMode .searchCard {
+    width: 100%;
+    max-width: 100%;
+    padding: 5px 6px;
+  }
+  body.dayFitMode .searchCard .addressSearchForm {
+    grid-template-columns: minmax(0, 1fr) 90px;
+    gap: 4px;
+  }
+  body.dayFitMode .searchCard .searchField span { display: none; }
+  body.dayFitMode .searchCard .searchField input {
+    min-height: 34px;
+    font-size: 11px;
+  }
+  body.dayFitMode .searchCard .addressSearchForm .btn {
+    width: 90px;
+    min-width: 90px;
+    min-height: 34px;
+    padding: 3px 5px;
+    font-size: 9px;
+  }
+}
+
+
+/* v1.7.19 — Day search fix + one current delivery status rail. */
+body.dayFitMode .searchCard {
+  display: block !important;
+  box-sizing: border-box;
+}

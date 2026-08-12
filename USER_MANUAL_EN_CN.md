@@ -14,3 +14,10 @@ Every delivery can have two marks / 每次送货有两个勾选：
 
 Tick the required box in Add/Edit Job → Deliver, then save to Google Calendar.
 在新增/编辑工作 → 送货中勾选，然后保存到谷歌日历。
+
+
+## v1.7.19 update
+- Day View now shows the same Search / 搜索 bar as Month View.
+- Material / 料单 and Delivery Sent / 已送货 are one-status-only for each delivery row.
+- Marking Delivery Sent automatically clears Material for that same delivery. Marking Material clears Delivery Sent.
+- The address status rail shows only the current/latest delivery row. If Delivery 2 exists, Delivery 2 status is the one shown.

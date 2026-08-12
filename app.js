@@ -178,6 +178,7 @@ function bindEvents() {
   el.continueJobInput.addEventListener("change", () => updateContinueJobState(true));
   el.addContinuePeriodBtn.addEventListener("click", () => addContinuePeriodRow());
   el.addDeliveryBtn.addEventListener("click", () => addDeliveryRow());
+  bindDeliveryStatusPair(el.deliveryRows.querySelector('[data-delivery-row]'));
   el.addressInput.addEventListener("change", () => loadSharedDeliveriesIntoForm(el.addressInput.value));
   el.dateInput.addEventListener("change", handleStartDateChange);
   el.endDateInput.addEventListener("change", handleEndDateChange);
@@ -735,9 +736,9 @@ function renderCalendar() {
 
       // Month View delivery indicators: keep the address bar clean and show
       // status only as the same 5 mm light/dark blue rails used in Day View.
-      const chipDeliveries = getDeliveryEntries(parseEventData(calendarEvent));
-      const chipHasMaterial = chipDeliveries.some((delivery) => delivery.materialStatus);
-      const chipHasDeliverySent = chipDeliveries.some((delivery) => delivery.deliverySent);
+      const chipDeliveryStatus = currentDeliveryDisplayStatus(parseEventData(calendarEvent));
+      const chipHasMaterial = chipDeliveryStatus.materialStatus;
+      const chipHasDeliverySent = chipDeliveryStatus.deliverySent;
       if (chipHasMaterial) chip.classList.add("monthEventMaterialStatus");
       if (chipHasDeliverySent) chip.classList.add("monthEventDeliverySent");
       chip.setAttribute("aria-label", [
@@ -916,9 +917,9 @@ function buildDayCompactJobRow(calendarEvent, segment = null) {
   address.disabled = !isConnected();
   address.addEventListener("click", () => openJobModal(calendarEvent));
 
-  const deliveries = getDeliveryEntries(data);
-  const hasMaterialStatus = deliveries.some((delivery) => delivery.materialStatus);
-  const hasDeliverySent = deliveries.some((delivery) => delivery.deliverySent);
+  const deliveryDisplayStatus = currentDeliveryDisplayStatus(data);
+  const hasMaterialStatus = deliveryDisplayStatus.materialStatus;
+  const hasDeliverySent = deliveryDisplayStatus.deliverySent;
   if (hasMaterialStatus) address.classList.add("dayAddressMaterialStatus");
   if (hasDeliverySent) address.classList.add("dayAddressDeliverySent");
   address.setAttribute("aria-label", [
@@ -1297,9 +1298,9 @@ function renderDayJobs() {
 
     // Month View selected-day list: do not print the Deliver / 送货 sentence.
     // Show Material and Delivery Sent only as 5 mm colour rails on the card.
-    const deliveries = getDeliveryEntries(data);
-    const hasMaterialStatus = deliveries.some((delivery) => delivery.materialStatus);
-    const hasDeliverySent = deliveries.some((delivery) => delivery.deliverySent);
+    const deliveryDisplayStatus = currentDeliveryDisplayStatus(data);
+    const hasMaterialStatus = deliveryDisplayStatus.materialStatus;
+    const hasDeliverySent = deliveryDisplayStatus.deliverySent;
     if (hasMaterialStatus) card.classList.add("monthCardMaterialStatus");
     if (hasDeliverySent) card.classList.add("monthCardDeliverySent");
     card.setAttribute("aria-label", [
@@ -2587,17 +2588,21 @@ function normalizeDeliveryEntry(entry = {}) {
     || Object.prototype.hasOwnProperty.call(entry, "material")
     || Object.prototype.hasOwnProperty.call(entry, "deliverySent");
   const legacySent = Object.prototype.hasOwnProperty.call(entry, "sent") ? Boolean(entry.sent) : false;
+  const deliverySent = hasNewStatusFields ? Boolean(entry.deliverySent) : false;
+  let materialStatus = hasNewStatusFields
+    ? Boolean(entry.materialStatus ?? entry.material ?? false)
+    : legacySent;
+
+  // v1.7.19: only one status per delivery. Delivery Sent wins over Material
+  // for the same delivery row, including older records that may contain both.
+  if (deliverySent) materialStatus = false;
+
   return {
     date: String(entry.date || entry.deliveryDate || "").trim(),
     materials: String(entry.materials || entry.deliveryMaterials || "").trim(),
     remark: String(entry.remark || entry.deliveryRemark || "").trim(),
-    // v1.7.14 and older used `sent` for the old checkbox. In v1.7.15 that
-    // same checkbox becomes Material / 料单, so old checked values migrate here.
-    materialStatus: hasNewStatusFields
-      ? Boolean(entry.materialStatus ?? entry.material ?? false)
-      : legacySent,
-    // This is the brand-new actual Delivery Sent / 已送货 status.
-    deliverySent: hasNewStatusFields ? Boolean(entry.deliverySent) : false
+    materialStatus,
+    deliverySent
   };
 }
 
@@ -2616,6 +2621,18 @@ function getDeliveryEntries(data = {}) {
       : { sent: data.deliverySent })
   });
   return legacy.date || legacy.materials || legacy.remark || legacy.materialStatus || legacy.deliverySent ? [legacy] : [];
+}
+
+function currentDeliveryDisplayStatus(dataOrDeliveries = {}) {
+  const deliveries = Array.isArray(dataOrDeliveries)
+    ? dataOrDeliveries.map(normalizeDeliveryEntry).filter((item) => item.date || item.materials || item.remark || item.materialStatus || item.deliverySent)
+    : getDeliveryEntries(dataOrDeliveries);
+  const current = deliveries.length ? normalizeDeliveryEntry(deliveries[deliveries.length - 1]) : null;
+  return {
+    materialStatus: Boolean(current?.materialStatus),
+    deliverySent: Boolean(current?.deliverySent),
+    deliveryNumber: deliveries.length
+  };
 }
 
 function applyDeliveryCompatibility(data = {}) {
@@ -2644,8 +2661,13 @@ function mergeDeliveryLists(...lists) {
     const key = deliveryEntryKey(item);
     if (!merged.has(key)) merged.set(key, item);
     else {
-      if (item.materialStatus) merged.get(key).materialStatus = true;
-      if (item.deliverySent) merged.get(key).deliverySent = true;
+      const current = merged.get(key);
+      if (item.deliverySent) {
+        current.deliverySent = true;
+        current.materialStatus = false;
+      } else if (item.materialStatus && !current.deliverySent) {
+        current.materialStatus = true;
+      }
     }
   });
   return Array.from(merged.values()).sort((a, b) => {
@@ -2653,6 +2675,21 @@ function mergeDeliveryLists(...lists) {
     if (a.date && !b.date) return -1;
     if (!a.date && b.date) return 1;
     return deliveryEntryKey(a).localeCompare(deliveryEntryKey(b));
+  });
+}
+
+function bindDeliveryStatusPair(row) {
+  if (!row || row.dataset.deliveryStatusBound === "1") return;
+  const materialInput = row.querySelector('[data-delivery-material]');
+  const sentInput = row.querySelector('[data-delivery-sent]');
+  if (!materialInput || !sentInput) return;
+
+  row.dataset.deliveryStatusBound = "1";
+  materialInput.addEventListener("change", () => {
+    if (materialInput.checked) sentInput.checked = false;
+  });
+  sentInput.addEventListener("change", () => {
+    if (sentInput.checked) materialInput.checked = false;
   });
 }
 
@@ -2690,6 +2727,7 @@ function addDeliveryRow(entry = {}) {
   row.querySelector('[data-delivery-remark]').value = item.remark;
   row.querySelector('[data-delivery-material]').checked = item.materialStatus;
   row.querySelector('[data-delivery-sent]').checked = item.deliverySent;
+  bindDeliveryStatusPair(row);
   row.querySelector('.deliveryRemoveBtn').addEventListener('click', () => {
     row.remove();
     updateDeliveryRowNumbers();
@@ -2714,6 +2752,7 @@ function renderDeliveryRows(deliveries = []) {
   el.deliveryRemarkInput.value = items[0].remark;
   el.deliveryMaterialInput.checked = items[0].materialStatus;
   el.deliverySentInput.checked = items[0].deliverySent;
+  bindDeliveryStatusPair(el.deliveryRows.querySelector('[data-delivery-row]'));
   items.slice(1).forEach((item) => addDeliveryRow(item));
   updateDeliveryRowNumbers();
 }
@@ -2971,7 +3010,7 @@ function formatFormTime(data) {
 function buildPrivateProperties(data) {
   const privateProperties = {
     kgCeilingApp: "1",
-    kgCeilingVersion: "1.7.18",
+    kgCeilingVersion: "1.7.19",
     ...(data.continueJob && data.continueGroupId ? {
       kgContinueJob: "1",
       kgContinueGroup: data.continueGroupId,

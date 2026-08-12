@@ -1,18 +1,14 @@
-KG Ceiling Calendar v1.7.18 - Test Report
+KG Ceiling Calendar v1.7.19 - Test Report
 
-Changes checked:
-- Day View now shows the same Job Search / 工作搜索 function used by Month View.
-- Day View search is compact on tablet/desktop and phone to avoid horizontal scrolling.
-- Month calendar event bars show Material / 料单 as a 5 mm light-blue rail.
-- Month calendar event bars show Delivery Sent / 已送货 as a 5 mm dark-blue rail.
-- If both statuses are set, both 5 mm rails appear.
-- Month selected-date job cards use the same light/dark blue status rails.
-- Month selected-date job cards no longer print 'Deliver / 送货: ... · 料单✓ / 已送货✓' below the address.
-- Delivery data remains saved/synced; only the Month View display was simplified.
-- Version/cache bumped to v1.7.18.
-
-Static checks:
-- app.js syntax: PASS
-- sw.js syntax: PASS
-- duplicate HTML IDs: PASS (none)
-- versioned index assets: PASS
+PASS
+- JavaScript syntax checked with node --check.
+- No duplicate HTML IDs.
+- All cached DOM IDs referenced by app.js exist in index.html.
+- Broken literal \n CSS from v1.7.18 repaired; CSS brace counts match.
+- Day View Search / 搜索 card has a valid final display:block override.
+- Delivery Sent / 已送货 automatically clears Material / 料单 in the same delivery row.
+- Material / 料单 also clears Delivery Sent in the same delivery row so only one status can exist.
+- Old records containing both statuses normalize to Delivery Sent only.
+- Address status rail uses only the latest/current delivery entry; Delivery 2 status replaces Delivery 1 display status.
+- Month chips, Day rows and Month selected-date cards all use the same current-delivery status logic.
+- Version/cache bumped to v1.7.19.
