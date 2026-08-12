@@ -25,6 +25,15 @@ if (!String(CONFIG.GOOGLE_SCOPE || "").trim()) CONFIG.GOOGLE_SCOPE = BUILT_IN_CO
 const API_BASE = "https://www.googleapis.com/calendar/v3";
 const APP_MARKER = "#KGCEILING";
 const DATA_HEADER = "[KG CEILING APP DATA / KG 天花应用资料]";
+const VEHICLE_OPTIONS = [
+  "YN8209T",
+  "YP8209B",
+  "YQ6498Y",
+  "GBE6680Y",
+  "GBG8121X",
+  "GBF291X",
+  "YR2464R"
+];
 
 const FALLBACK_GOOGLE_EVENT_COLOURS = [
   { id: "1",  name: "Lavender / 淡紫",  background: "#a4bdfc", foreground: "#1d1d1d" },
@@ -123,7 +132,8 @@ function cacheElements() {
     "lockInput", "idFirmInput", "idNameInput", "installerNameInput", "amendCeilingInput",
     "amendCeilingDetailInput", "amendPartitionInput", "amendPartitionDetailInput",
     "amendPelmetInput", "amendPelmetDetailInput", "amendTimberOtherInput", "amendTimberOtherDetailInput", "amendRemarkInput",
-    "deliveryRows", "addDeliveryBtn", "deliveryDateInput", "deliveryMaterialsInput", "deliveryRemarkInput", "deliveryMaterialInput", "deliverySentInput", "billingNumberInput",
+    "deliveryRows", "addDeliveryBtn", "deliveryDateInput", "deliveryVehicleInput", "deliveryMaterialsInput", "deliveryRemarkInput", "deliveryMaterialInput", "deliverySentInput",
+    "clearSiteInput", "clearSiteDateInput", "clearSiteVehicleInput", "billingNumberInput",
     "colourPicker", "deleteJobBtn", "cancelBtn",
     "saveJobBtn", "searchModal", "closeSearchBtn", "historySearchForm",
     "historySearchInput", "historySearchBtn", "historySearchStatus",
@@ -178,6 +188,7 @@ function bindEvents() {
   el.continueJobInput.addEventListener("change", () => updateContinueJobState(true));
   el.addContinuePeriodBtn.addEventListener("click", () => addContinuePeriodRow());
   el.addDeliveryBtn.addEventListener("click", () => addDeliveryRow());
+  populateVehicleSelectsInRow(el.deliveryRows.querySelector('[data-delivery-row]'));
   bindDeliveryStatusPair(el.deliveryRows.querySelector('[data-delivery-row]'));
   el.addressInput.addEventListener("change", () => loadSharedDeliveriesIntoForm(el.addressInput.value));
   el.dateInput.addEventListener("change", handleStartDateChange);
@@ -1681,9 +1692,11 @@ function buildEventSearchText(event) {
     data.amendTimberOtherDetail,
     data.amendRemark,
     ...getDeliveryEntries(data).flatMap((item) => [
-      item.date, item.materials, item.remark,
+      item.date, item.vehicle, item.materials, item.remark,
       item.materialStatus ? "material 料单" : "material pending 未料单",
-      item.deliverySent ? "delivery sent 已送货" : "delivery pending 未送货"
+      item.deliverySent ? "delivery sent 已送货" : "delivery pending 未送货",
+      item.clearSite ? "clear site 清场" : "",
+      item.clearDate, item.clearVehicle
     ]),
     data.deliveryDate,
     data.deliveryMaterials,
@@ -1762,9 +1775,14 @@ function buildHistoryGroup(group) {
   head.appendChild(headText);
 
   const deliveryText = deliveries.length
-    ? deliveries.map((item, index) => {
+    ? deliveries.map((rawItem, index) => {
+        const item = normalizeDeliveryEntry(rawItem);
         const statuses = [item.materialStatus ? "料单✓" : "", item.deliverySent ? "已送货✓" : ""].filter(Boolean).join(" · ");
-        return `#${index + 1} ${item.date ? formatDateShort(item.date) : "No date / 无日期"}${statuses ? ` · ${statuses}` : ""}: ${item.materials || "Material not entered / 未填写材料"}${item.remark ? ` — ${item.remark}` : ""}`;
+        const delivery = `#${index + 1} ${item.date ? formatDateShort(item.date) : "No date / 无日期"}${item.vehicle ? ` · ${item.vehicle}` : ""}${statuses ? ` · ${statuses}` : ""}`;
+        const clear = (item.clearSite || item.clearDate || item.clearVehicle)
+          ? ` | 清场${item.clearSite ? "✓" : ""}${item.clearDate ? ` · ${formatDateShort(item.clearDate)}` : ""}${item.clearVehicle ? ` · ${item.clearVehicle}` : ""}`
+          : "";
+        return `${delivery}${clear}`;
       }).join("\n")
     : "None / 无";
 
@@ -1830,8 +1848,12 @@ function buildHistoryEventRow(event, data) {
   getDeliveryEntries(data).forEach((delivery, index) => {
     const detail = [
       delivery.date ? formatDateBilingual(delivery.date) : "No date / 无日期",
+      delivery.vehicle ? `Vehicle / 车辆: ${delivery.vehicle}` : "",
       delivery.materialStatus ? "Material / 料单: Yes / 是" : "Material / 料单: No / 否",
       delivery.deliverySent ? "Delivery Sent / 已送货: Yes / 是" : "Delivery Sent / 已送货: No / 否",
+      (delivery.clearSite || delivery.clearDate || delivery.clearVehicle)
+        ? `Clear Site / 清场: ${delivery.clearSite ? "Yes / 是" : "No / 否"}${delivery.clearDate ? ` · ${formatDateBilingual(delivery.clearDate)}` : ""}${delivery.clearVehicle ? ` · ${delivery.clearVehicle}` : ""}`
+        : "",
       delivery.materials || "",
       delivery.remark || ""
     ].filter(Boolean).join(" · ");
@@ -1938,9 +1960,22 @@ function formatDateList(values) {
 
 function formatDeliveryList(deliveries) {
   if (!deliveries.length) return "None recorded / 没有记录";
-  const shown = deliveries.slice(0, 12).map((entry) => {
-    const materials = entry.materials ? ` — ${entry.materials}` : "";
-    return `${formatDateBilingual(entry.date)}${materials}`;
+  const shown = deliveries.slice(0, 12).map((rawEntry) => {
+    const entry = normalizeDeliveryEntry(rawEntry);
+    const deliveryPart = [
+      entry.date ? formatDateBilingual(entry.date) : "No date / 无日期",
+      entry.vehicle || "No vehicle / 无车辆",
+      entry.materialStatus ? "Material / 料单" : "",
+      entry.deliverySent ? "Delivery Sent / 已送货" : ""
+    ].filter(Boolean).join(" · ");
+    const clearPart = (entry.clearSite || entry.clearDate || entry.clearVehicle)
+      ? ` | Clear Site / 清场: ${[
+          entry.clearSite ? "✓" : "",
+          entry.clearDate ? formatDateBilingual(entry.clearDate) : "",
+          entry.clearVehicle || ""
+        ].filter(Boolean).join(" · ")}`
+      : "";
+    return `${deliveryPart}${clearPart}`;
   });
   if (deliveries.length > 12) shown.push(`+${deliveries.length - 12} more / 另外 ${deliveries.length - 12} 条`);
   return shown.join("\n");
@@ -2593,39 +2628,53 @@ function normalizeDeliveryEntry(entry = {}) {
     ? Boolean(entry.materialStatus ?? entry.material ?? false)
     : legacySent;
 
-  // v1.7.19: only one status per delivery. Delivery Sent wins over Material
-  // for the same delivery row, including older records that may contain both.
+  // One status per delivery: Delivery Sent replaces Material for that same delivery.
   if (deliverySent) materialStatus = false;
 
   return {
     date: String(entry.date || entry.deliveryDate || "").trim(),
-    materials: String(entry.materials || entry.deliveryMaterials || "").trim(),
-    remark: String(entry.remark || entry.deliveryRemark || "").trim(),
+    vehicle: String(entry.vehicle || entry.deliveryVehicle || "").trim(),
+    materials: String(entry.materials || entry.deliveryMaterials || "").trim(), // legacy hidden data
+    remark: String(entry.remark || entry.deliveryRemark || "").trim(), // legacy hidden data
     materialStatus,
-    deliverySent
+    deliverySent,
+    clearSite: Boolean(entry.clearSite),
+    clearDate: String(entry.clearDate || entry.clearSiteDate || "").trim(),
+    clearVehicle: String(entry.clearVehicle || entry.clearSiteVehicle || "").trim()
   };
+}
+
+function deliveryEntryHasData(item) {
+  return Boolean(item && (
+    item.date || item.vehicle || item.materials || item.remark || item.materialStatus || item.deliverySent
+    || item.clearSite || item.clearDate || item.clearVehicle
+  ));
 }
 
 function getDeliveryEntries(data = {}) {
   const structured = Array.isArray(data.deliveries)
-    ? data.deliveries.map(normalizeDeliveryEntry).filter((item) => item.date || item.materials || item.remark || item.materialStatus || item.deliverySent)
+    ? data.deliveries.map(normalizeDeliveryEntry).filter(deliveryEntryHasData)
     : [];
   if (structured.length) return structured;
   const hasNewTopLevelStatus = Number(data.deliveryStatusVersion || 0) >= 2;
   const legacy = normalizeDeliveryEntry({
     date: data.deliveryDate,
+    vehicle: data.deliveryVehicle,
     materials: data.deliveryMaterials,
     remark: data.deliveryRemark,
+    clearSite: data.clearSite,
+    clearDate: data.clearSiteDate,
+    clearVehicle: data.clearSiteVehicle,
     ...(hasNewTopLevelStatus
       ? { materialStatus: data.deliveryMaterialStatus, deliverySent: data.deliverySent }
       : { sent: data.deliverySent })
   });
-  return legacy.date || legacy.materials || legacy.remark || legacy.materialStatus || legacy.deliverySent ? [legacy] : [];
+  return deliveryEntryHasData(legacy) ? [legacy] : [];
 }
 
 function currentDeliveryDisplayStatus(dataOrDeliveries = {}) {
   const deliveries = Array.isArray(dataOrDeliveries)
-    ? dataOrDeliveries.map(normalizeDeliveryEntry).filter((item) => item.date || item.materials || item.remark || item.materialStatus || item.deliverySent)
+    ? dataOrDeliveries.map(normalizeDeliveryEntry).filter(deliveryEntryHasData)
     : getDeliveryEntries(dataOrDeliveries);
   const current = deliveries.length ? normalizeDeliveryEntry(deliveries[deliveries.length - 1]) : null;
   return {
@@ -2638,26 +2687,38 @@ function currentDeliveryDisplayStatus(dataOrDeliveries = {}) {
 function applyDeliveryCompatibility(data = {}) {
   const deliveries = getDeliveryEntries(data);
   data.deliveries = deliveries;
-  const first = deliveries[0] || { date: "", materials: "", remark: "", materialStatus: false, deliverySent: false };
+  const first = deliveries[0] || {
+    date: "", vehicle: "", materials: "", remark: "", materialStatus: false, deliverySent: false,
+    clearSite: false, clearDate: "", clearVehicle: ""
+  };
   data.deliveryDate = first.date;
+  data.deliveryVehicle = first.vehicle;
   data.deliveryMaterials = first.materials;
   data.deliveryRemark = first.remark;
   data.deliveryMaterialStatus = deliveries.some((item) => item.materialStatus);
   data.deliverySent = deliveries.some((item) => item.deliverySent);
-  data.deliveryStatusVersion = 2;
+  data.clearSite = deliveries.some((item) => item.clearSite);
+  data.clearSiteDate = first.clearDate;
+  data.clearSiteVehicle = first.clearVehicle;
+  data.deliveryStatusVersion = 3;
   return data;
 }
 
 function deliveryEntryKey(entry) {
   const item = normalizeDeliveryEntry(entry);
-  return [item.date, normalizeSearchText(item.materials), normalizeSearchText(item.remark)].join("|");
+  return [
+    item.date,
+    normalizeSearchText(item.vehicle),
+    normalizeSearchText(item.materials),
+    normalizeSearchText(item.remark)
+  ].join("|");
 }
 
 function mergeDeliveryLists(...lists) {
   const merged = new Map();
   lists.flat().forEach((raw) => {
     const item = normalizeDeliveryEntry(raw);
-    if (!item.date && !item.materials && !item.remark && !item.materialStatus && !item.deliverySent) return;
+    if (!deliveryEntryHasData(item)) return;
     const key = deliveryEntryKey(item);
     if (!merged.has(key)) merged.set(key, item);
     else {
@@ -2668,6 +2729,10 @@ function mergeDeliveryLists(...lists) {
       } else if (item.materialStatus && !current.deliverySent) {
         current.materialStatus = true;
       }
+      if (item.vehicle) current.vehicle = item.vehicle;
+      if (item.clearSite) current.clearSite = true;
+      if (item.clearDate) current.clearDate = item.clearDate;
+      if (item.clearVehicle) current.clearVehicle = item.clearVehicle;
     }
   });
   return Array.from(merged.values()).sort((a, b) => {
@@ -2676,6 +2741,30 @@ function mergeDeliveryLists(...lists) {
     if (!a.date && b.date) return 1;
     return deliveryEntryKey(a).localeCompare(deliveryEntryKey(b));
   });
+}
+
+function populateVehicleSelect(select, selectedValue = "") {
+  if (!select) return;
+  const value = String(selectedValue || select.value || "").trim();
+  select.innerHTML = "";
+  const blank = document.createElement("option");
+  blank.value = "";
+  blank.textContent = "Select vehicle / 选择车辆";
+  select.appendChild(blank);
+  VEHICLE_OPTIONS.forEach((vehicle) => {
+    const option = document.createElement("option");
+    option.value = vehicle;
+    option.textContent = vehicle;
+    select.appendChild(option);
+  });
+  select.value = VEHICLE_OPTIONS.includes(value) ? value : "";
+}
+
+function populateVehicleSelectsInRow(row, entry = {}) {
+  if (!row) return;
+  const item = normalizeDeliveryEntry(entry);
+  populateVehicleSelect(row.querySelector('[data-delivery-vehicle]'), item.vehicle);
+  populateVehicleSelect(row.querySelector('[data-clear-site-vehicle]'), item.clearVehicle);
 }
 
 function bindDeliveryStatusPair(row) {
@@ -2695,10 +2784,14 @@ function bindDeliveryStatusPair(row) {
 
 function resetDeliveryRows() {
   el.deliveryDateInput.value = "";
+  el.deliveryVehicleInput.value = "";
   el.deliveryMaterialsInput.value = "";
   el.deliveryRemarkInput.value = "";
   el.deliveryMaterialInput.checked = false;
   el.deliverySentInput.checked = false;
+  el.clearSiteInput.checked = false;
+  el.clearSiteDateInput.value = "";
+  el.clearSiteVehicleInput.value = "";
   Array.from(el.deliveryRows.querySelectorAll('[data-delivery-row]')).slice(1).forEach((row) => row.remove());
   updateDeliveryRowNumbers();
 }
@@ -2713,20 +2806,31 @@ function addDeliveryRow(entry = {}) {
       <strong data-delivery-title>Delivery / 送货</strong>
       <button type="button" class="deliveryRemoveBtn">Remove / 删除</button>
     </div>
-    <div class="formGrid">
-      <label class="field"><span>Delivery date / 送货日期</span><input data-delivery-date type="date" lang="en-GB"></label>
-      <label class="field fullField"><span>Delivery material / 送货材料</span><textarea data-delivery-materials rows="3" placeholder="Fill in the items yourself / 自己填写送货物品"></textarea></label>
-    </div>
-    <label class="field fullField"><span>Delivery remark / 送货备注</span><textarea data-delivery-remark rows="2" placeholder="Delivery notes / 送货备注"></textarea></label>
-    <div class="deliveryStatusChecks">
+    <div class="deliveryStatusChecks deliveryStatusChecksFirst">
       <label class="checkLine deliveryMaterialFormCheck"><input data-delivery-material type="checkbox"><span>Material / 料单</span></label>
       <label class="checkLine deliverySentFormCheck"><input data-delivery-sent type="checkbox"><span>Delivery Sent / 已送货</span></label>
-    </div>`;
+    </div>
+    <div class="deliveryActionGrid">
+      <label class="field"><span>Date / 日期</span><input data-delivery-date type="date" lang="en-GB"></label>
+      <label class="field"><span>Vehicle / 车辆</span><select data-delivery-vehicle></select></label>
+    </div>
+    <div class="clearSiteBlock">
+      <label class="checkLine clearSiteFormCheck"><input data-clear-site type="checkbox"><span>Clear Site / 清场</span></label>
+      <div class="deliveryActionGrid">
+        <label class="field"><span>Date / 日期</span><input data-clear-site-date type="date" lang="en-GB"></label>
+        <label class="field"><span>Vehicle / 车辆</span><select data-clear-site-vehicle></select></label>
+      </div>
+    </div>
+    <input data-delivery-materials type="hidden">
+    <input data-delivery-remark type="hidden">`;
   row.querySelector('[data-delivery-date]').value = item.date;
   row.querySelector('[data-delivery-materials]').value = item.materials;
   row.querySelector('[data-delivery-remark]').value = item.remark;
   row.querySelector('[data-delivery-material]').checked = item.materialStatus;
   row.querySelector('[data-delivery-sent]').checked = item.deliverySent;
+  row.querySelector('[data-clear-site]').checked = item.clearSite;
+  row.querySelector('[data-clear-site-date]').value = item.clearDate;
+  populateVehicleSelectsInRow(row, item);
   bindDeliveryStatusPair(row);
   row.querySelector('.deliveryRemoveBtn').addEventListener('click', () => {
     row.remove();
@@ -2745,13 +2849,20 @@ function updateDeliveryRowNumbers() {
 
 function renderDeliveryRows(deliveries = []) {
   resetDeliveryRows();
-  const items = deliveries.map(normalizeDeliveryEntry).filter((item) => item.date || item.materials || item.remark || item.materialStatus || item.deliverySent);
-  if (!items.length) return;
-  el.deliveryDateInput.value = items[0].date;
-  el.deliveryMaterialsInput.value = items[0].materials;
-  el.deliveryRemarkInput.value = items[0].remark;
-  el.deliveryMaterialInput.checked = items[0].materialStatus;
-  el.deliverySentInput.checked = items[0].deliverySent;
+  const items = deliveries.map(normalizeDeliveryEntry).filter(deliveryEntryHasData);
+  if (!items.length) {
+    populateVehicleSelectsInRow(el.deliveryRows.querySelector('[data-delivery-row]'));
+    return;
+  }
+  const first = items[0];
+  el.deliveryDateInput.value = first.date;
+  el.deliveryMaterialsInput.value = first.materials;
+  el.deliveryRemarkInput.value = first.remark;
+  el.deliveryMaterialInput.checked = first.materialStatus;
+  el.deliverySentInput.checked = first.deliverySent;
+  el.clearSiteInput.checked = first.clearSite;
+  el.clearSiteDateInput.value = first.clearDate;
+  populateVehicleSelectsInRow(el.deliveryRows.querySelector('[data-delivery-row]'), first);
   bindDeliveryStatusPair(el.deliveryRows.querySelector('[data-delivery-row]'));
   items.slice(1).forEach((item) => addDeliveryRow(item));
   updateDeliveryRowNumbers();
@@ -2760,11 +2871,15 @@ function renderDeliveryRows(deliveries = []) {
 function collectDeliveryRows() {
   return Array.from(el.deliveryRows.querySelectorAll('[data-delivery-row]')).map((row) => normalizeDeliveryEntry({
     date: row.querySelector('[data-delivery-date]')?.value || "",
+    vehicle: row.querySelector('[data-delivery-vehicle]')?.value || "",
     materials: row.querySelector('[data-delivery-materials]')?.value || "",
     remark: row.querySelector('[data-delivery-remark]')?.value || "",
     materialStatus: Boolean(row.querySelector('[data-delivery-material]')?.checked),
-    deliverySent: Boolean(row.querySelector('[data-delivery-sent]')?.checked)
-  })).filter((item) => item.date || item.materials || item.remark || item.materialStatus || item.deliverySent);
+    deliverySent: Boolean(row.querySelector('[data-delivery-sent]')?.checked),
+    clearSite: Boolean(row.querySelector('[data-clear-site]')?.checked),
+    clearDate: row.querySelector('[data-clear-site-date]')?.value || "",
+    clearVehicle: row.querySelector('[data-clear-site-vehicle]')?.value || ""
+  })).filter(deliveryEntryHasData);
 }
 
 async function loadSharedDeliveriesIntoForm(address) {
@@ -2791,7 +2906,10 @@ async function loadSharedDeliveriesIntoForm(address) {
 }
 
 function deliverySignature(deliveries) {
-  return JSON.stringify(mergeDeliveryLists(deliveries).map((item) => [item.date, item.materials, item.remark, item.materialStatus, item.deliverySent]));
+  return JSON.stringify(mergeDeliveryLists(deliveries).map((item) => [
+    item.date, item.vehicle, item.materials, item.remark, item.materialStatus, item.deliverySent,
+    item.clearSite, item.clearDate, item.clearVehicle
+  ]));
 }
 
 async function syncDeliveriesAcrossSameAddress(address, deliveries) {
@@ -2957,11 +3075,16 @@ function buildDescription(data) {
     lines.push("*Deliver / 送货:*");
     deliveries.forEach((delivery, index) => {
       lines.push(`*Delivery ${index + 1} / 送货 ${index + 1}:*`);
-      if (delivery.date) lines.push(`*Delivery ${index + 1} date / 第${index + 1}次送货日期:* ${formatDateBilingual(delivery.date)}`);
-      if (delivery.materials) lines.push(`*Delivery ${index + 1} material / 第${index + 1}次送货材料:* ${displayInlineValue(delivery.materials)}`);
-      if (delivery.remark) lines.push(`*Delivery ${index + 1} remark / 第${index + 1}次送货备注:* ${displayInlineValue(delivery.remark)}`);
       lines.push(`*Delivery ${index + 1} material checklist / 第${index + 1}次料单:* ${delivery.materialStatus ? "Yes / 是" : "No / 否"}`);
       lines.push(`*Delivery ${index + 1} sent / 第${index + 1}次已送货:* ${delivery.deliverySent ? "Yes / 是" : "No / 否"}`);
+      if (delivery.date) lines.push(`*Delivery ${index + 1} date / 第${index + 1}次送货日期:* ${formatDateBilingual(delivery.date)}`);
+      if (delivery.vehicle) lines.push(`*Delivery ${index + 1} vehicle / 第${index + 1}次送货车辆:* ${displayInlineValue(delivery.vehicle)}`);
+      lines.push(`*Delivery ${index + 1} clear site / 第${index + 1}次清场:* ${delivery.clearSite ? "Yes / 是" : "No / 否"}`);
+      if (delivery.clearDate) lines.push(`*Delivery ${index + 1} clear site date / 第${index + 1}次清场日期:* ${formatDateBilingual(delivery.clearDate)}`);
+      if (delivery.clearVehicle) lines.push(`*Delivery ${index + 1} clear site vehicle / 第${index + 1}次清场车辆:* ${displayInlineValue(delivery.clearVehicle)}`);
+      // Keep older free-text delivery data in Google Calendar descriptions if it already exists.
+      if (delivery.materials) lines.push(`*Delivery ${index + 1} material / 第${index + 1}次送货材料:* ${displayInlineValue(delivery.materials)}`);
+      if (delivery.remark) lines.push(`*Delivery ${index + 1} remark / 第${index + 1}次送货备注:* ${displayInlineValue(delivery.remark)}`);
     });
   }
 
@@ -3010,7 +3133,7 @@ function formatFormTime(data) {
 function buildPrivateProperties(data) {
   const privateProperties = {
     kgCeilingApp: "1",
-    kgCeilingVersion: "1.7.19",
+    kgCeilingVersion: "1.7.20",
     ...(data.continueJob && data.continueGroupId ? {
       kgContinueJob: "1",
       kgContinueGroup: data.continueGroupId,
@@ -3039,11 +3162,15 @@ function buildPrivateProperties(data) {
     amendRemark: data.amendRemark || "",
     deliveries: getDeliveryEntries(data),
     deliveryDate: data.deliveryDate || "",
+    deliveryVehicle: data.deliveryVehicle || "",
     deliveryMaterials: data.deliveryMaterials || "",
     deliveryRemark: data.deliveryRemark || "",
     deliveryMaterialStatus: Boolean(data.deliveryMaterialStatus),
     deliverySent: Boolean(data.deliverySent),
-    deliveryStatusVersion: 2,
+    clearSite: Boolean(data.clearSite),
+    clearSiteDate: data.clearSiteDate || "",
+    clearSiteVehicle: data.clearSiteVehicle || "",
+    deliveryStatusVersion: 3,
     billingNumber: data.billingNumber || ""
   };
 
@@ -3130,21 +3257,30 @@ function parseHumanDescription(description) {
     const label = plain.slice(0, separator).trim().toLowerCase();
     const value = plain.slice(separator + 1).trim();
 
-    const deliveryNumbered = label.match(/^delivery\s+(\d+)\s+(date|material checklist|material|remark|sent)/i);
-    const deliveryChinese = label.match(/^第(\d+)次(送货日期|送货材料|送货备注|料单|已送货)/);
+    const deliveryNumbered = label.match(/^delivery\s+(\d+)\s+(date|vehicle|material checklist|material|remark|sent|clear site date|clear site vehicle|clear site)/i);
+    const deliveryChinese = label.match(/^第(\d+)次(送货日期|送货车辆|送货材料|送货备注|料单|已送货|清场日期|清场车辆|清场)/);
     if (deliveryNumbered || deliveryChinese) {
       const index = Math.max(0, Number((deliveryNumbered || deliveryChinese)[1]) - 1);
       result.deliveries = Array.isArray(result.deliveries) ? result.deliveries : [];
-      result.deliveries[index] = result.deliveries[index] || { date: "", materials: "", remark: "", materialStatus: false, deliverySent: false };
+      result.deliveries[index] = result.deliveries[index] || {
+        date: "", vehicle: "", materials: "", remark: "", materialStatus: false, deliverySent: false,
+        clearSite: false, clearDate: "", clearVehicle: ""
+      };
       const kind = deliveryNumbered ? deliveryNumbered[2].toLowerCase() : deliveryChinese[2];
       if (kind === "date" || kind === "送货日期") {
         const parsedDate = parseDateFromDescription(value);
         if (parsedDate) result.deliveries[index].date = parsedDate;
-      } else if (kind === "material checklist" || kind === "料单") {
+      } else if (kind === "vehicle" || kind === "送货车辆") result.deliveries[index].vehicle = value;
+      else if (kind === "material checklist" || kind === "料单") {
         result.deliveries[index].materialStatus = parseYesNo(value);
-        result.deliveryStatusVersion = 2;
+        result.deliveryStatusVersion = 3;
       } else if (kind === "material" || kind === "送货材料") result.deliveries[index].materials = value;
       else if (kind === "remark" || kind === "送货备注") result.deliveries[index].remark = value;
+      else if (kind === "clear site date" || kind === "清场日期") {
+        const parsedDate = parseDateFromDescription(value);
+        if (parsedDate) result.deliveries[index].clearDate = parsedDate;
+      } else if (kind === "clear site vehicle" || kind === "清场车辆") result.deliveries[index].clearVehicle = value;
+      else if (kind === "clear site" || kind === "清场") result.deliveries[index].clearSite = parseYesNo(value);
       else if (Number(result.deliveryStatusVersion || 0) >= 2) result.deliveries[index].deliverySent = parseYesNo(value);
       else result.deliveries[index].materialStatus = parseYesNo(value);
       return;
@@ -3161,9 +3297,16 @@ function parseHumanDescription(description) {
       const parsedDate = parseDateFromDescription(value);
       if (parsedDate) result.deliveryDate = parsedDate;
     }
+    else if (label.startsWith("delivery vehicle") || label.includes("送货车辆")) result.deliveryVehicle = value;
     else if (label.startsWith("delivery material") || label.includes("送货材料")) result.deliveryMaterials = value;
     else if (label.startsWith("delivery remark") || label.includes("送货备注")) result.deliveryRemark = value;
     else if (label.startsWith("delivery sent") || label.includes("已送货")) result.deliverySent = parseYesNo(value);
+    else if (label.startsWith("clear site date") || label.includes("清场日期")) {
+      const parsedDate = parseDateFromDescription(value);
+      if (parsedDate) result.clearSiteDate = parsedDate;
+    }
+    else if (label.startsWith("clear site vehicle") || label.includes("清场车辆")) result.clearSiteVehicle = value;
+    else if (label.startsWith("clear site") || label.includes("清场")) result.clearSite = parseYesNo(value);
     else if (label.startsWith("billing number") || label.includes("开单号码")) result.billingNumber = value;
     else if (label.startsWith("remark") || label.includes("备注")) result.amendRemark = value;
   });
@@ -3211,10 +3354,14 @@ function parseEventData(event) {
     amendRemark: "",
     deliveries: [],
     deliveryDate: "",
+    deliveryVehicle: "",
     deliveryMaterials: "",
     deliveryRemark: "",
     deliveryMaterialStatus: false,
     deliveryStatusVersion: 0,
+    clearSite: false,
+    clearSiteDate: "",
+    clearSiteVehicle: "",
     billingNumber: "",
     // Legacy values are kept only so old calendar records still open safely.
     idPhone: "",

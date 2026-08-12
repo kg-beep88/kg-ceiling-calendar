@@ -1,14 +1,14 @@
-KG Ceiling Calendar v1.7.19 - Test Report
+KG Ceiling Calendar v1.7.20 - Test Report
 
 PASS
-- JavaScript syntax checked with node --check.
+- JavaScript syntax check passed (node --check app.js).
 - No duplicate HTML IDs.
-- All cached DOM IDs referenced by app.js exist in index.html.
-- Broken literal \n CSS from v1.7.18 repaired; CSS brace counts match.
-- Day View Search / 搜索 card has a valid final display:block override.
-- Delivery Sent / 已送货 automatically clears Material / 料单 in the same delivery row.
-- Material / 料单 also clears Delivery Sent in the same delivery row so only one status can exist.
-- Old records containing both statuses normalize to Delivery Sent only.
-- Address status rail uses only the latest/current delivery entry; Delivery 2 status replaces Delivery 1 display status.
-- Month chips, Day rows and Month selected-date cards all use the same current-delivery status logic.
-- Version/cache bumped to v1.7.19.
+- All DOM IDs cached by app.js exist in index.html.
+- Delivery form reordered to Material/Delivery Sent -> Date/Vehicle -> Clear Site -> Date/Vehicle.
+- Vehicle dropdown is hard-coded with exactly 7 requested vehicle numbers.
+- Multiple delivery rows keep the same new structure.
+- Material and Delivery Sent remain mutually exclusive for each delivery row.
+- New delivery fields are stored in Google event private data and visible description.
+- Same-address delivery sync includes vehicle and clear-site data.
+- Legacy delivery material/remark data is preserved hidden when old events are edited.
+- Version and service-worker cache bumped to v1.7.20.

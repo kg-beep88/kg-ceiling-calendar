@@ -9,7 +9,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=1.7.19">
+  <link rel="stylesheet" href="styles.css?v=1.7.20">
 </head>
 <body>
   <noscript>
@@ -21,7 +21,7 @@
       <div class="brandMark" aria-hidden="true">KG</div>
       <div>
         <h1>KG Ceiling Work Calendar</h1>
-        <p>KG 天花工作日历 · v1.7.19</p>
+        <p>KG 天花工作日历 · v1.7.20</p>
       </div>
     </div>
 
@@ -283,21 +283,8 @@
                 <div class="deliveryRowHead">
                   <strong data-delivery-title>Delivery 1 / 送货 1</strong>
                 </div>
-                <div class="formGrid">
-                  <label class="field">
-                    <span>Delivery date / 送货日期</span>
-                    <input id="deliveryDateInput" data-delivery-date type="date" lang="en-GB">
-                  </label>
-                  <label class="field fullField">
-                    <span>Delivery material / 送货材料</span>
-                    <textarea id="deliveryMaterialsInput" data-delivery-materials rows="3" placeholder="Fill in the items yourself / 自己填写送货物品"></textarea>
-                  </label>
-                </div>
-                <label class="field fullField">
-                  <span>Delivery remark / 送货备注</span>
-                  <textarea id="deliveryRemarkInput" data-delivery-remark rows="2" placeholder="Delivery notes / 送货备注"></textarea>
-                </label>
-                <div class="deliveryStatusChecks">
+
+                <div class="deliveryStatusChecks deliveryStatusChecksFirst">
                   <label class="checkLine deliveryMaterialFormCheck">
                     <input id="deliveryMaterialInput" data-delivery-material type="checkbox">
                     <span>Material / 料单</span>
@@ -307,6 +294,37 @@
                     <span>Delivery Sent / 已送货</span>
                   </label>
                 </div>
+
+                <div class="deliveryActionGrid">
+                  <label class="field">
+                    <span>Date / 日期</span>
+                    <input id="deliveryDateInput" data-delivery-date type="date" lang="en-GB">
+                  </label>
+                  <label class="field">
+                    <span>Vehicle / 车辆</span>
+                    <select id="deliveryVehicleInput" data-delivery-vehicle></select>
+                  </label>
+                </div>
+
+                <div class="clearSiteBlock">
+                  <label class="checkLine clearSiteFormCheck">
+                    <input id="clearSiteInput" data-clear-site type="checkbox">
+                    <span>Clear Site / 清场</span>
+                  </label>
+                  <div class="deliveryActionGrid">
+                    <label class="field">
+                      <span>Date / 日期</span>
+                      <input id="clearSiteDateInput" data-clear-site-date type="date" lang="en-GB">
+                    </label>
+                    <label class="field">
+                      <span>Vehicle / 车辆</span>
+                      <select id="clearSiteVehicleInput" data-clear-site-vehicle></select>
+                    </label>
+                  </div>
+                </div>
+
+                <input id="deliveryMaterialsInput" data-delivery-materials type="hidden">
+                <input id="deliveryRemarkInput" data-delivery-remark type="hidden">
               </div>
             </div>
             <button id="addDeliveryBtn" class="btn btnSecondary btnSmall addDeliveryBtn" type="button">＋ Add another delivery / 增加送货</button>
@@ -455,8 +473,8 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="config.js?v=1.7.19"></script>
+  <script src="config.js?v=1.7.20"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="app.js?v=1.7.19" defer></script>
+  <script src="app.js?v=1.7.20" defer></script>
 </body>
 </html>

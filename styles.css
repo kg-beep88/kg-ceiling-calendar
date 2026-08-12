@@ -1525,3 +1525,36 @@ body.dayFitMode .searchCard {
   display: block !important;
   box-sizing: border-box;
 }
+
+/* v1.7.20 — simplified delivery + clear-site form with fixed vehicle dropdowns */
+.deliveryStatusChecksFirst { margin-top: 0; }
+.deliveryActionGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+  margin-top: 10px;
+}
+.clearSiteBlock {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed #cbdedb;
+}
+.clearSiteFormCheck {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid #d7e3e0;
+  border-radius: 12px;
+  background: #f7fbfa;
+}
+.clearSiteFormCheck input {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+}
+.clearSiteFormCheck span { font-weight: 850; }
+.deliveryRow select { min-height: 44px; }
+
+@media (max-width: 620px) {
+  .deliveryActionGrid { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .deliveryStatusChecks { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+}

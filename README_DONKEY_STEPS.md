@@ -1,5 +1,19 @@
 # KG Ceiling Calendar v1.7.15 — Day Row + Delivery Status
 
+
+## v1.7.20 update
+
+Delivery in Add/Edit Job is now arranged as:
+
+1. Material / 料单 and Delivery Sent / 已送货 checkboxes
+2. Date / 日期
+3. Vehicle / 车辆 dropdown
+4. Clear Site / 清场 checkbox
+5. Clear Site Date / 清场日期
+6. Clear Site Vehicle / 清场车辆 dropdown
+
+Vehicle dropdown choices are fixed in the app code: YN8209T, YP8209B, YQ6498Y, GBE6680Y, GBG8121X, GBF291X, YR2464R. Multiple Delivery rows are still supported and same-address delivery/clear-site records continue to sync. Delivery Sent replaces Material for the same delivery row.
+
 ## Upload
 1. Unzip this file.
 2. Upload all files inside to the root of GitHub repository `KGcall`.
