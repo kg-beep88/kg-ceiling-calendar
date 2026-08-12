@@ -123,7 +123,7 @@ function cacheElements() {
     "lockInput", "idFirmInput", "idNameInput", "installerNameInput", "amendCeilingInput",
     "amendCeilingDetailInput", "amendPartitionInput", "amendPartitionDetailInput",
     "amendPelmetInput", "amendPelmetDetailInput", "amendTimberOtherInput", "amendTimberOtherDetailInput", "amendRemarkInput",
-    "deliveryRows", "addDeliveryBtn", "deliveryDateInput", "deliveryMaterialsInput", "deliveryRemarkInput", "deliverySentInput", "billingNumberInput",
+    "deliveryRows", "addDeliveryBtn", "deliveryDateInput", "deliveryMaterialsInput", "deliveryRemarkInput", "deliveryMaterialInput", "deliverySentInput", "billingNumberInput",
     "colourPicker", "deleteJobBtn", "cancelBtn",
     "saveJobBtn", "searchModal", "closeSearchBtn", "historySearchForm",
     "historySearchInput", "historySearchBtn", "historySearchStatus",
@@ -903,6 +903,17 @@ function buildDayCompactJobRow(calendarEvent, segment = null) {
   address.disabled = !isConnected();
   address.addEventListener("click", () => openJobModal(calendarEvent));
 
+  const deliveries = getDeliveryEntries(data);
+  const hasMaterialStatus = deliveries.some((delivery) => delivery.materialStatus);
+  const hasDeliverySent = deliveries.some((delivery) => delivery.deliverySent);
+  if (hasMaterialStatus) address.classList.add("dayAddressMaterialStatus");
+  if (hasDeliverySent) address.classList.add("dayAddressDeliverySent");
+  address.setAttribute("aria-label", [
+    address.textContent,
+    hasMaterialStatus ? "Material / 料单" : "",
+    hasDeliverySent ? "Delivery Sent / 已送货" : ""
+  ].filter(Boolean).join(" • "));
+
   const whatsAppBtn = document.createElement("button");
   whatsAppBtn.type = "button";
   whatsAppBtn.className = "dayCompactWhatsAppBtn";
@@ -922,18 +933,22 @@ function buildDayCompactJobRow(calendarEvent, segment = null) {
   idValue.textContent = data.contact || "—";
   idName.append(idLabel, idValue);
 
-  addressLine.append(address, whatsAppBtn, idName);
+  // Requested Day View order: Installer → ID detail → Address → WhatsApp Copy.
+  addressLine.append(idName, address, whatsAppBtn);
   main.appendChild(addressLine);
 
-  const deliveries = getDeliveryEntries(data);
   if (deliveries.length) {
     const deliveryWrap = document.createElement("div");
     deliveryWrap.className = "dayCompactDelivery";
     deliveries.forEach((delivery, index) => {
       const tag = document.createElement("span");
-      tag.className = `dayDeliveryTag${delivery.sent ? " sent" : ""}`;
+      tag.className = `dayDeliveryTag${delivery.deliverySent ? " sent" : delivery.materialStatus ? " material" : ""}`;
       const dateText = delivery.date ? formatDateShort(delivery.date) : "No date / 无日期";
-      tag.textContent = `Deliver ${index + 1} / 送货 ${index + 1}: ${dateText}${delivery.sent ? " ✓" : ""}`;
+      const statusText = [
+        delivery.materialStatus ? "料单✓" : "",
+        delivery.deliverySent ? "已送货✓" : ""
+      ].filter(Boolean).join(" · ");
+      tag.textContent = `Deliver ${index + 1} / 送货 ${index + 1}: ${dateText}${statusText ? ` · ${statusText}` : ""}`;
       if (delivery.materials || delivery.remark) {
         tag.title = [delivery.materials, delivery.remark].filter(Boolean).join(" • ");
       }
@@ -1275,7 +1290,7 @@ function renderDayJobs() {
   dayEvents.forEach((event) => {
     const data = parseEventData(event);
     const card = document.createElement("article");
-    card.className = `jobCard jobCardAddressOnly${data.deliverySent ? " jobCardDeliverySent" : ""}`;
+    card.className = "jobCard jobCardAddressOnly";
 
     const strip = document.createElement("div");
     strip.className = "jobColour";
@@ -1290,7 +1305,7 @@ function renderDayJobs() {
     if (deliveries.length) {
       const deliveryDates = document.createElement("div");
       deliveryDates.className = "jobDeliveryDates";
-      deliveryDates.textContent = `Deliver / 送货: ${deliveries.map((item) => `${item.date ? formatDateShort(item.date) : "No date / 无日期"}${item.sent ? " ✓" : ""}`).join(", ")}`;
+      deliveryDates.textContent = `Deliver / 送货: ${deliveries.map((item) => `${item.date ? formatDateShort(item.date) : "No date / 无日期"}${item.materialStatus ? " · 料单✓" : ""}${item.deliverySent ? " · 已送货✓" : ""}`).join(", ")}`;
       info.appendChild(deliveryDates);
     }
 
@@ -1386,7 +1401,7 @@ function buildTrackingTags(data) {
   const deliveries = getDeliveryEntries(data);
   if (deliveries.length) {
     const dates = deliveries.map((item) => item.date ? formatDateShort(item.date) : "No date / 无日期").join(", ");
-    add(`Deliver / 送货: ${dates}`, deliveries.every((item) => item.sent) ? "good" : "info");
+    add(`Deliver / 送货: ${dates}`, deliveries.every((item) => item.deliverySent) ? "good" : "info");
   }
   if (data.billingNumber) add(`Billing #${data.billingNumber} / 开单号码`, "good");
   return wrap;
@@ -1665,7 +1680,11 @@ function buildEventSearchText(event) {
     data.amendTimberOther ? "add timber support other 加木支撑 其他" : "",
     data.amendTimberOtherDetail,
     data.amendRemark,
-    ...getDeliveryEntries(data).flatMap((item) => [item.date, item.materials, item.remark, item.sent ? "delivery sent 已送货" : "delivery pending 未送货"]),
+    ...getDeliveryEntries(data).flatMap((item) => [
+      item.date, item.materials, item.remark,
+      item.materialStatus ? "material 料单" : "material pending 未料单",
+      item.deliverySent ? "delivery sent 已送货" : "delivery pending 未送货"
+    ]),
     data.deliveryDate,
     data.deliveryMaterials,
     data.deliveryRemark,
@@ -1743,7 +1762,10 @@ function buildHistoryGroup(group) {
   head.appendChild(headText);
 
   const deliveryText = deliveries.length
-    ? deliveries.map((item, index) => `#${index + 1} ${item.date ? formatDateShort(item.date) : "No date / 无日期"}${item.sent ? " ✓" : ""}: ${item.materials || "Material not entered / 未填写材料"}${item.remark ? ` — ${item.remark}` : ""}`).join("\n")
+    ? deliveries.map((item, index) => {
+        const statuses = [item.materialStatus ? "料单✓" : "", item.deliverySent ? "已送货✓" : ""].filter(Boolean).join(" · ");
+        return `#${index + 1} ${item.date ? formatDateShort(item.date) : "No date / 无日期"}${statuses ? ` · ${statuses}` : ""}: ${item.materials || "Material not entered / 未填写材料"}${item.remark ? ` — ${item.remark}` : ""}`;
+      }).join("\n")
     : "None / 无";
 
   const summary = document.createElement("div");
@@ -1808,7 +1830,8 @@ function buildHistoryEventRow(event, data) {
   getDeliveryEntries(data).forEach((delivery, index) => {
     const detail = [
       delivery.date ? formatDateBilingual(delivery.date) : "No date / 无日期",
-      delivery.sent ? "Sent / 已送货" : "Not sent / 未送货",
+      delivery.materialStatus ? "Material / 料单: Yes / 是" : "Material / 料单: No / 否",
+      delivery.deliverySent ? "Delivery Sent / 已送货: Yes / 是" : "Delivery Sent / 已送货: No / 否",
       delivery.materials || "",
       delivery.remark || ""
     ].filter(Boolean).join(" · ");
@@ -2561,36 +2584,51 @@ function normalizeAddressKey(value) {
 }
 
 function normalizeDeliveryEntry(entry = {}) {
+  const hasNewStatusFields = Object.prototype.hasOwnProperty.call(entry, "materialStatus")
+    || Object.prototype.hasOwnProperty.call(entry, "material")
+    || Object.prototype.hasOwnProperty.call(entry, "deliverySent");
+  const legacySent = Object.prototype.hasOwnProperty.call(entry, "sent") ? Boolean(entry.sent) : false;
   return {
     date: String(entry.date || entry.deliveryDate || "").trim(),
     materials: String(entry.materials || entry.deliveryMaterials || "").trim(),
     remark: String(entry.remark || entry.deliveryRemark || "").trim(),
-    sent: Boolean(entry.sent ?? entry.deliverySent)
+    // v1.7.14 and older used `sent` for the old checkbox. In v1.7.15 that
+    // same checkbox becomes Material / 料单, so old checked values migrate here.
+    materialStatus: hasNewStatusFields
+      ? Boolean(entry.materialStatus ?? entry.material ?? false)
+      : legacySent,
+    // This is the brand-new actual Delivery Sent / 已送货 status.
+    deliverySent: hasNewStatusFields ? Boolean(entry.deliverySent) : false
   };
 }
 
 function getDeliveryEntries(data = {}) {
   const structured = Array.isArray(data.deliveries)
-    ? data.deliveries.map(normalizeDeliveryEntry).filter((item) => item.date || item.materials || item.remark || item.sent)
+    ? data.deliveries.map(normalizeDeliveryEntry).filter((item) => item.date || item.materials || item.remark || item.materialStatus || item.deliverySent)
     : [];
   if (structured.length) return structured;
+  const hasNewTopLevelStatus = Number(data.deliveryStatusVersion || 0) >= 2;
   const legacy = normalizeDeliveryEntry({
     date: data.deliveryDate,
     materials: data.deliveryMaterials,
     remark: data.deliveryRemark,
-    sent: data.deliverySent
+    ...(hasNewTopLevelStatus
+      ? { materialStatus: data.deliveryMaterialStatus, deliverySent: data.deliverySent }
+      : { sent: data.deliverySent })
   });
-  return legacy.date || legacy.materials || legacy.remark || legacy.sent ? [legacy] : [];
+  return legacy.date || legacy.materials || legacy.remark || legacy.materialStatus || legacy.deliverySent ? [legacy] : [];
 }
 
 function applyDeliveryCompatibility(data = {}) {
   const deliveries = getDeliveryEntries(data);
   data.deliveries = deliveries;
-  const first = deliveries[0] || { date: "", materials: "", remark: "", sent: false };
+  const first = deliveries[0] || { date: "", materials: "", remark: "", materialStatus: false, deliverySent: false };
   data.deliveryDate = first.date;
   data.deliveryMaterials = first.materials;
   data.deliveryRemark = first.remark;
-  data.deliverySent = deliveries.some((item) => item.sent);
+  data.deliveryMaterialStatus = deliveries.some((item) => item.materialStatus);
+  data.deliverySent = deliveries.some((item) => item.deliverySent);
+  data.deliveryStatusVersion = 2;
   return data;
 }
 
@@ -2603,10 +2641,13 @@ function mergeDeliveryLists(...lists) {
   const merged = new Map();
   lists.flat().forEach((raw) => {
     const item = normalizeDeliveryEntry(raw);
-    if (!item.date && !item.materials && !item.remark && !item.sent) return;
+    if (!item.date && !item.materials && !item.remark && !item.materialStatus && !item.deliverySent) return;
     const key = deliveryEntryKey(item);
     if (!merged.has(key)) merged.set(key, item);
-    else if (item.sent) merged.get(key).sent = true;
+    else {
+      if (item.materialStatus) merged.get(key).materialStatus = true;
+      if (item.deliverySent) merged.get(key).deliverySent = true;
+    }
   });
   return Array.from(merged.values()).sort((a, b) => {
     if (a.date && b.date && a.date !== b.date) return a.date.localeCompare(b.date);
@@ -2620,6 +2661,7 @@ function resetDeliveryRows() {
   el.deliveryDateInput.value = "";
   el.deliveryMaterialsInput.value = "";
   el.deliveryRemarkInput.value = "";
+  el.deliveryMaterialInput.checked = false;
   el.deliverySentInput.checked = false;
   Array.from(el.deliveryRows.querySelectorAll('[data-delivery-row]')).slice(1).forEach((row) => row.remove());
   updateDeliveryRowNumbers();
@@ -2640,11 +2682,15 @@ function addDeliveryRow(entry = {}) {
       <label class="field fullField"><span>Delivery material / 送货材料</span><textarea data-delivery-materials rows="3" placeholder="Fill in the items yourself / 自己填写送货物品"></textarea></label>
     </div>
     <label class="field fullField"><span>Delivery remark / 送货备注</span><textarea data-delivery-remark rows="2" placeholder="Delivery notes / 送货备注"></textarea></label>
-    <label class="checkLine deliverySentFormCheck"><input data-delivery-sent type="checkbox"><span>Delivery Sent / 已送货</span></label>`;
+    <div class="deliveryStatusChecks">
+      <label class="checkLine deliveryMaterialFormCheck"><input data-delivery-material type="checkbox"><span>Material / 料单</span></label>
+      <label class="checkLine deliverySentFormCheck"><input data-delivery-sent type="checkbox"><span>Delivery Sent / 已送货</span></label>
+    </div>`;
   row.querySelector('[data-delivery-date]').value = item.date;
   row.querySelector('[data-delivery-materials]').value = item.materials;
   row.querySelector('[data-delivery-remark]').value = item.remark;
-  row.querySelector('[data-delivery-sent]').checked = item.sent;
+  row.querySelector('[data-delivery-material]').checked = item.materialStatus;
+  row.querySelector('[data-delivery-sent]').checked = item.deliverySent;
   row.querySelector('.deliveryRemoveBtn').addEventListener('click', () => {
     row.remove();
     updateDeliveryRowNumbers();
@@ -2662,12 +2708,13 @@ function updateDeliveryRowNumbers() {
 
 function renderDeliveryRows(deliveries = []) {
   resetDeliveryRows();
-  const items = deliveries.map(normalizeDeliveryEntry).filter((item) => item.date || item.materials || item.remark || item.sent);
+  const items = deliveries.map(normalizeDeliveryEntry).filter((item) => item.date || item.materials || item.remark || item.materialStatus || item.deliverySent);
   if (!items.length) return;
   el.deliveryDateInput.value = items[0].date;
   el.deliveryMaterialsInput.value = items[0].materials;
   el.deliveryRemarkInput.value = items[0].remark;
-  el.deliverySentInput.checked = items[0].sent;
+  el.deliveryMaterialInput.checked = items[0].materialStatus;
+  el.deliverySentInput.checked = items[0].deliverySent;
   items.slice(1).forEach((item) => addDeliveryRow(item));
   updateDeliveryRowNumbers();
 }
@@ -2677,8 +2724,9 @@ function collectDeliveryRows() {
     date: row.querySelector('[data-delivery-date]')?.value || "",
     materials: row.querySelector('[data-delivery-materials]')?.value || "",
     remark: row.querySelector('[data-delivery-remark]')?.value || "",
-    sent: Boolean(row.querySelector('[data-delivery-sent]')?.checked)
-  })).filter((item) => item.date || item.materials || item.remark || item.sent);
+    materialStatus: Boolean(row.querySelector('[data-delivery-material]')?.checked),
+    deliverySent: Boolean(row.querySelector('[data-delivery-sent]')?.checked)
+  })).filter((item) => item.date || item.materials || item.remark || item.materialStatus || item.deliverySent);
 }
 
 async function loadSharedDeliveriesIntoForm(address) {
@@ -2705,7 +2753,7 @@ async function loadSharedDeliveriesIntoForm(address) {
 }
 
 function deliverySignature(deliveries) {
-  return JSON.stringify(mergeDeliveryLists(deliveries).map((item) => [item.date, item.materials, item.remark, item.sent]));
+  return JSON.stringify(mergeDeliveryLists(deliveries).map((item) => [item.date, item.materials, item.remark, item.materialStatus, item.deliverySent]));
 }
 
 async function syncDeliveriesAcrossSameAddress(address, deliveries) {
@@ -2874,7 +2922,8 @@ function buildDescription(data) {
       if (delivery.date) lines.push(`*Delivery ${index + 1} date / 第${index + 1}次送货日期:* ${formatDateBilingual(delivery.date)}`);
       if (delivery.materials) lines.push(`*Delivery ${index + 1} material / 第${index + 1}次送货材料:* ${displayInlineValue(delivery.materials)}`);
       if (delivery.remark) lines.push(`*Delivery ${index + 1} remark / 第${index + 1}次送货备注:* ${displayInlineValue(delivery.remark)}`);
-      lines.push(`*Delivery ${index + 1} sent / 第${index + 1}次已送货:* ${delivery.sent ? "Yes / 是" : "No / 否"}`);
+      lines.push(`*Delivery ${index + 1} material checklist / 第${index + 1}次料单:* ${delivery.materialStatus ? "Yes / 是" : "No / 否"}`);
+      lines.push(`*Delivery ${index + 1} sent / 第${index + 1}次已送货:* ${delivery.deliverySent ? "Yes / 是" : "No / 否"}`);
     });
   }
 
@@ -2923,7 +2972,7 @@ function formatFormTime(data) {
 function buildPrivateProperties(data) {
   const privateProperties = {
     kgCeilingApp: "1",
-    kgCeilingVersion: "1.7.14",
+    kgCeilingVersion: "1.7.15",
     ...(data.continueJob && data.continueGroupId ? {
       kgContinueJob: "1",
       kgContinueGroup: data.continueGroupId,
@@ -2954,7 +3003,9 @@ function buildPrivateProperties(data) {
     deliveryDate: data.deliveryDate || "",
     deliveryMaterials: data.deliveryMaterials || "",
     deliveryRemark: data.deliveryRemark || "",
+    deliveryMaterialStatus: Boolean(data.deliveryMaterialStatus),
     deliverySent: Boolean(data.deliverySent),
+    deliveryStatusVersion: 2,
     billingNumber: data.billingNumber || ""
   };
 
@@ -3041,19 +3092,23 @@ function parseHumanDescription(description) {
     const label = plain.slice(0, separator).trim().toLowerCase();
     const value = plain.slice(separator + 1).trim();
 
-    const deliveryNumbered = label.match(/^delivery\s+(\d+)\s+(date|material|remark|sent)/i);
-    const deliveryChinese = label.match(/^第(\d+)次(送货日期|送货材料|送货备注|已送货)/);
+    const deliveryNumbered = label.match(/^delivery\s+(\d+)\s+(date|material checklist|material|remark|sent)/i);
+    const deliveryChinese = label.match(/^第(\d+)次(送货日期|送货材料|送货备注|料单|已送货)/);
     if (deliveryNumbered || deliveryChinese) {
       const index = Math.max(0, Number((deliveryNumbered || deliveryChinese)[1]) - 1);
       result.deliveries = Array.isArray(result.deliveries) ? result.deliveries : [];
-      result.deliveries[index] = result.deliveries[index] || { date: "", materials: "", remark: "", sent: false };
+      result.deliveries[index] = result.deliveries[index] || { date: "", materials: "", remark: "", materialStatus: false, deliverySent: false };
       const kind = deliveryNumbered ? deliveryNumbered[2].toLowerCase() : deliveryChinese[2];
       if (kind === "date" || kind === "送货日期") {
         const parsedDate = parseDateFromDescription(value);
         if (parsedDate) result.deliveries[index].date = parsedDate;
+      } else if (kind === "material checklist" || kind === "料单") {
+        result.deliveries[index].materialStatus = parseYesNo(value);
+        result.deliveryStatusVersion = 2;
       } else if (kind === "material" || kind === "送货材料") result.deliveries[index].materials = value;
       else if (kind === "remark" || kind === "送货备注") result.deliveries[index].remark = value;
-      else result.deliveries[index].sent = parseYesNo(value);
+      else if (Number(result.deliveryStatusVersion || 0) >= 2) result.deliveries[index].deliverySent = parseYesNo(value);
+      else result.deliveries[index].materialStatus = parseYesNo(value);
       return;
     }
 
@@ -3120,6 +3175,8 @@ function parseEventData(event) {
     deliveryDate: "",
     deliveryMaterials: "",
     deliveryRemark: "",
+    deliveryMaterialStatus: false,
+    deliveryStatusVersion: 0,
     billingNumber: "",
     // Legacy values are kept only so old calendar records still open safely.
     idPhone: "",

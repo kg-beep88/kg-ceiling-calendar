@@ -1,4 +1,4 @@
-const CACHE_NAME = "kg-ceiling-calendar-v1.7.14-day-whatsapp-beside-address";
+const CACHE_NAME = "kg-ceiling-calendar-v1.7.15-day-order-material-delivery-rails";
 const APP_FILES = [
   "./",
   "./index.html",

@@ -1043,3 +1043,122 @@ body.dayFitMode .dayTimeline {
   }
   .dayViewTopActions .btn { flex: 1 1 0; }
 }
+
+/* v1.7.15 Day view order + Material/Delivery status rails */
+.deliveryStatusChecks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+.deliveryMaterialFormCheck,
+.deliverySentFormCheck {
+  margin-top: 0;
+  padding: 12px 14px;
+  border: 1px solid #cbdedb;
+  border-radius: 12px;
+  background: #f7fbfa;
+}
+.deliveryMaterialFormCheck input,
+.deliverySentFormCheck input {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+}
+.deliveryMaterialFormCheck span,
+.deliverySentFormCheck span { font-weight: 850; }
+.deliveryMaterialFormCheck { border-color: #b9dff1; background: #f2fbff; }
+.deliverySentFormCheck { border-color: #9bb9dc; background: #f1f6fc; }
+
+/* Installer -> ID detail -> roughly half-width Address -> WhatsApp Copy. */
+.dayCompactAddressLine {
+  grid-template-columns: minmax(175px, .82fr) minmax(0, 2.35fr) auto;
+  gap: 7px;
+}
+.dayCompactAddress {
+  position: relative;
+  isolation: isolate;
+  padding-right: 10px;
+}
+/* 5 mm trailing status rails on the back/right edge of the address bar. */
+.dayCompactAddress.dayAddressMaterialStatus::before,
+.dayCompactAddress.dayAddressDeliverySent::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 5mm;
+  z-index: 2;
+  pointer-events: none;
+}
+.dayCompactAddress.dayAddressMaterialStatus::before {
+  right: 0;
+  background: #8fd7f4;
+}
+.dayCompactAddress.dayAddressDeliverySent::after {
+  right: 0;
+  background: #174f9b;
+}
+.dayCompactAddress.dayAddressMaterialStatus.dayAddressDeliverySent::before {
+  right: 5mm;
+}
+.dayCompactAddress.dayAddressMaterialStatus.dayAddressDeliverySent {
+  padding-right: calc(10mm + 10px);
+}
+.dayCompactAddress.dayAddressMaterialStatus:not(.dayAddressDeliverySent),
+.dayCompactAddress.dayAddressDeliverySent:not(.dayAddressMaterialStatus) {
+  padding-right: calc(5mm + 10px);
+}
+.dayDeliveryTag.material {
+  border-color: #8fd7f4;
+  background: #effaff;
+  color: #226680;
+}
+.dayDeliveryTag.sent {
+  border-color: #174f9b;
+  background: #edf4ff;
+  color: #174f9b;
+}
+
+@media (min-width: 768px) {
+  body.dayFitMode .dayCompactJobRow {
+    grid-template-columns: minmax(125px, 165px) minmax(0, 1fr);
+  }
+  body.dayFitMode .dayCompactAddressLine {
+    grid-template-columns: minmax(150px, .78fr) minmax(0, 2.25fr) auto;
+    gap: 4px;
+  }
+  body.dayFitDense .dayCompactAddressLine,
+  body.dayFitUltra .dayCompactAddressLine {
+    grid-template-columns: minmax(135px, .75fr) minmax(0, 2.2fr) auto;
+  }
+}
+
+@media (max-width: 767px) {
+  .deliveryStatusChecks { grid-template-columns: minmax(0, 1fr); }
+  .dayCompactAddressLine { grid-template-columns: minmax(0, 1fr); }
+  .dayCompactIdBeside { order: 1; }
+  .dayCompactAddress { order: 2; }
+  .dayCompactWhatsAppBtn { order: 3; }
+}
+
+/* Keep the coloured address section to about half of the Day View row. */
+.dayCompactAddressLine {
+  grid-template-columns: minmax(185px, 1fr) minmax(280px, 1.75fr) auto;
+}
+@media (min-width: 768px) {
+  body.dayFitMode .dayCompactAddressLine {
+    grid-template-columns: minmax(155px, 1fr) minmax(250px, 1.7fr) auto;
+  }
+  body.dayFitDense .dayCompactAddressLine,
+  body.dayFitUltra .dayCompactAddressLine {
+    grid-template-columns: minmax(140px, 1fr) minmax(220px, 1.65fr) auto;
+  }
+}
+@media (max-width: 767px) {
+  .dayCompactAddressLine { grid-template-columns: minmax(0, 1fr); }
+}
+.dayCompactAddress.dayAddressDeliverySent::after,
+.dayCompactAddress.dayAddressMaterialStatus:not(.dayAddressDeliverySent)::before {
+  border-radius: 0 8px 8px 0;
+}
