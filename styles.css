@@ -1214,3 +1214,179 @@ body.dayFitMode .dayTimeline {
     gap: 2px;
   }
 }
+
+
+/* v1.7.17 — compact Day View row.
+   Installer -> ID detail only -> half-width Address -> WhatsApp.
+   Delivery text under addresses is removed; 5 mm status rails remain. */
+.dayCompactDelivery { display: none !important; }
+.dayCompactIdBeside small { display: none !important; }
+.dayCompactIdBeside {
+  gap: 0;
+}
+.dayCompactIdBeside strong {
+  display: block;
+  margin: 0;
+}
+
+/* Do not stretch busy-day rows across a wide desktop screen. */
+@media (min-width: 768px) {
+  body.dayFitMode .dayCompactJobRow {
+    grid-template-columns: minmax(72px, 86px) minmax(0, 620px);
+    justify-content: start;
+    width: min(100%, 710px);
+    max-width: 710px;
+    gap: 4px;
+  }
+  body.dayFitMode .dayCompactMain {
+    width: min(100%, 620px);
+    max-width: 620px;
+  }
+  body.dayFitMode .dayCompactAddressLine {
+    width: min(100%, 620px);
+    grid-template-columns: minmax(70px, 82px) minmax(0, 1fr) 92px;
+    justify-content: start;
+    gap: 4px;
+  }
+  body.dayFitMode .dayCompactIdBeside {
+    padding: 2px 4px;
+  }
+  body.dayFitMode .dayCompactIdBeside strong {
+    font-size: 9px;
+    line-height: 1.05;
+  }
+  body.dayFitMode .dayCompactAddress {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    white-space: normal;
+    overflow: visible;
+    overflow-wrap: anywhere;
+  }
+  body.dayFitMode .dayCompactWhatsAppBtn {
+    width: 92px;
+    min-width: 92px;
+  }
+
+  body.dayFitDense .dayCompactJobRow {
+    grid-template-columns: minmax(66px, 78px) minmax(0, 560px);
+    width: min(100%, 642px);
+    max-width: 642px;
+  }
+  body.dayFitDense .dayCompactMain,
+  body.dayFitDense .dayCompactAddressLine {
+    width: min(100%, 560px);
+    max-width: 560px;
+  }
+  body.dayFitDense .dayCompactAddressLine {
+    grid-template-columns: minmax(62px, 72px) minmax(0, 1fr) 82px;
+  }
+  body.dayFitDense .dayCompactWhatsAppBtn {
+    width: 82px;
+    min-width: 82px;
+  }
+
+  body.dayFitUltra .dayCompactJobRow {
+    grid-template-columns: minmax(60px, 70px) minmax(0, 510px);
+    width: min(100%, 584px);
+    max-width: 584px;
+  }
+  body.dayFitUltra .dayCompactMain,
+  body.dayFitUltra .dayCompactAddressLine {
+    width: min(100%, 510px);
+    max-width: 510px;
+  }
+  body.dayFitUltra .dayCompactAddressLine {
+    grid-template-columns: minmax(56px, 66px) minmax(0, 1fr) 76px;
+    gap: 2px;
+  }
+  body.dayFitUltra .dayCompactWhatsAppBtn {
+    width: 76px;
+    min-width: 76px;
+  }
+}
+
+/* Phone: keep the same left-to-right order but fit inside the screen,
+   so there is no sideways page scrolling. */
+@media (max-width: 767px) {
+  body.dayFitMode,
+  body.dayFitMode .appShell,
+  body.dayFitMode .calendarPanel,
+  body.dayFitMode .dayViewPanel,
+  body.dayFitMode .dayTimelineScroll,
+  body.dayFitMode .dayTimeline,
+  body.dayFitMode .allDayBand {
+    max-width: 100%;
+    overflow-x: hidden !important;
+  }
+  .dayCompactJobRow {
+    grid-template-columns: minmax(62px, 72px) minmax(0, 1fr);
+    width: 100%;
+    max-width: 100%;
+    gap: 3px;
+  }
+  .dayCompactMeta {
+    padding: 2px 3px;
+  }
+  .dayInstallerField { gap: 1px; }
+  .dayInstallerField span {
+    font-size: 7px;
+    line-height: 1;
+  }
+  .dayInstallerInput {
+    min-height: 26px;
+    padding: 2px 3px;
+    font-size: 8px;
+  }
+  .dayCompactMain,
+  .dayCompactAddressLine {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+  .dayCompactAddressLine {
+    display: grid;
+    grid-template-columns: minmax(52px, 62px) minmax(0, 1fr) 68px;
+    gap: 3px;
+    align-items: stretch;
+  }
+  .dayCompactIdBeside,
+  .dayCompactAddress,
+  .dayCompactWhatsAppBtn {
+    order: initial;
+    min-width: 0;
+  }
+  .dayCompactIdBeside {
+    padding: 2px 3px;
+    border-radius: 5px;
+  }
+  .dayCompactIdBeside strong {
+    font-size: 7.5px;
+    line-height: 1.05;
+    overflow-wrap: anywhere;
+  }
+  .dayCompactAddress {
+    min-height: 28px;
+    padding: 3px 5px;
+    font-size: 8.5px;
+    line-height: 1.08;
+    white-space: normal;
+    overflow: visible;
+    overflow-wrap: anywhere;
+  }
+  .dayCompactWhatsAppBtn {
+    width: 68px;
+    min-width: 68px;
+    min-height: 28px;
+    padding: 2px 3px;
+    white-space: normal;
+    border-radius: 6px;
+  }
+  .dayCompactWhatsAppBtn strong { font-size: 7.5px; }
+  .dayCompactWhatsAppBtn small { font-size: 6px; margin-top: 1px; }
+  .dayTimeline,
+  .allDayBand {
+    padding-left: 3px;
+    padding-right: 3px;
+  }
+}

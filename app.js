@@ -927,35 +927,15 @@ function buildDayCompactJobRow(calendarEvent, segment = null) {
 
   const idName = document.createElement("div");
   idName.className = "dayCompactIdBeside";
-  const idLabel = document.createElement("small");
-  idLabel.textContent = "ID Name / ID 联系人姓名";
   const idValue = document.createElement("strong");
   idValue.textContent = data.contact || "—";
-  idName.append(idLabel, idValue);
+  idName.append(idValue);
 
-  // Requested Day View order: Installer → ID detail → Address → WhatsApp Copy.
+  // Day View order: Installer → ID detail only → Address → WhatsApp Copy.
+  // Delivery dates/status text are intentionally not printed below the address;
+  // Material and Delivery Sent remain visible through the 5 mm address rails.
   addressLine.append(idName, address, whatsAppBtn);
   main.appendChild(addressLine);
-
-  if (deliveries.length) {
-    const deliveryWrap = document.createElement("div");
-    deliveryWrap.className = "dayCompactDelivery";
-    deliveries.forEach((delivery, index) => {
-      const tag = document.createElement("span");
-      tag.className = `dayDeliveryTag${delivery.deliverySent ? " sent" : delivery.materialStatus ? " material" : ""}`;
-      const dateText = delivery.date ? formatDateShort(delivery.date) : "No date / 无日期";
-      const statusText = [
-        delivery.materialStatus ? "料单✓" : "",
-        delivery.deliverySent ? "已送货✓" : ""
-      ].filter(Boolean).join(" · ");
-      tag.textContent = `Deliver ${index + 1} / 送货 ${index + 1}: ${dateText}${statusText ? ` · ${statusText}` : ""}`;
-      if (delivery.materials || delivery.remark) {
-        tag.title = [delivery.materials, delivery.remark].filter(Boolean).join(" • ");
-      }
-      deliveryWrap.appendChild(tag);
-    });
-    main.appendChild(deliveryWrap);
-  }
 
   row.append(meta, main);
   return row;
@@ -2972,7 +2952,7 @@ function formatFormTime(data) {
 function buildPrivateProperties(data) {
   const privateProperties = {
     kgCeilingApp: "1",
-    kgCeilingVersion: "1.7.16",
+    kgCeilingVersion: "1.7.17",
     ...(data.continueJob && data.continueGroupId ? {
       kgContinueJob: "1",
       kgContinueGroup: data.continueGroupId,

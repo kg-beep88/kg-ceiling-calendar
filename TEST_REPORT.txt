@@ -1,17 +1,18 @@
-KG Ceiling Calendar v1.7.15 test report
+KG Ceiling Calendar v1.7.17 - Test Report
 
-- JavaScript syntax (`node --check`): PASS
-- Duplicate HTML IDs: PASS (none)
-- JS cached element IDs present in HTML: PASS (98/98)
-- Versioned assets v1.7.15: PASS
-- Service-worker cache bumped to v1.7.15: PASS
-- Day View row order Installer → ID → Address → WhatsApp: PASS
-- Address column reduced to approximately half-row width on tablet/desktop: PASS (CSS)
-- Material / 料单 checkbox exists on every delivery row: PASS
-- New Delivery Sent / 已送货 checkbox exists on every delivery row: PASS
-- Material light-blue 5 mm address rail: PASS
-- Delivery Sent dark-blue 5 mm address rail: PASS
-- Both rails can display together: PASS
-- v1.7.14 legacy checked `sent` migrates to Material / 料单: PASS
-- New material + delivery-sent statuses persist in structured Google event data: PASS (static path check)
-- Same-address delivery sync signature includes both status fields: PASS
+Changes checked:
+- Day View no longer renders Deliver 1 / 送货 1 text beneath addresses.
+- ID Name / ID 联系人姓名 label removed from Day View rows; value remains.
+- Day row order remains Installer -> ID detail -> Address -> WhatsApp Copy.
+- Address area is compact/roughly half-width on tablet/desktop instead of stretching across page.
+- Phone Day View uses a no-horizontal-scroll compact grid.
+- Material / 料单 5 mm light-blue status rail remains.
+- Delivery Sent / 已送货 5 mm dark-blue status rail remains.
+- Delivery data itself is unchanged and continues to sync.
+- Version/cache bumped to v1.7.17.
+
+Static checks:
+- app.js syntax: PASS
+- sw.js syntax: PASS
+- duplicate HTML IDs: PASS (none)
+- versioned index assets: PASS
