@@ -1,15 +1,15 @@
-KG Ceiling Calendar v1.7.17 - Test Report
+KG Ceiling Calendar v1.7.18 - Test Report
 
 Changes checked:
-- Day View no longer renders Deliver 1 / 送货 1 text beneath addresses.
-- ID Name / ID 联系人姓名 label removed from Day View rows; value remains.
-- Day row order remains Installer -> ID detail -> Address -> WhatsApp Copy.
-- Address area is compact/roughly half-width on tablet/desktop instead of stretching across page.
-- Phone Day View uses a no-horizontal-scroll compact grid.
-- Material / 料单 5 mm light-blue status rail remains.
-- Delivery Sent / 已送货 5 mm dark-blue status rail remains.
-- Delivery data itself is unchanged and continues to sync.
-- Version/cache bumped to v1.7.17.
+- Day View now shows the same Job Search / 工作搜索 function used by Month View.
+- Day View search is compact on tablet/desktop and phone to avoid horizontal scrolling.
+- Month calendar event bars show Material / 料单 as a 5 mm light-blue rail.
+- Month calendar event bars show Delivery Sent / 已送货 as a 5 mm dark-blue rail.
+- If both statuses are set, both 5 mm rails appear.
+- Month selected-date job cards use the same light/dark blue status rails.
+- Month selected-date job cards no longer print 'Deliver / 送货: ... · 料单✓ / 已送货✓' below the address.
+- Delivery data remains saved/synced; only the Month View display was simplified.
+- Version/cache bumped to v1.7.18.
 
 Static checks:
 - app.js syntax: PASS

@@ -732,6 +732,19 @@ function renderCalendar() {
       chip.style.background = colour.background;
       chip.style.color = colour.foreground;
       chip.textContent = eventChipLabel(calendarEvent, key);
+
+      // Month View delivery indicators: keep the address bar clean and show
+      // status only as the same 5 mm light/dark blue rails used in Day View.
+      const chipDeliveries = getDeliveryEntries(parseEventData(calendarEvent));
+      const chipHasMaterial = chipDeliveries.some((delivery) => delivery.materialStatus);
+      const chipHasDeliverySent = chipDeliveries.some((delivery) => delivery.deliverySent);
+      if (chipHasMaterial) chip.classList.add("monthEventMaterialStatus");
+      if (chipHasDeliverySent) chip.classList.add("monthEventDeliverySent");
+      chip.setAttribute("aria-label", [
+        chip.textContent,
+        chipHasMaterial ? "Material / 料单" : "",
+        chipHasDeliverySent ? "Delivery Sent / 已送货" : ""
+      ].filter(Boolean).join(" • "));
       chip.title = "Click to edit. Drag to move. / 点击编辑，拖动更改日期。";
       chip.addEventListener("click", (clickEvent) => {
         clickEvent.stopPropagation();
@@ -1281,13 +1294,19 @@ function renderDayJobs() {
     const title = document.createElement("h3");
     title.textContent = data.address || event.summary || "Untitled job / 未命名工作";
     info.appendChild(title);
+
+    // Month View selected-day list: do not print the Deliver / 送货 sentence.
+    // Show Material and Delivery Sent only as 5 mm colour rails on the card.
     const deliveries = getDeliveryEntries(data);
-    if (deliveries.length) {
-      const deliveryDates = document.createElement("div");
-      deliveryDates.className = "jobDeliveryDates";
-      deliveryDates.textContent = `Deliver / 送货: ${deliveries.map((item) => `${item.date ? formatDateShort(item.date) : "No date / 无日期"}${item.materialStatus ? " · 料单✓" : ""}${item.deliverySent ? " · 已送货✓" : ""}`).join(", ")}`;
-      info.appendChild(deliveryDates);
-    }
+    const hasMaterialStatus = deliveries.some((delivery) => delivery.materialStatus);
+    const hasDeliverySent = deliveries.some((delivery) => delivery.deliverySent);
+    if (hasMaterialStatus) card.classList.add("monthCardMaterialStatus");
+    if (hasDeliverySent) card.classList.add("monthCardDeliverySent");
+    card.setAttribute("aria-label", [
+      title.textContent,
+      hasMaterialStatus ? "Material / 料单" : "",
+      hasDeliverySent ? "Delivery Sent / 已送货" : ""
+    ].filter(Boolean).join(" • "));
 
     const actions = document.createElement("div");
     actions.className = "jobActions";
@@ -2952,7 +2971,7 @@ function formatFormTime(data) {
 function buildPrivateProperties(data) {
   const privateProperties = {
     kgCeilingApp: "1",
-    kgCeilingVersion: "1.7.17",
+    kgCeilingVersion: "1.7.18",
     ...(data.continueJob && data.continueGroupId ? {
       kgContinueJob: "1",
       kgContinueGroup: data.continueGroupId,
