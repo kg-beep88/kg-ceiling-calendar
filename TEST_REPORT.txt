@@ -1,14 +1,9 @@
-KG Ceiling Calendar v1.7.20 - Test Report
+KG Ceiling Calendar v1.7.21 - Test Report
 
-PASS
-- JavaScript syntax check passed (node --check app.js).
-- No duplicate HTML IDs.
-- All DOM IDs cached by app.js exist in index.html.
-- Delivery form reordered to Material/Delivery Sent -> Date/Vehicle -> Clear Site -> Date/Vehicle.
-- Vehicle dropdown is hard-coded with exactly 7 requested vehicle numbers.
-- Multiple delivery rows keep the same new structure.
-- Material and Delivery Sent remain mutually exclusive for each delivery row.
-- New delivery fields are stored in Google event private data and visible description.
-- Same-address delivery sync includes vehicle and clear-site data.
-- Legacy delivery material/remark data is preserved hidden when old events are edited.
-- Version and service-worker cache bumped to v1.7.20.
+- JavaScript syntax check: PASS
+- Clear Site status exposed by currentDeliveryDisplayStatus: PASS
+- Day View yellow 5 mm Clear Site rail: PASS
+- Month View yellow 5 mm Clear Site rail: PASS
+- Month selected-day card yellow 5 mm Clear Site rail: PASS
+- Material / Delivery Sent status logic unchanged: PASS
+- Version and service-worker cache bumped to v1.7.21.

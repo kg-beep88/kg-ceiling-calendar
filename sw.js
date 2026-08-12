@@ -1,4 +1,4 @@
-const CACHE_NAME = "kg-ceiling-calendar-v1.7.20-delivery-clear-site-vehicles";
+const CACHE_NAME = "kg-ceiling-calendar-v1.7.21-clear-site-yellow-rail";
 const APP_FILES = [
   "./",
   "./index.html",

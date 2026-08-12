@@ -1080,9 +1080,12 @@ body.dayFitMode .dayTimeline {
   isolation: isolate;
   padding-right: 10px;
 }
-/* 5 mm trailing status rails on the back/right edge of the address bar. */
-.dayCompactAddress.dayAddressMaterialStatus::before,
-.dayCompactAddress.dayAddressDeliverySent::after {
+/* 5 mm trailing status rails on the back/right edge of the address bar.
+   Latest delivery status: light blue = Material, dark blue = Delivery Sent.
+   Clear Site is an independent yellow 5 mm rail. */
+.dayCompactAddress.dayAddressMaterialStatus::after,
+.dayCompactAddress.dayAddressDeliverySent::after,
+.dayCompactAddress.dayAddressClearSite::before {
   content: "";
   position: absolute;
   top: 0;
@@ -1091,7 +1094,7 @@ body.dayFitMode .dayTimeline {
   z-index: 2;
   pointer-events: none;
 }
-.dayCompactAddress.dayAddressMaterialStatus::before {
+.dayCompactAddress.dayAddressMaterialStatus::after {
   right: 0;
   background: #8fd7f4;
 }
@@ -1099,15 +1102,27 @@ body.dayFitMode .dayTimeline {
   right: 0;
   background: #174f9b;
 }
-.dayCompactAddress.dayAddressMaterialStatus.dayAddressDeliverySent::before {
+.dayCompactAddress.dayAddressClearSite::before {
+  right: 0;
+  background: #f2c94c;
+  border-radius: 0 7px 7px 0;
+}
+.dayCompactAddress.dayAddressClearSite.dayAddressMaterialStatus::after,
+.dayCompactAddress.dayAddressClearSite.dayAddressDeliverySent::after {
   right: 5mm;
 }
-.dayCompactAddress.dayAddressMaterialStatus.dayAddressDeliverySent {
+.dayCompactAddress.dayAddressClearSite.dayAddressMaterialStatus,
+.dayCompactAddress.dayAddressClearSite.dayAddressDeliverySent {
   padding-right: calc(10mm + 10px);
 }
-.dayCompactAddress.dayAddressMaterialStatus:not(.dayAddressDeliverySent),
-.dayCompactAddress.dayAddressDeliverySent:not(.dayAddressMaterialStatus) {
+.dayCompactAddress.dayAddressClearSite:not(.dayAddressMaterialStatus):not(.dayAddressDeliverySent),
+.dayCompactAddress.dayAddressMaterialStatus:not(.dayAddressClearSite),
+.dayCompactAddress.dayAddressDeliverySent:not(.dayAddressClearSite) {
   padding-right: calc(5mm + 10px);
+}
+.dayCompactAddress.dayAddressMaterialStatus:not(.dayAddressClearSite)::after,
+.dayCompactAddress.dayAddressDeliverySent:not(.dayAddressClearSite)::after {
+  border-radius: 0 7px 7px 0;
 }
 .dayDeliveryTag.material {
   border-color: #8fd7f4;
@@ -1425,14 +1440,16 @@ body.dayFitMode .searchCard .addressSearchForm .btn {
 }
 body.dayFitMode .searchCard .addressSearchForm .btn small { font-size: 8px; }
 
-/* Month calendar address bars: light blue = Material, dark blue = Delivery Sent. */
+/* Month calendar address bars: light blue = Material, dark blue = Delivery Sent, yellow = Clear Site. */
 .eventChip.monthEventMaterialStatus,
-.eventChip.monthEventDeliverySent {
+.eventChip.monthEventDeliverySent,
+.eventChip.monthEventClearSite {
   position: relative;
   isolation: isolate;
 }
-.eventChip.monthEventMaterialStatus::before,
-.eventChip.monthEventDeliverySent::after {
+.eventChip.monthEventMaterialStatus::after,
+.eventChip.monthEventDeliverySent::after,
+.eventChip.monthEventClearSite::before {
   content: "";
   position: absolute;
   top: 0;
@@ -1441,33 +1458,29 @@ body.dayFitMode .searchCard .addressSearchForm .btn small { font-size: 8px; }
   z-index: 2;
   pointer-events: none;
 }
-.eventChip.monthEventMaterialStatus::before {
-  right: 0;
-  background: #8fd7f4;
-}
-.eventChip.monthEventDeliverySent::after {
-  right: 0;
-  background: #174f9b;
-}
-.eventChip.monthEventMaterialStatus.monthEventDeliverySent::before { right: 5mm; }
-.eventChip.monthEventMaterialStatus.monthEventDeliverySent { padding-right: calc(10mm + 7px); }
-.eventChip.monthEventMaterialStatus:not(.monthEventDeliverySent),
-.eventChip.monthEventDeliverySent:not(.monthEventMaterialStatus) {
-  padding-right: calc(5mm + 7px);
-}
-.eventChip.monthEventDeliverySent::after,
-.eventChip.monthEventMaterialStatus:not(.monthEventDeliverySent)::before {
-  border-radius: 0 7px 7px 0;
-}
+.eventChip.monthEventMaterialStatus::after { right: 0; background: #8fd7f4; }
+.eventChip.monthEventDeliverySent::after { right: 0; background: #174f9b; }
+.eventChip.monthEventClearSite::before { right: 0; background: #f2c94c; border-radius: 0 7px 7px 0; }
+.eventChip.monthEventClearSite.monthEventMaterialStatus::after,
+.eventChip.monthEventClearSite.monthEventDeliverySent::after { right: 5mm; }
+.eventChip.monthEventClearSite.monthEventMaterialStatus,
+.eventChip.monthEventClearSite.monthEventDeliverySent { padding-right: calc(10mm + 7px); }
+.eventChip.monthEventClearSite:not(.monthEventMaterialStatus):not(.monthEventDeliverySent),
+.eventChip.monthEventMaterialStatus:not(.monthEventClearSite),
+.eventChip.monthEventDeliverySent:not(.monthEventClearSite) { padding-right: calc(5mm + 7px); }
+.eventChip.monthEventMaterialStatus:not(.monthEventClearSite)::after,
+.eventChip.monthEventDeliverySent:not(.monthEventClearSite)::after { border-radius: 0 7px 7px 0; }
 
 /* Month selected-date cards use the same status rails and no delivery sentence. */
 .jobCard.monthCardMaterialStatus,
-.jobCard.monthCardDeliverySent {
+.jobCard.monthCardDeliverySent,
+.jobCard.monthCardClearSite {
   position: relative;
   overflow: hidden;
 }
-.jobCard.monthCardMaterialStatus::before,
-.jobCard.monthCardDeliverySent::after {
+.jobCard.monthCardMaterialStatus::after,
+.jobCard.monthCardDeliverySent::after,
+.jobCard.monthCardClearSite::before {
   content: "";
   position: absolute;
   top: 0;
@@ -1476,24 +1489,18 @@ body.dayFitMode .searchCard .addressSearchForm .btn small { font-size: 8px; }
   z-index: 2;
   pointer-events: none;
 }
-.jobCard.monthCardMaterialStatus::before {
-  right: 0;
-  background: #8fd7f4;
-}
-.jobCard.monthCardDeliverySent::after {
-  right: 0;
-  background: #174f9b;
-}
-.jobCard.monthCardMaterialStatus.monthCardDeliverySent::before { right: 5mm; }
-.jobCard.monthCardMaterialStatus.monthCardDeliverySent { padding-right: calc(10mm + 12px); }
-.jobCard.monthCardMaterialStatus:not(.monthCardDeliverySent),
-.jobCard.monthCardDeliverySent:not(.monthCardMaterialStatus) {
-  padding-right: calc(5mm + 12px);
-}
-.jobCard.monthCardDeliverySent::after,
-.jobCard.monthCardMaterialStatus:not(.monthCardDeliverySent)::before {
-  border-radius: 0 14px 14px 0;
-}
+.jobCard.monthCardMaterialStatus::after { right: 0; background: #8fd7f4; }
+.jobCard.monthCardDeliverySent::after { right: 0; background: #174f9b; }
+.jobCard.monthCardClearSite::before { right: 0; background: #f2c94c; border-radius: 0 14px 14px 0; }
+.jobCard.monthCardClearSite.monthCardMaterialStatus::after,
+.jobCard.monthCardClearSite.monthCardDeliverySent::after { right: 5mm; }
+.jobCard.monthCardClearSite.monthCardMaterialStatus,
+.jobCard.monthCardClearSite.monthCardDeliverySent { padding-right: calc(10mm + 12px); }
+.jobCard.monthCardClearSite:not(.monthCardMaterialStatus):not(.monthCardDeliverySent),
+.jobCard.monthCardMaterialStatus:not(.monthCardClearSite),
+.jobCard.monthCardDeliverySent:not(.monthCardClearSite) { padding-right: calc(5mm + 12px); }
+.jobCard.monthCardMaterialStatus:not(.monthCardClearSite)::after,
+.jobCard.monthCardDeliverySent:not(.monthCardClearSite)::after { border-radius: 0 14px 14px 0; }
 
 @media (max-width: 700px) {
   body.dayFitMode .searchCard {
@@ -1558,3 +1565,5 @@ body.dayFitMode .searchCard {
   .deliveryActionGrid { grid-template-columns: minmax(0, 1fr); gap: 8px; }
   .deliveryStatusChecks { grid-template-columns: minmax(0, 1fr); gap: 8px; }
 }
+
+/* v1.7.21 — Clear Site / 清场 yellow 5 mm status rail. */

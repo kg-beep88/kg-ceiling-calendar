@@ -1,7 +1,11 @@
 # v1.7.15 Quick Update / 快速更新
 
 
-## v1.7.20 update
+## v1.7.21 update
+
+- Clear Site / 清场 now shows a yellow 5 mm status rail on the back/right of the address bar.
+- If the latest delivery also has Material or Delivery Sent status, the yellow rail appears beside the blue rail.
+
 
 Delivery in Add/Edit Job is now arranged as:
 

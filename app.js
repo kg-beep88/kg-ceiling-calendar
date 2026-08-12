@@ -750,12 +750,15 @@ function renderCalendar() {
       const chipDeliveryStatus = currentDeliveryDisplayStatus(parseEventData(calendarEvent));
       const chipHasMaterial = chipDeliveryStatus.materialStatus;
       const chipHasDeliverySent = chipDeliveryStatus.deliverySent;
+      const chipHasClearSite = chipDeliveryStatus.clearSite;
       if (chipHasMaterial) chip.classList.add("monthEventMaterialStatus");
       if (chipHasDeliverySent) chip.classList.add("monthEventDeliverySent");
+      if (chipHasClearSite) chip.classList.add("monthEventClearSite");
       chip.setAttribute("aria-label", [
         chip.textContent,
         chipHasMaterial ? "Material / 料单" : "",
-        chipHasDeliverySent ? "Delivery Sent / 已送货" : ""
+        chipHasDeliverySent ? "Delivery Sent / 已送货" : "",
+        chipHasClearSite ? "Clear Site / 清场" : ""
       ].filter(Boolean).join(" • "));
       chip.title = "Click to edit. Drag to move. / 点击编辑，拖动更改日期。";
       chip.addEventListener("click", (clickEvent) => {
@@ -931,12 +934,15 @@ function buildDayCompactJobRow(calendarEvent, segment = null) {
   const deliveryDisplayStatus = currentDeliveryDisplayStatus(data);
   const hasMaterialStatus = deliveryDisplayStatus.materialStatus;
   const hasDeliverySent = deliveryDisplayStatus.deliverySent;
+  const hasClearSite = deliveryDisplayStatus.clearSite;
   if (hasMaterialStatus) address.classList.add("dayAddressMaterialStatus");
   if (hasDeliverySent) address.classList.add("dayAddressDeliverySent");
+  if (hasClearSite) address.classList.add("dayAddressClearSite");
   address.setAttribute("aria-label", [
     address.textContent,
     hasMaterialStatus ? "Material / 料单" : "",
-    hasDeliverySent ? "Delivery Sent / 已送货" : ""
+    hasDeliverySent ? "Delivery Sent / 已送货" : "",
+    hasClearSite ? "Clear Site / 清场" : ""
   ].filter(Boolean).join(" • "));
 
   const whatsAppBtn = document.createElement("button");
@@ -1312,12 +1318,15 @@ function renderDayJobs() {
     const deliveryDisplayStatus = currentDeliveryDisplayStatus(data);
     const hasMaterialStatus = deliveryDisplayStatus.materialStatus;
     const hasDeliverySent = deliveryDisplayStatus.deliverySent;
+    const hasClearSite = deliveryDisplayStatus.clearSite;
     if (hasMaterialStatus) card.classList.add("monthCardMaterialStatus");
     if (hasDeliverySent) card.classList.add("monthCardDeliverySent");
+    if (hasClearSite) card.classList.add("monthCardClearSite");
     card.setAttribute("aria-label", [
       title.textContent,
       hasMaterialStatus ? "Material / 料单" : "",
-      hasDeliverySent ? "Delivery Sent / 已送货" : ""
+      hasDeliverySent ? "Delivery Sent / 已送货" : "",
+      hasClearSite ? "Clear Site / 清场" : ""
     ].filter(Boolean).join(" • "));
 
     const actions = document.createElement("div");
@@ -2680,6 +2689,7 @@ function currentDeliveryDisplayStatus(dataOrDeliveries = {}) {
   return {
     materialStatus: Boolean(current?.materialStatus),
     deliverySent: Boolean(current?.deliverySent),
+    clearSite: Boolean(current?.clearSite),
     deliveryNumber: deliveries.length
   };
 }
@@ -3133,7 +3143,7 @@ function formatFormTime(data) {
 function buildPrivateProperties(data) {
   const privateProperties = {
     kgCeilingApp: "1",
-    kgCeilingVersion: "1.7.20",
+    kgCeilingVersion: "1.7.21",
     ...(data.continueJob && data.continueGroupId ? {
       kgContinueJob: "1",
       kgContinueGroup: data.continueGroupId,
