@@ -27,7 +27,7 @@ const APP_MARKER = "#KGCEILING";
 const DATA_HEADER = "[KG CEILING APP DATA / KG 天花应用资料]";
 const VEHICLE_OPTIONS = [
   "YN8209T",
-  "YP8289B",
+  "YP8209B",
   "YQ6498Y",
   "GBE6680Y",
   "GBG8121X",
@@ -807,7 +807,9 @@ function renderDaySchedule() {
   el.dayTimeline.innerHTML = "";
 
   const dayEvents = eventsForDate(key);
-  const allDayEvents = dayEvents.filter((event) => Boolean(event.start?.date));
+  const allDayEvents = dayEvents
+    .filter((event) => Boolean(event.start?.date))
+    .sort(compareDayColourThenAddress);
   const timedSegments = dayEvents
     .filter((event) => Boolean(event.start?.dateTime))
     .map((event) => {
@@ -816,18 +818,14 @@ function renderDaySchedule() {
     })
     .filter(Boolean)
     .sort((a, b) => {
+      // Day View order: time slot first, then Google Calendar colour, then address.
       if (a.start !== b.start) return a.start - b.start;
-      if (a.end !== b.end) return a.end - b.end;
 
-      const colourA = eventColourSortValue(a.event);
-      const colourB = eventColourSortValue(b.event);
-      if (colourA !== colourB) return colourA - colourB;
+      const colourAddressOrder = compareDayColourThenAddress(a.event, b.event);
+      if (colourAddressOrder !== 0) return colourAddressOrder;
 
-      return eventAddressForSort(a.event).localeCompare(
-        eventAddressForSort(b.event),
-        undefined,
-        { numeric: true, sensitivity: "base" }
-      );
+      // Only use end time as the final tie-breaker after colour + address.
+      return a.end - b.end;
     });
 
   if (!allDayEvents.length) {
@@ -2116,6 +2114,18 @@ function eventAddressForSort(event) {
   return String(data.address || event?.summary || event?.location || "").trim();
 }
 
+function compareDayColourThenAddress(a, b) {
+  const colourA = eventColourSortValue(a);
+  const colourB = eventColourSortValue(b);
+  if (colourA !== colourB) return colourA - colourB;
+
+  return eventAddressForSort(a).localeCompare(
+    eventAddressForSort(b),
+    undefined,
+    { numeric: true, sensitivity: "base" }
+  );
+}
+
 
 function eventStartMs(event) {
   if (event.start?.dateTime) return new Date(event.start.dateTime).getTime();
@@ -3143,7 +3153,7 @@ function formatFormTime(data) {
 function buildPrivateProperties(data) {
   const privateProperties = {
     kgCeilingApp: "1",
-    kgCeilingVersion: "1.7.21",
+    kgCeilingVersion: "1.7.22",
     ...(data.continueJob && data.continueGroupId ? {
       kgContinueJob: "1",
       kgContinueGroup: data.continueGroupId,

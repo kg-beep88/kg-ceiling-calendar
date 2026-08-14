@@ -1,4 +1,4 @@
-const CACHE_NAME = "kg-ceiling-calendar-v1.7.21-clear-site-yellow-rail";
+const CACHE_NAME = "kg-ceiling-calendar-v1.7.22-day-colour-address-sort";
 const APP_FILES = [
   "./",
   "./index.html",
