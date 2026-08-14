@@ -1,12 +1,12 @@
-KG Ceiling Calendar v1.7.25 - Test Report
+KG Ceiling Calendar v1.7.26 - Test Report
 
 Checks completed:
 - JavaScript syntax: PASS (node --check).
 - Duplicate HTML IDs: PASS (none).
-- Version text/assets/service-worker cache: v1.7.25.
+- Version text/assets/service-worker cache: v1.7.26.
 - Day View keeps chronological time groups.
-- Google Tomato Red (colorId 11) is routed to the left column.
-- Right column custom colour order starts Tangerine/Orange (6), Basil/Sage Green (10/2), Grape/Lavender Purple (3/1), then remaining colours.
+- Calendar default (no colorId) is routed to the left column.
+- Right column custom Google colour order starts Tangerine (6), Basil (10), Grape (3), then remaining colours.
 - Within a colour: Installer grouping, then Address sort.
 - Phone layout stacks columns vertically to avoid horizontal scrolling.
 - Existing Material/Delivery Sent/Clear Site status rails remain unchanged.

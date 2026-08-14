@@ -1,4 +1,4 @@
-const CACHE_NAME = "kg-ceiling-calendar-v1.7.25-red-left-colour-columns";
+const CACHE_NAME = "kg-ceiling-calendar-v1.7.26-google-default-left-tangerine-basil-grape";
 const APP_FILES = [
   "./",
   "./index.html",

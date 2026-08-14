@@ -1,14 +1,14 @@
-# KG Ceiling Calendar v1.7.25 — Day View Colour Columns
+# KG Ceiling Calendar v1.7.26 — Google Colour Day View
 
-## v1.7.25 update
+## v1.7.26 update
 
-Day View now uses two colour columns on tablet/desktop:
+Day View now uses the actual Google Calendar colour IDs for the two-column layout:
 
-- Left: Google Tomato Red jobs.
-- Right: Orange, Green, Purple, then the remaining colours.
+- Left: Calendar default / 日历默认.
+- Right: Tangerine / 橙色 → Basil / 深绿色 → Grape / 葡萄紫 → remaining Google Calendar colours.
 - Within each colour: Installer Name, then Address.
 - Existing time slots stay in chronological order.
-- Phone stacks Red first, then the other colours to avoid horizontal scrolling.
+- Phone stacks the left and right sections vertically to avoid horizontal scrolling.
 
 ## Update GitHub
 
@@ -17,4 +17,4 @@ Day View now uses two colour columns on tablet/desktop:
 3. Commit the changes.
 4. Open the app.
 5. Settings → Reset Cache.
-6. Confirm the app shows v1.7.25.
+6. Confirm the app shows v1.7.26.

@@ -35,22 +35,22 @@ const VEHICLE_OPTIONS = [
   "YR2464R"
 ];
 
-// Day View colour layout. Tomato red stays in the left column.
-// The right column puts Orange first, then Green shades, then Purple shades,
-// followed by the remaining Google Calendar colours.
-const DAY_RED_COLOUR_ID = "11";
+// Day View colour layout uses the actual Google Calendar event colour IDs.
+// Left column = Calendar default (no event colorId).
+// Right column = Tangerine, Basil, Grape first, then the remaining Google colours.
+const DAY_LEFT_COLOUR_ID = "default";
 const DAY_RIGHT_COLOUR_PRIORITY = new Map([
-  ["6", 0],   // Tangerine / Orange
-  ["10", 1],  // Basil / Green
-  ["2", 2],   // Sage / Green
-  ["3", 3],   // Grape / Purple
-  ["1", 4],   // Lavender / Purple
-  ["4", 5],   // Flamingo
-  ["5", 6],   // Banana
-  ["7", 7],   // Peacock
-  ["8", 8],   // Graphite
-  ["9", 9],   // Blueberry
-  ["default", 10]
+  ["6", 0],   // Tangerine / 橙色
+  ["10", 1],  // Basil / 深绿色
+  ["3", 2],   // Grape / 葡萄紫
+  ["1", 3],   // Lavender / 淡紫
+  ["2", 4],   // Sage / 鼠尾草绿
+  ["4", 5],   // Flamingo / 粉红
+  ["5", 6],   // Banana / 香蕉黄
+  ["7", 7],   // Peacock / 蓝绿
+  ["8", 8],   // Graphite / 灰色
+  ["9", 9],   // Blueberry / 蓝色
+  ["11", 10]  // Tomato / 红色
 ]);
 
 const FALLBACK_GOOGLE_EVENT_COLOURS = [
@@ -898,23 +898,23 @@ function buildDayColourSplit(items, buildRow, getEvent = (item) => item) {
   split.className = "dayColourSplit";
 
   const left = document.createElement("div");
-  left.className = "dayColourColumn dayColourColumnRed";
+  left.className = "dayColourColumn dayColourColumnDefault";
 
   const right = document.createElement("div");
   right.className = "dayColourColumn dayColourColumnOther";
 
-  const redItems = items
-    .filter((item) => isDayRedEvent(getEvent(item)))
+  const leftItems = items
+    .filter((item) => isDayLeftDefaultEvent(getEvent(item)))
     .sort((a, b) => compareDayInstallerThenAddress(getEvent(a), getEvent(b)));
 
   const rightItems = items
-    .filter((item) => !isDayRedEvent(getEvent(item)))
+    .filter((item) => !isDayLeftDefaultEvent(getEvent(item)))
     .sort((a, b) => compareDayRightColourThenInstallerThenAddress(getEvent(a), getEvent(b)));
 
-  redItems.forEach((item) => left.appendChild(buildRow(item)));
+  leftItems.forEach((item) => left.appendChild(buildRow(item)));
   rightItems.forEach((item) => right.appendChild(buildRow(item)));
 
-  if (!redItems.length) left.classList.add("dayColourColumnEmpty");
+  if (!leftItems.length) left.classList.add("dayColourColumnEmpty");
   if (!rightItems.length) right.classList.add("dayColourColumnEmpty");
 
   split.append(left, right);
@@ -2168,8 +2168,8 @@ function dayEventColourId(event) {
   return String(event?.colorId || "default");
 }
 
-function isDayRedEvent(event) {
-  return dayEventColourId(event) === DAY_RED_COLOUR_ID;
+function isDayLeftDefaultEvent(event) {
+  return dayEventColourId(event) === DAY_LEFT_COLOUR_ID;
 }
 
 function dayRightColourPriority(event) {
@@ -2207,8 +2207,8 @@ function compareDayRightColourThenInstallerThenAddress(a, b) {
 }
 
 function compareDayColourLayout(a, b) {
-  const sideA = isDayRedEvent(a) ? 0 : 1;
-  const sideB = isDayRedEvent(b) ? 0 : 1;
+  const sideA = isDayLeftDefaultEvent(a) ? 0 : 1;
+  const sideB = isDayLeftDefaultEvent(b) ? 0 : 1;
   if (sideA !== sideB) return sideA - sideB;
   if (sideA === 0) return compareDayInstallerThenAddress(a, b);
   return compareDayRightColourThenInstallerThenAddress(a, b);
@@ -3248,7 +3248,7 @@ function formatFormTime(data) {
 function buildPrivateProperties(data) {
   const privateProperties = {
     kgCeilingApp: "1",
-    kgCeilingVersion: "1.7.25",
+    kgCeilingVersion: "1.7.26",
     ...(data.continueJob && data.continueGroupId ? {
       kgContinueJob: "1",
       kgContinueGroup: data.continueGroupId,
