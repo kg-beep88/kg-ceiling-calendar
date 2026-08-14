@@ -1567,3 +1567,78 @@ body.dayFitMode .searchCard {
 }
 
 /* v1.7.21 — Clear Site / 清场 yellow 5 mm status rail. */
+
+
+/* v1.7.25 — Day View colour columns.
+   Left = Google Tomato red. Right = Orange, Green, Purple, then remaining colours.
+   Each colour keeps Installer -> Address grouping. */
+.dayColourSplit {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  width: 100%;
+}
+.dayColourColumn {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  align-content: start;
+}
+.dayColourColumnEmpty {
+  min-height: 1px;
+}
+
+/* Rows now fit inside either half of the Day View instead of using the old
+   single-column 710px maximum. */
+@media (min-width: 768px) {
+  body.dayFitMode .dayColourSplit {
+    gap: 8px;
+  }
+  body.dayFitMode .dayCompactJobRow,
+  body.dayFitDense .dayCompactJobRow,
+  body.dayFitUltra .dayCompactJobRow {
+    grid-template-columns: minmax(62px, 76px) minmax(0, 1fr) !important;
+    width: 100% !important;
+    max-width: none !important;
+    gap: 3px;
+  }
+  body.dayFitMode .dayCompactMain,
+  body.dayFitDense .dayCompactMain,
+  body.dayFitUltra .dayCompactMain,
+  body.dayFitMode .dayCompactAddressLine,
+  body.dayFitDense .dayCompactAddressLine,
+  body.dayFitUltra .dayCompactAddressLine {
+    width: 100% !important;
+    max-width: none !important;
+  }
+  body.dayFitMode .dayCompactAddressLine,
+  body.dayFitDense .dayCompactAddressLine,
+  body.dayFitUltra .dayCompactAddressLine {
+    grid-template-columns: minmax(50px, 66px) minmax(0, 1fr) 72px !important;
+    gap: 3px;
+  }
+  body.dayFitMode .dayCompactWhatsAppBtn,
+  body.dayFitDense .dayCompactWhatsAppBtn,
+  body.dayFitUltra .dayCompactWhatsAppBtn {
+    width: 72px !important;
+    min-width: 72px !important;
+  }
+  body.dayFitMode .dayCompactWhatsAppBtn strong { font-size: 7.5px; }
+  body.dayFitMode .dayCompactWhatsAppBtn small { font-size: 6px; }
+
+  /* All-day jobs use the exact same red-left / others-right row layout. */
+  body.dayFitMode .allDayEvents {
+    display: block !important;
+  }
+}
+
+/* Phone/tablet portrait: no sideways scrolling. Red jobs appear first,
+   followed by the ordered right-side colours underneath. */
+@media (max-width: 767px) {
+  .dayColourSplit {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 5px;
+  }
+  .dayColourColumnEmpty { display: none; }
+}

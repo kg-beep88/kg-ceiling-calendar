@@ -1,17 +1,12 @@
-KG Ceiling Calendar v1.7.24 - Test Report
+KG Ceiling Calendar v1.7.25 - Test Report
 
-- JavaScript syntax check: PASS
-- Clear Site status exposed by currentDeliveryDisplayStatus: PASS
-- Day View yellow 5 mm Clear Site rail: PASS
-- Month View yellow 5 mm Clear Site rail: PASS
-- Month selected-day card yellow 5 mm Clear Site rail: PASS
-- Material / Delivery Sent status logic unchanged: PASS
-- Version and service-worker cache bumped to v1.7.24.
-
-Additional v1.7.24 checks:
-- Day comparator includes colour -> installer -> address.
-- Blank installer sorts after named installers.
-- Inline Installer save triggers immediate Day View re-render/re-sort.
-
-Vehicle dropdown correction:
-- YP8209B replaced with YP8289B.
+Checks completed:
+- JavaScript syntax: PASS (node --check).
+- Duplicate HTML IDs: PASS (none).
+- Version text/assets/service-worker cache: v1.7.25.
+- Day View keeps chronological time groups.
+- Google Tomato Red (colorId 11) is routed to the left column.
+- Right column custom colour order starts Tangerine/Orange (6), Basil/Sage Green (10/2), Grape/Lavender Purple (3/1), then remaining colours.
+- Within a colour: Installer grouping, then Address sort.
+- Phone layout stacks columns vertically to avoid horizontal scrolling.
+- Existing Material/Delivery Sent/Clear Site status rails remain unchanged.

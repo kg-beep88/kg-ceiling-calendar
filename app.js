@@ -35,6 +35,24 @@ const VEHICLE_OPTIONS = [
   "YR2464R"
 ];
 
+// Day View colour layout. Tomato red stays in the left column.
+// The right column puts Orange first, then Green shades, then Purple shades,
+// followed by the remaining Google Calendar colours.
+const DAY_RED_COLOUR_ID = "11";
+const DAY_RIGHT_COLOUR_PRIORITY = new Map([
+  ["6", 0],   // Tangerine / Orange
+  ["10", 1],  // Basil / Green
+  ["2", 2],   // Sage / Green
+  ["3", 3],   // Grape / Purple
+  ["1", 4],   // Lavender / Purple
+  ["4", 5],   // Flamingo
+  ["5", 6],   // Banana
+  ["7", 7],   // Peacock
+  ["8", 8],   // Graphite
+  ["9", 9],   // Blueberry
+  ["default", 10]
+]);
+
 const FALLBACK_GOOGLE_EVENT_COLOURS = [
   { id: "1",  name: "Lavender / 淡紫",  background: "#a4bdfc", foreground: "#1d1d1d" },
   { id: "2",  name: "Sage / 鼠尾草绿", background: "#7ae7bf", foreground: "#1d1d1d" },
@@ -807,9 +825,7 @@ function renderDaySchedule() {
   el.dayTimeline.innerHTML = "";
 
   const dayEvents = eventsForDate(key);
-  const allDayEvents = dayEvents
-    .filter((event) => Boolean(event.start?.date))
-    .sort(compareDayColourThenInstallerThenAddress);
+  const allDayEvents = dayEvents.filter((event) => Boolean(event.start?.date));
   const timedSegments = dayEvents
     .filter((event) => Boolean(event.start?.dateTime))
     .map((event) => {
@@ -818,14 +834,10 @@ function renderDaySchedule() {
     })
     .filter(Boolean)
     .sort((a, b) => {
-      // Day View order: time slot first, then Google Calendar colour, then Installer, then address.
+      // Keep the day's time slots in chronological order.
       if (a.start !== b.start) return a.start - b.start;
-
-      const colourInstallerAddressOrder = compareDayColourThenInstallerThenAddress(a.event, b.event);
-      if (colourInstallerAddressOrder !== 0) return colourInstallerAddressOrder;
-
-      // Only use end time as the final tie-breaker after colour + installer + address.
-      return a.end - b.end;
+      if (a.end !== b.end) return a.end - b.end;
+      return compareDayColourLayout(a.event, b.event);
     });
 
   if (!allDayEvents.length) {
@@ -834,9 +846,10 @@ function renderDaySchedule() {
     none.textContent = "No all-day job / 没有全天工作";
     el.dayAllDayEvents.appendChild(none);
   } else {
-    allDayEvents.forEach((calendarEvent) => {
-      el.dayAllDayEvents.appendChild(buildDayCompactJobRow(calendarEvent));
-    });
+    el.dayAllDayEvents.appendChild(buildDayColourSplit(
+      allDayEvents,
+      (calendarEvent) => buildDayCompactJobRow(calendarEvent)
+    ));
   }
 
   if (!timedSegments.length) {
@@ -868,14 +881,44 @@ function renderDaySchedule() {
     label.textContent = `${formatMinutes12Hour(group.start)} – ${formatMinutes12Hour(group.end)}`;
     section.appendChild(label);
 
-    group.items.forEach((segment) => {
-      section.appendChild(buildDayCompactJobRow(segment.event, segment));
-    });
-
+    const split = buildDayColourSplit(
+      group.items,
+      (segment) => buildDayCompactJobRow(segment.event, segment),
+      (segment) => segment.event
+    );
+    section.appendChild(split);
     el.dayTimeline.appendChild(section);
   });
 
   updateDayFitDensity();
+}
+
+function buildDayColourSplit(items, buildRow, getEvent = (item) => item) {
+  const split = document.createElement("div");
+  split.className = "dayColourSplit";
+
+  const left = document.createElement("div");
+  left.className = "dayColourColumn dayColourColumnRed";
+
+  const right = document.createElement("div");
+  right.className = "dayColourColumn dayColourColumnOther";
+
+  const redItems = items
+    .filter((item) => isDayRedEvent(getEvent(item)))
+    .sort((a, b) => compareDayInstallerThenAddress(getEvent(a), getEvent(b)));
+
+  const rightItems = items
+    .filter((item) => !isDayRedEvent(getEvent(item)))
+    .sort((a, b) => compareDayRightColourThenInstallerThenAddress(getEvent(a), getEvent(b)));
+
+  redItems.forEach((item) => left.appendChild(buildRow(item)));
+  rightItems.forEach((item) => right.appendChild(buildRow(item)));
+
+  if (!redItems.length) left.classList.add("dayColourColumnEmpty");
+  if (!rightItems.length) right.classList.add("dayColourColumnEmpty");
+
+  split.append(left, right);
+  return split;
 }
 
 function buildDayCompactJobRow(calendarEvent, segment = null) {
@@ -2121,15 +2164,25 @@ function eventInstallerForSort(event) {
   return String(data.installerName || "").trim();
 }
 
-function compareDayColourThenInstallerThenAddress(a, b) {
-  const colourA = eventColourSortValue(a);
-  const colourB = eventColourSortValue(b);
-  if (colourA !== colourB) return colourA - colourB;
+function dayEventColourId(event) {
+  return String(event?.colorId || "default");
+}
 
+function isDayRedEvent(event) {
+  return dayEventColourId(event) === DAY_RED_COLOUR_ID;
+}
+
+function dayRightColourPriority(event) {
+  const id = dayEventColourId(event);
+  if (DAY_RIGHT_COLOUR_PRIORITY.has(id)) return DAY_RIGHT_COLOUR_PRIORITY.get(id);
+  return 50 + eventColourSortValue(event);
+}
+
+function compareDayInstallerThenAddress(a, b) {
   const installerA = eventInstallerForSort(a);
   const installerB = eventInstallerForSort(b);
 
-  // Keep jobs with an Installer grouped first. Jobs with no Installer stay together after them.
+  // Named installers stay together first. Blank installer rows remain together after them.
   if (Boolean(installerA) !== Boolean(installerB)) return installerA ? -1 : 1;
 
   const installerOrder = installerA.localeCompare(
@@ -2144,6 +2197,28 @@ function compareDayColourThenInstallerThenAddress(a, b) {
     undefined,
     { numeric: true, sensitivity: "base" }
   );
+}
+
+function compareDayRightColourThenInstallerThenAddress(a, b) {
+  const colourA = dayRightColourPriority(a);
+  const colourB = dayRightColourPriority(b);
+  if (colourA !== colourB) return colourA - colourB;
+  return compareDayInstallerThenAddress(a, b);
+}
+
+function compareDayColourLayout(a, b) {
+  const sideA = isDayRedEvent(a) ? 0 : 1;
+  const sideB = isDayRedEvent(b) ? 0 : 1;
+  if (sideA !== sideB) return sideA - sideB;
+  if (sideA === 0) return compareDayInstallerThenAddress(a, b);
+  return compareDayRightColourThenInstallerThenAddress(a, b);
+}
+
+function compareDayColourThenInstallerThenAddress(a, b) {
+  const colourA = eventColourSortValue(a);
+  const colourB = eventColourSortValue(b);
+  if (colourA !== colourB) return colourA - colourB;
+  return compareDayInstallerThenAddress(a, b);
 }
 
 
@@ -3173,7 +3248,7 @@ function formatFormTime(data) {
 function buildPrivateProperties(data) {
   const privateProperties = {
     kgCeilingApp: "1",
-    kgCeilingVersion: "1.7.24",
+    kgCeilingVersion: "1.7.25",
     ...(data.continueJob && data.continueGroupId ? {
       kgContinueJob: "1",
       kgContinueGroup: data.continueGroupId,
