@@ -27,7 +27,7 @@ const APP_MARKER = "#KGCEILING";
 const DATA_HEADER = "[KG CEILING APP DATA / KG 天花应用资料]";
 const VEHICLE_OPTIONS = [
   "YN8209T",
-  "YP8209B",
+  "YP8289B",
   "YQ6498Y",
   "GBE6680Y",
   "GBG8121X",
@@ -809,7 +809,7 @@ function renderDaySchedule() {
   const dayEvents = eventsForDate(key);
   const allDayEvents = dayEvents
     .filter((event) => Boolean(event.start?.date))
-    .sort(compareDayColourThenAddress);
+    .sort(compareDayColourThenInstallerThenAddress);
   const timedSegments = dayEvents
     .filter((event) => Boolean(event.start?.dateTime))
     .map((event) => {
@@ -818,13 +818,13 @@ function renderDaySchedule() {
     })
     .filter(Boolean)
     .sort((a, b) => {
-      // Day View order: time slot first, then Google Calendar colour, then address.
+      // Day View order: time slot first, then Google Calendar colour, then Installer, then address.
       if (a.start !== b.start) return a.start - b.start;
 
-      const colourAddressOrder = compareDayColourThenAddress(a.event, b.event);
-      if (colourAddressOrder !== 0) return colourAddressOrder;
+      const colourInstallerAddressOrder = compareDayColourThenInstallerThenAddress(a.event, b.event);
+      if (colourInstallerAddressOrder !== 0) return colourInstallerAddressOrder;
 
-      // Only use end time as the final tie-breaker after colour + address.
+      // Only use end time as the final tie-breaker after colour + installer + address.
       return a.end - b.end;
     });
 
@@ -998,6 +998,8 @@ async function saveInlineInstaller(calendarEvent, input) {
     input.dataset.original = nextValue;
     invalidateHistoryCache();
     saveCachedEvents();
+    // Re-render immediately so jobs move into the correct Installer group after editing.
+    if (calendarViewMode === "day") renderDaySchedule();
     showToast("Installer saved and synced. / 安装人员已保存并同步。", false);
   } catch (error) {
     input.value = original;
@@ -2114,10 +2116,28 @@ function eventAddressForSort(event) {
   return String(data.address || event?.summary || event?.location || "").trim();
 }
 
-function compareDayColourThenAddress(a, b) {
+function eventInstallerForSort(event) {
+  const data = parseEventData(event);
+  return String(data.installerName || "").trim();
+}
+
+function compareDayColourThenInstallerThenAddress(a, b) {
   const colourA = eventColourSortValue(a);
   const colourB = eventColourSortValue(b);
   if (colourA !== colourB) return colourA - colourB;
+
+  const installerA = eventInstallerForSort(a);
+  const installerB = eventInstallerForSort(b);
+
+  // Keep jobs with an Installer grouped first. Jobs with no Installer stay together after them.
+  if (Boolean(installerA) !== Boolean(installerB)) return installerA ? -1 : 1;
+
+  const installerOrder = installerA.localeCompare(
+    installerB,
+    undefined,
+    { numeric: true, sensitivity: "base" }
+  );
+  if (installerOrder !== 0) return installerOrder;
 
   return eventAddressForSort(a).localeCompare(
     eventAddressForSort(b),
@@ -3153,7 +3173,7 @@ function formatFormTime(data) {
 function buildPrivateProperties(data) {
   const privateProperties = {
     kgCeilingApp: "1",
-    kgCeilingVersion: "1.7.22",
+    kgCeilingVersion: "1.7.24",
     ...(data.continueJob && data.continueGroupId ? {
       kgContinueJob: "1",
       kgContinueGroup: data.continueGroupId,

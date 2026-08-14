@@ -1,4 +1,4 @@
-KG Ceiling Calendar v1.7.22 - Test Report
+KG Ceiling Calendar v1.7.24 - Test Report
 
 - JavaScript syntax check: PASS
 - Clear Site status exposed by currentDeliveryDisplayStatus: PASS
@@ -6,4 +6,12 @@ KG Ceiling Calendar v1.7.22 - Test Report
 - Month View yellow 5 mm Clear Site rail: PASS
 - Month selected-day card yellow 5 mm Clear Site rail: PASS
 - Material / Delivery Sent status logic unchanged: PASS
-- Version and service-worker cache bumped to v1.7.22.
+- Version and service-worker cache bumped to v1.7.24.
+
+Additional v1.7.24 checks:
+- Day comparator includes colour -> installer -> address.
+- Blank installer sorts after named installers.
+- Inline Installer save triggers immediate Day View re-render/re-sort.
+
+Vehicle dropdown correction:
+- YP8209B replaced with YP8289B.

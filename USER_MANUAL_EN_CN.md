@@ -1,26 +1,14 @@
-# v1.7.15 Quick Update / 快速更新
+# KG Ceiling Calendar v1.7.24 — User Manual / 用户手册
 
 
-## v1.7.22 update
+## v1.7.24 update
 
+- Vehicle dropdown correction: `YP8209B` changed to `YP8289B`.
 
-- Day View sorting is now: time slot → Google Calendar colour → address.
-- All-day jobs sort by Google Calendar colour → address.
-
-- Clear Site / 清场 now shows a yellow 5 mm status rail on the back/right of the address bar.
-- If the latest delivery also has Material or Delivery Sent status, the yellow rail appears beside the blue rail.
-
-
-Delivery in Add/Edit Job is now arranged as:
-
-1. Material / 料单 and Delivery Sent / 已送货 checkboxes
-2. Date / 日期
-3. Vehicle / 车辆 dropdown
-4. Clear Site / 清场 checkbox
-5. Clear Site Date / 清场日期
-6. Clear Site Vehicle / 清场车辆 dropdown
-
-Vehicle dropdown choices are fixed in the app code: YN8209T, YP8209B, YQ6498Y, GBE6680Y, GBG8121X, GBF291X, YR2464R. Multiple Delivery rows are still supported and same-address delivery/clear-site records continue to sync. Delivery Sent replaces Material for the same delivery row.
+- Day View sorting is now: **Time slot → Google Calendar colour → Installer → Address**.
+- Jobs with the same Installer are grouped together inside the same colour.
+- Jobs without an Installer are grouped after named Installers.
+- Saving an Installer directly in Day View immediately re-sorts the Day View.
 
 ## Day View / 日视图
 Row order / 排列：
