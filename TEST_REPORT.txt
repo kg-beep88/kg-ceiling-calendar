@@ -1,12 +1,12 @@
-KG Ceiling Calendar v1.7.26 - Test Report
+KG Ceiling Calendar v1.7.27 - Test Report
 
-Checks completed:
-- JavaScript syntax: PASS (node --check).
-- Duplicate HTML IDs: PASS (none).
-- Version text/assets/service-worker cache: v1.7.26.
-- Day View keeps chronological time groups.
-- Calendar default (no colorId) is routed to the left column.
-- Right column custom Google colour order starts Tangerine (6), Basil (10), Grape (3), then remaining colours.
-- Within a colour: Installer grouping, then Address sort.
-- Phone layout stacks columns vertically to avoid horizontal scrolling.
-- Existing Material/Delivery Sent/Clear Site status rails remain unchanged.
+PASS
+- JavaScript syntax check: passed (node --check).
+- Duplicate HTML IDs: none.
+- Version text/assets/service-worker cache: v1.7.27.
+- Fixed vehicle list preserved: YN8209T, YP8289B, YQ6498Y, GBE6680Y, GBG8121X, GBF291X, YR2464R.
+- Vehicle dropdown now includes Other / 其他.
+- Choosing Other reveals a manual vehicle-number input.
+- Manual vehicle number is saved as the same vehicle field, so existing Google Calendar sync/search/description logic continues to use it.
+- Existing non-list vehicle values reopen as Other with the saved number restored.
+- Other / manual entry works for both Delivery vehicle and Clear Site vehicle.

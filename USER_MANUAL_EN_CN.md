@@ -1,4 +1,4 @@
-# KG Ceiling Calendar v1.7.26 — User Manual / 用户手册
+# KG Ceiling Calendar v1.7.27 — User Manual / 用户手册
 
 ## Day View / 日视图
 
@@ -12,3 +12,7 @@ Tablet/Desktop / 平板和电脑：
 Phone / 手机：
 
 - The same order is used, but the two sides stack vertically so there is no sideways scrolling.
+
+
+## v1.7.27 Vehicle / 车辆
+Vehicle dropdowns now include **Other / 其他**. Choose it to enter a vehicle number manually. The manual vehicle number is saved and synced the same way as the fixed vehicle list.

@@ -9,7 +9,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=1.7.26">
+  <link rel="stylesheet" href="styles.css?v=1.7.27">
 </head>
 <body>
   <noscript>
@@ -21,7 +21,7 @@
       <div class="brandMark" aria-hidden="true">KG</div>
       <div>
         <h1>KG Ceiling Work Calendar</h1>
-        <p>KG 天花工作日历 · v1.7.26</p>
+        <p>KG 天花工作日历 · v1.7.27</p>
       </div>
     </div>
 
@@ -303,6 +303,7 @@
                   <label class="field">
                     <span>Vehicle / 车辆</span>
                     <select id="deliveryVehicleInput" data-delivery-vehicle></select>
+                    <input data-delivery-vehicle-other class="vehicleOtherInput" type="text" placeholder="Enter vehicle number / 输入车牌号码" hidden>
                   </label>
                 </div>
 
@@ -319,6 +320,7 @@
                     <label class="field">
                       <span>Vehicle / 车辆</span>
                       <select id="clearSiteVehicleInput" data-clear-site-vehicle></select>
+                      <input data-clear-site-vehicle-other class="vehicleOtherInput" type="text" placeholder="Enter vehicle number / 输入车牌号码" hidden>
                     </label>
                   </div>
                 </div>
@@ -473,8 +475,8 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="config.js?v=1.7.26"></script>
+  <script src="config.js?v=1.7.27"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="app.js?v=1.7.26" defer></script>
+  <script src="app.js?v=1.7.27" defer></script>
 </body>
 </html>

@@ -1642,3 +1642,13 @@ body.dayFitMode .searchCard {
   }
   .dayColourColumnEmpty { display: none; }
 }
+
+
+/* v1.7.27 — Vehicle dropdown supports Other / 其他 with manual plate entry. */
+.vehicleOtherInput {
+  margin-top: 7px;
+  width: 100%;
+  min-height: 44px;
+  box-sizing: border-box;
+}
+.vehicleOtherInput[hidden] { display: none !important; }

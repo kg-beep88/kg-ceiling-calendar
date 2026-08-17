@@ -1,6 +1,6 @@
-# KG Ceiling Calendar v1.7.26 — Google Colour Day View
+# KG Ceiling Calendar v1.7.27 — Google Colour Day View
 
-## v1.7.26 update
+## v1.7.27 update
 
 Day View now uses the actual Google Calendar colour IDs for the two-column layout:
 
@@ -17,4 +17,8 @@ Day View now uses the actual Google Calendar colour IDs for the two-column layou
 3. Commit the changes.
 4. Open the app.
 5. Settings → Reset Cache.
-6. Confirm the app shows v1.7.26.
+6. Confirm the app shows v1.7.27.
+
+
+## v1.7.27 Vehicle / 车辆
+Vehicle dropdowns now include **Other / 其他**. Choose it to enter a vehicle number manually. The manual vehicle number is saved and synced the same way as the fixed vehicle list.

@@ -34,6 +34,7 @@ const VEHICLE_OPTIONS = [
   "GBF291X",
   "YR2464R"
 ];
+const OTHER_VEHICLE_VALUE = "__OTHER__";
 
 // Day View colour layout uses the actual Google Calendar event colour IDs.
 // Left column = Calendar default (no event colorId).
@@ -2858,28 +2859,74 @@ function mergeDeliveryLists(...lists) {
   });
 }
 
-function populateVehicleSelect(select, selectedValue = "") {
+function populateVehicleSelect(select, selectedValue = "", otherInput = null) {
   if (!select) return;
-  const value = String(selectedValue || select.value || "").trim();
+  const value = String(selectedValue || "").trim();
   select.innerHTML = "";
+
   const blank = document.createElement("option");
   blank.value = "";
   blank.textContent = "Select vehicle / 选择车辆";
   select.appendChild(blank);
+
   VEHICLE_OPTIONS.forEach((vehicle) => {
     const option = document.createElement("option");
     option.value = vehicle;
     option.textContent = vehicle;
     select.appendChild(option);
   });
-  select.value = VEHICLE_OPTIONS.includes(value) ? value : "";
+
+  const other = document.createElement("option");
+  other.value = OTHER_VEHICLE_VALUE;
+  other.textContent = "Other / 其他";
+  select.appendChild(other);
+
+  const isFixed = VEHICLE_OPTIONS.includes(value);
+  select.value = isFixed ? value : (value ? OTHER_VEHICLE_VALUE : "");
+
+  if (otherInput) {
+    otherInput.hidden = select.value !== OTHER_VEHICLE_VALUE;
+    otherInput.value = !isFixed && value ? value : "";
+    if (!otherInput.placeholder) otherInput.placeholder = "Enter vehicle number / 输入车牌号码";
+  }
+}
+
+function bindVehicleOtherInput(select, otherInput) {
+  if (!select || !otherInput || select.dataset.otherVehicleBound === "1") return;
+  select.dataset.otherVehicleBound = "1";
+  select.addEventListener("change", () => {
+    const isOther = select.value === OTHER_VEHICLE_VALUE;
+    otherInput.hidden = !isOther;
+    if (!isOther) otherInput.value = "";
+    if (isOther) {
+      requestAnimationFrame(() => {
+        try { otherInput.focus(); } catch (_) {}
+      });
+    }
+  });
+}
+
+function readVehiclePicker(row, selectSelector, otherSelector) {
+  const select = row?.querySelector(selectSelector);
+  const otherInput = row?.querySelector(otherSelector);
+  if (!select) return "";
+  if (select.value === OTHER_VEHICLE_VALUE) return String(otherInput?.value || "").trim();
+  return String(select.value || "").trim();
 }
 
 function populateVehicleSelectsInRow(row, entry = {}) {
   if (!row) return;
   const item = normalizeDeliveryEntry(entry);
-  populateVehicleSelect(row.querySelector('[data-delivery-vehicle]'), item.vehicle);
-  populateVehicleSelect(row.querySelector('[data-clear-site-vehicle]'), item.clearVehicle);
+
+  const deliverySelect = row.querySelector('[data-delivery-vehicle]');
+  const deliveryOther = row.querySelector('[data-delivery-vehicle-other]');
+  populateVehicleSelect(deliverySelect, item.vehicle, deliveryOther);
+  bindVehicleOtherInput(deliverySelect, deliveryOther);
+
+  const clearSelect = row.querySelector('[data-clear-site-vehicle]');
+  const clearOther = row.querySelector('[data-clear-site-vehicle-other]');
+  populateVehicleSelect(clearSelect, item.clearVehicle, clearOther);
+  bindVehicleOtherInput(clearSelect, clearOther);
 }
 
 function bindDeliveryStatusPair(row) {
@@ -2900,6 +2947,9 @@ function bindDeliveryStatusPair(row) {
 function resetDeliveryRows() {
   el.deliveryDateInput.value = "";
   el.deliveryVehicleInput.value = "";
+  const firstDeliveryRow = el.deliveryRows.querySelector('[data-delivery-row]');
+  const deliveryVehicleOther = firstDeliveryRow?.querySelector('[data-delivery-vehicle-other]');
+  if (deliveryVehicleOther) { deliveryVehicleOther.value = ""; deliveryVehicleOther.hidden = true; }
   el.deliveryMaterialsInput.value = "";
   el.deliveryRemarkInput.value = "";
   el.deliveryMaterialInput.checked = false;
@@ -2907,6 +2957,8 @@ function resetDeliveryRows() {
   el.clearSiteInput.checked = false;
   el.clearSiteDateInput.value = "";
   el.clearSiteVehicleInput.value = "";
+  const clearVehicleOther = firstDeliveryRow?.querySelector('[data-clear-site-vehicle-other]');
+  if (clearVehicleOther) { clearVehicleOther.value = ""; clearVehicleOther.hidden = true; }
   Array.from(el.deliveryRows.querySelectorAll('[data-delivery-row]')).slice(1).forEach((row) => row.remove());
   updateDeliveryRowNumbers();
 }
@@ -2927,13 +2979,13 @@ function addDeliveryRow(entry = {}) {
     </div>
     <div class="deliveryActionGrid">
       <label class="field"><span>Date / 日期</span><input data-delivery-date type="date" lang="en-GB"></label>
-      <label class="field"><span>Vehicle / 车辆</span><select data-delivery-vehicle></select></label>
+      <label class="field"><span>Vehicle / 车辆</span><select data-delivery-vehicle></select><input data-delivery-vehicle-other class="vehicleOtherInput" type="text" placeholder="Enter vehicle number / 输入车牌号码" hidden></label>
     </div>
     <div class="clearSiteBlock">
       <label class="checkLine clearSiteFormCheck"><input data-clear-site type="checkbox"><span>Clear Site / 清场</span></label>
       <div class="deliveryActionGrid">
         <label class="field"><span>Date / 日期</span><input data-clear-site-date type="date" lang="en-GB"></label>
-        <label class="field"><span>Vehicle / 车辆</span><select data-clear-site-vehicle></select></label>
+        <label class="field"><span>Vehicle / 车辆</span><select data-clear-site-vehicle></select><input data-clear-site-vehicle-other class="vehicleOtherInput" type="text" placeholder="Enter vehicle number / 输入车牌号码" hidden></label>
       </div>
     </div>
     <input data-delivery-materials type="hidden">
@@ -2986,14 +3038,14 @@ function renderDeliveryRows(deliveries = []) {
 function collectDeliveryRows() {
   return Array.from(el.deliveryRows.querySelectorAll('[data-delivery-row]')).map((row) => normalizeDeliveryEntry({
     date: row.querySelector('[data-delivery-date]')?.value || "",
-    vehicle: row.querySelector('[data-delivery-vehicle]')?.value || "",
+    vehicle: readVehiclePicker(row, '[data-delivery-vehicle]', '[data-delivery-vehicle-other]'),
     materials: row.querySelector('[data-delivery-materials]')?.value || "",
     remark: row.querySelector('[data-delivery-remark]')?.value || "",
     materialStatus: Boolean(row.querySelector('[data-delivery-material]')?.checked),
     deliverySent: Boolean(row.querySelector('[data-delivery-sent]')?.checked),
     clearSite: Boolean(row.querySelector('[data-clear-site]')?.checked),
     clearDate: row.querySelector('[data-clear-site-date]')?.value || "",
-    clearVehicle: row.querySelector('[data-clear-site-vehicle]')?.value || ""
+    clearVehicle: readVehiclePicker(row, '[data-clear-site-vehicle]', '[data-clear-site-vehicle-other]')
   })).filter(deliveryEntryHasData);
 }
 
