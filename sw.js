@@ -1,4 +1,4 @@
-const CACHE_NAME = "kg-ceiling-calendar-v1.7.29-clear-site-removal-fix";
+const CACHE_NAME = "kg-ceiling-calendar-v1.7.30-clear-site-removal-hard-fix";
 const APP_FILES = [
   "./",
   "./index.html",

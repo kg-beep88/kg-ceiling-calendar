@@ -2677,7 +2677,16 @@ async function saveJob(event) {
       }
     }
 
-    const deliverySync = await syncDeliveriesAcrossSameAddress(formData.address, formData.deliveries, savedEventId);
+    const originalDeliveries = (eventId && currentModalEvent)
+      ? getDeliveryEntries(parseEventData(currentModalEvent))
+      : [];
+    const removedClearSiteIds = removedClearSiteRecordIds(originalDeliveries, formData.deliveries);
+    const deliverySync = await syncDeliveriesAcrossSameAddress(
+      formData.address,
+      formData.deliveries,
+      savedEventId,
+      removedClearSiteIds
+    );
 
     const message = extraCreated
       ? `Saved with ${extraCreated} continuation period(s). / 已保存，并新增 ${extraCreated} 个继续工作时段。`
@@ -2796,22 +2805,36 @@ function stripClearSiteFromDeliveryEntry(rawEntry = {}) {
   return { ...item, clearSite: false, clearDate: "", clearVehicle: "" };
 }
 
+function clearSiteRecordIdentity(record = {}) {
+  // Vehicle is deliberately NOT part of the identity. If the user edits or
+  // clears the vehicle while removing Clear Site, it is still the same clear
+  // record: same delivery + same clear date.
+  return `${record.deliveryKey || ""}|${String(record.clearDate || "").trim()}`;
+}
+
 function clearSiteRecordsFromDeliveries(deliveries = []) {
   const seen = new Set();
   const records = [];
   deliveries.map(normalizeDeliveryEntry).forEach((item) => {
     if (!item.clearSite || !item.clearDate) return;
-    const key = `${deliveryEntryKey(item)}|${item.clearDate}|${normalizeSearchText(item.clearVehicle)}`;
-    if (seen.has(key)) return;
-    seen.add(key);
-    records.push({
+    const record = {
       deliveryKey: deliveryEntryKey(item),
       clearSite: true,
       clearDate: item.clearDate,
       clearVehicle: item.clearVehicle || ""
-    });
+    };
+    const key = clearSiteRecordIdentity(record);
+    if (seen.has(key)) return;
+    seen.add(key);
+    records.push(record);
   });
   return records;
+}
+
+function removedClearSiteRecordIds(originalDeliveries = [], currentDeliveries = []) {
+  const before = clearSiteRecordsFromDeliveries(originalDeliveries);
+  const afterIds = new Set(clearSiteRecordsFromDeliveries(currentDeliveries).map(clearSiteRecordIdentity));
+  return new Set(before.map(clearSiteRecordIdentity).filter((id) => !afterIds.has(id)));
 }
 
 function eventHasClearSiteOnDate(calendarEvent, dataOrDeliveries = {}, shownDate = "") {
@@ -3127,9 +3150,7 @@ async function loadSharedDeliveriesIntoForm(address) {
   const key = normalizeAddressKey(address);
   if (!key || !isConnected()) return;
   const requestId = ++sharedDeliveryLoadRequest;
-  const currentRows = sharedDeliveriesLoadedForAddress && sharedDeliveriesLoadedForAddress !== key
-    ? []
-    : collectDeliveryRows();
+  const canKeepCurrentRows = !sharedDeliveriesLoadedForAddress || sharedDeliveriesLoadedForAddress === key;
   try {
     const all = await fetchAllHistoryEvents(false);
     if (requestId !== sharedDeliveryLoadRequest || normalizeAddressKey(el.addressInput.value) !== key || el.jobModal.hidden) return;
@@ -3139,7 +3160,11 @@ async function loadSharedDeliveriesIntoForm(address) {
       if (normalizeAddressKey(data.address || calendarEvent.summary || calendarEvent.location || "") !== key) return;
       shared.push(...getDeliveryEntries(data).map(stripClearSiteFromDeliveryEntry));
     });
-    renderDeliveryRows(mergeDeliveryLists(shared, currentRows));
+    // Read the form rows NOW, after the history request finishes. This avoids a
+    // slow background history load restoring a Clear Site box the user already
+    // unticked while the request was in flight.
+    const liveRows = canKeepCurrentRows ? collectDeliveryRows() : [];
+    renderDeliveryRows(mergeDeliveryLists(shared, liveRows));
     sharedDeliveriesLoadedForAddress = key;
   } catch {
     // Keep the delivery rows already on screen if history cannot be loaded.
@@ -3153,7 +3178,7 @@ function deliverySignature(deliveries) {
   ]));
 }
 
-async function syncDeliveriesAcrossSameAddress(address, deliveries, sourceEventId = "") {
+async function syncDeliveriesAcrossSameAddress(address, deliveries, sourceEventId = "", removedClearSiteIds = new Set()) {
   const key = normalizeAddressKey(address);
   if (!key) return { updated: 0, failed: 0 };
 
@@ -3176,9 +3201,16 @@ async function syncDeliveriesAcrossSameAddress(address, deliveries, sourceEventI
   // De-duplicate them, then place each one only on the event that actually includes that date.
   const clearRecords = [];
   const clearSeen = new Set();
+  const removedSet = removedClearSiteIds instanceof Set
+    ? removedClearSiteIds
+    : new Set(Array.isArray(removedClearSiteIds) ? removedClearSiteIds : []);
   const addClearRecords = (entries) => {
     clearSiteRecordsFromDeliveries(entries).forEach((record) => {
-      const recordKey = `${record.deliveryKey}|${record.clearDate}|${normalizeSearchText(record.clearVehicle)}`;
+      const recordKey = clearSiteRecordIdentity(record);
+      // If the user explicitly unticked this Clear Site record, remove every
+      // stale copy of that same delivery/date from the site's history instead
+      // of letting another same-address event resurrect it.
+      if (removedSet.has(recordKey)) return;
       if (clearSeen.has(recordKey)) return;
       clearSeen.add(recordKey);
       clearRecords.push(record);
@@ -3197,7 +3229,7 @@ async function syncDeliveriesAcrossSameAddress(address, deliveries, sourceEventI
   sameAddressEvents.forEach((calendarEvent) => {
     clearRecords.forEach((record) => {
       if (eventIncludesDate(calendarEvent, record.clearDate)) {
-        matchedClearKeys.add(`${record.deliveryKey}|${record.clearDate}|${normalizeSearchText(record.clearVehicle)}`);
+        matchedClearKeys.add(clearSiteRecordIdentity(record));
       }
     });
   });
@@ -3212,7 +3244,7 @@ async function syncDeliveriesAcrossSameAddress(address, deliveries, sourceEventI
 
     clearRecords.forEach((record) => {
       const belongsToThisEvent = eventIncludesDate(calendarEvent, record.clearDate);
-      const recordKey = `${record.deliveryKey}|${record.clearDate}|${normalizeSearchText(record.clearVehicle)}`;
+      const recordKey = clearSiteRecordIdentity(record);
       const unmatchedButSource = !matchedClearKeys.has(recordKey) && sourceEventId && calendarEvent.id === sourceEventId;
       if (!belongsToThisEvent && !unmatchedButSource) return;
 
@@ -3435,7 +3467,7 @@ function formatFormTime(data) {
 function buildPrivateProperties(data) {
   const privateProperties = {
     kgCeilingApp: "1",
-    kgCeilingVersion: "1.7.29",
+    kgCeilingVersion: "1.7.30",
     ...(data.continueJob && data.continueGroupId ? {
       kgContinueJob: "1",
       kgContinueGroup: data.continueGroupId,
