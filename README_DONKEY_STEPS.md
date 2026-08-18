@@ -1,24 +1,19 @@
-# KG Ceiling Calendar v1.7.27 — Google Colour Day View
+# KG Ceiling Calendar v1.7.28 — Clear Site Date-Only Status
 
-## v1.7.27 update
+## v1.7.28 update
 
-Day View now uses the actual Google Calendar colour IDs for the two-column layout:
+- Delivery / 送货 still syncs across all jobs with the same address.
+- Clear Site / 清场 is now date-specific and no longer stays active on every date for the same address.
+- The yellow 5 mm Clear Site bar appears only on the exact clear-site date.
+- Site history shows Clear Site / 清场 as the clear date only.
+- Clear Site vehicle is still saved in the Google Calendar record, but the site-history summary shows only the date.
+- If Clear Site is ticked and no clear date is entered, the current job date is used automatically.
 
-- Left: Calendar default / 日历默认.
-- Right: Tangerine / 橙色 → Basil / 深绿色 → Grape / 葡萄紫 → remaining Google Calendar colours.
-- Within each colour: Installer Name, then Address.
-- Existing time slots stay in chronological order.
-- Phone stacks the left and right sections vertically to avoid horizontal scrolling.
+## Upload to GitHub Pages
 
-## Update GitHub
-
-1. Unzip this file.
-2. Upload/replace all files in the root of the `KGcall` GitHub repository.
-3. Commit the changes.
-4. Open the app.
-5. Settings → Reset Cache.
-6. Confirm the app shows v1.7.27.
-
-
-## v1.7.27 Vehicle / 车辆
-Vehicle dropdowns now include **Other / 其他**. Choose it to enter a vehicle number manually. The manual vehicle number is saved and synced the same way as the fixed vehicle list.
+1. Back up your current KGcall repository.
+2. Unzip this file.
+3. Upload/replace the files in the repository root.
+4. Open the KG Calendar website.
+5. Go to Settings / 设置 → Reset Cache / 重置缓存 once.
+6. Confirm the app shows v1.7.28.

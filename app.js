@@ -766,10 +766,11 @@ function renderCalendar() {
 
       // Month View delivery indicators: keep the address bar clean and show
       // status only as the same 5 mm light/dark blue rails used in Day View.
-      const chipDeliveryStatus = currentDeliveryDisplayStatus(parseEventData(calendarEvent));
+      const chipData = parseEventData(calendarEvent);
+      const chipDeliveryStatus = currentDeliveryDisplayStatus(chipData);
       const chipHasMaterial = chipDeliveryStatus.materialStatus;
       const chipHasDeliverySent = chipDeliveryStatus.deliverySent;
-      const chipHasClearSite = chipDeliveryStatus.clearSite;
+      const chipHasClearSite = eventHasClearSiteOnDate(calendarEvent, chipData, key);
       if (chipHasMaterial) chip.classList.add("monthEventMaterialStatus");
       if (chipHasDeliverySent) chip.classList.add("monthEventDeliverySent");
       if (chipHasClearSite) chip.classList.add("monthEventClearSite");
@@ -976,7 +977,7 @@ function buildDayCompactJobRow(calendarEvent, segment = null) {
   const deliveryDisplayStatus = currentDeliveryDisplayStatus(data);
   const hasMaterialStatus = deliveryDisplayStatus.materialStatus;
   const hasDeliverySent = deliveryDisplayStatus.deliverySent;
-  const hasClearSite = deliveryDisplayStatus.clearSite;
+  const hasClearSite = eventHasClearSiteOnDate(calendarEvent, data, selectedDate);
   if (hasMaterialStatus) address.classList.add("dayAddressMaterialStatus");
   if (hasDeliverySent) address.classList.add("dayAddressDeliverySent");
   if (hasClearSite) address.classList.add("dayAddressClearSite");
@@ -1362,7 +1363,7 @@ function renderDayJobs() {
     const deliveryDisplayStatus = currentDeliveryDisplayStatus(data);
     const hasMaterialStatus = deliveryDisplayStatus.materialStatus;
     const hasDeliverySent = deliveryDisplayStatus.deliverySent;
-    const hasClearSite = deliveryDisplayStatus.clearSite;
+    const hasClearSite = eventHasClearSiteOnDate(event, data, selectedDate);
     if (hasMaterialStatus) card.classList.add("monthCardMaterialStatus");
     if (hasDeliverySent) card.classList.add("monthCardDeliverySent");
     if (hasClearSite) card.classList.add("monthCardClearSite");
@@ -1808,6 +1809,11 @@ function buildHistoryGroup(group) {
   const workDates = uniqueDateValues(records.flatMap(({ event }) => eventDateKeys(event)));
   const deliveries = mergeDeliveryLists(records.flatMap(({ data }) => getDeliveryEntries(data)))
     .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
+  const clearSiteDates = uniqueDateValues(records.flatMap(({ data }) =>
+    getDeliveryEntries(data)
+      .filter((item) => item.clearSite && item.clearDate)
+      .map((item) => item.clearDate)
+  ));
   const billingNumbers = Array.from(new Set(records.map(({ data }) => data.billingNumber).filter(Boolean)));
   const latestId = records.find(({ data }) => data.idFirm || data.contact || data.idName)?.data || {};
   const installerNames = Array.from(new Set(records.map(({ data }) => data.installerName).filter(Boolean)));
@@ -1831,11 +1837,7 @@ function buildHistoryGroup(group) {
     ? deliveries.map((rawItem, index) => {
         const item = normalizeDeliveryEntry(rawItem);
         const statuses = [item.materialStatus ? "料单✓" : "", item.deliverySent ? "已送货✓" : ""].filter(Boolean).join(" · ");
-        const delivery = `#${index + 1} ${item.date ? formatDateShort(item.date) : "No date / 无日期"}${item.vehicle ? ` · ${item.vehicle}` : ""}${statuses ? ` · ${statuses}` : ""}`;
-        const clear = (item.clearSite || item.clearDate || item.clearVehicle)
-          ? ` | 清场${item.clearSite ? "✓" : ""}${item.clearDate ? ` · ${formatDateShort(item.clearDate)}` : ""}${item.clearVehicle ? ` · ${item.clearVehicle}` : ""}`
-          : "";
-        return `${delivery}${clear}`;
+        return `#${index + 1} ${item.date ? formatDateShort(item.date) : "No date / 无日期"}${item.vehicle ? ` · ${item.vehicle}` : ""}${statuses ? ` · ${statuses}` : ""}`;
       }).join("\n")
     : "None / 无";
 
@@ -1846,6 +1848,7 @@ function buildHistoryGroup(group) {
     makeHistorySummary("Installer / 安装人员", installerNames.length ? installerNames.join(", ") : "None / 无"),
     makeHistorySummary("Job Scope / 工作范围", amendments.length ? amendments.join(", ") : "None / 无"),
     makeHistorySummary("Deliver / 送货", deliveryText),
+    makeHistorySummary("Clear Site / 清场", clearSiteDates.length ? clearSiteDates.map(formatDateShort).join(", ") : "None / 无"),
     makeHistorySummary("Billing number / 开单号码", billingNumbers.length ? billingNumbers.join(", ") : "None / 无"),
     makeHistorySummary("ID details / ID 资料", [
       `Firm / 公司: ${latestId.idFirm || "None / 无"}`,
@@ -1904,13 +1907,11 @@ function buildHistoryEventRow(event, data) {
       delivery.vehicle ? `Vehicle / 车辆: ${delivery.vehicle}` : "",
       delivery.materialStatus ? "Material / 料单: Yes / 是" : "Material / 料单: No / 否",
       delivery.deliverySent ? "Delivery Sent / 已送货: Yes / 是" : "Delivery Sent / 已送货: No / 否",
-      (delivery.clearSite || delivery.clearDate || delivery.clearVehicle)
-        ? `Clear Site / 清场: ${delivery.clearSite ? "Yes / 是" : "No / 否"}${delivery.clearDate ? ` · ${formatDateBilingual(delivery.clearDate)}` : ""}${delivery.clearVehicle ? ` · ${delivery.clearVehicle}` : ""}`
-        : "",
       delivery.materials || "",
       delivery.remark || ""
     ].filter(Boolean).join(" · ");
     lines.push(`Delivery ${index + 1} / 送货 ${index + 1}: ${detail}`);
+    if (delivery.clearSite && delivery.clearDate) lines.push(`Clear Site / 清场: ${formatDateShort(delivery.clearDate)}`);
   });
   if (data.billingNumber) lines.push(`Billing number / 开单号码: ${data.billingNumber}`);
   lines.push(`Colour / 颜色: ${eventColour(event).name}`);
@@ -2640,6 +2641,7 @@ async function saveJob(event) {
   }
 
   let extraCreated = 0;
+  let savedEventId = eventId || "";
   try {
     if (eventId) {
       // Google Calendar PATCH merges the nested start/end objects. When changing
@@ -2647,17 +2649,19 @@ async function saveJob(event) {
       // alternative fields so Google does not receive both `date` and
       // `dateTime`, which causes “Invalid start time”.
       normaliseTimingFieldsForPatch(calendarEvent, formData.allDay);
-      await apiFetch(`/calendars/${calendarId}/events/${encodeURIComponent(eventId)}`, {
+      const saved = await apiFetch(`/calendars/${calendarId}/events/${encodeURIComponent(eventId)}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(calendarEvent)
       });
+      savedEventId = saved?.id || eventId;
     } else {
-      await apiFetch(`/calendars/${calendarId}/events`, {
+      const saved = await apiFetch(`/calendars/${calendarId}/events`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(calendarEvent)
       });
+      savedEventId = saved?.id || "";
     }
 
     if (formData.continueJob && formData.continuePeriods.length) {
@@ -2673,7 +2677,7 @@ async function saveJob(event) {
       }
     }
 
-    const deliverySync = await syncDeliveriesAcrossSameAddress(formData.address, formData.deliveries);
+    const deliverySync = await syncDeliveriesAcrossSameAddress(formData.address, formData.deliveries, savedEventId);
 
     const message = extraCreated
       ? `Saved with ${extraCreated} continuation period(s). / 已保存，并新增 ${extraCreated} 个继续工作时段。`
@@ -2787,6 +2791,37 @@ function getDeliveryEntries(data = {}) {
   return deliveryEntryHasData(legacy) ? [legacy] : [];
 }
 
+function stripClearSiteFromDeliveryEntry(rawEntry = {}) {
+  const item = normalizeDeliveryEntry(rawEntry);
+  return { ...item, clearSite: false, clearDate: "", clearVehicle: "" };
+}
+
+function clearSiteRecordsFromDeliveries(deliveries = []) {
+  const seen = new Set();
+  const records = [];
+  deliveries.map(normalizeDeliveryEntry).forEach((item) => {
+    if (!item.clearSite || !item.clearDate) return;
+    const key = `${deliveryEntryKey(item)}|${item.clearDate}|${normalizeSearchText(item.clearVehicle)}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    records.push({
+      deliveryKey: deliveryEntryKey(item),
+      clearSite: true,
+      clearDate: item.clearDate,
+      clearVehicle: item.clearVehicle || ""
+    });
+  });
+  return records;
+}
+
+function eventHasClearSiteOnDate(calendarEvent, dataOrDeliveries = {}, shownDate = "") {
+  if (!shownDate || !calendarEvent) return false;
+  const deliveries = Array.isArray(dataOrDeliveries)
+    ? dataOrDeliveries.map(normalizeDeliveryEntry)
+    : getDeliveryEntries(dataOrDeliveries);
+  return deliveries.some((item) => item.clearSite && item.clearDate === shownDate && eventIncludesDate(calendarEvent, shownDate));
+}
+
 function currentDeliveryDisplayStatus(dataOrDeliveries = {}) {
   const deliveries = Array.isArray(dataOrDeliveries)
     ? dataOrDeliveries.map(normalizeDeliveryEntry).filter(deliveryEntryHasData)
@@ -2795,7 +2830,7 @@ function currentDeliveryDisplayStatus(dataOrDeliveries = {}) {
   return {
     materialStatus: Boolean(current?.materialStatus),
     deliverySent: Boolean(current?.deliverySent),
-    clearSite: Boolean(current?.clearSite),
+    clearSite: false,
     deliveryNumber: deliveries.length
   };
 }
@@ -3063,7 +3098,7 @@ async function loadSharedDeliveriesIntoForm(address) {
     all.forEach((calendarEvent) => {
       const data = parseEventData(calendarEvent);
       if (normalizeAddressKey(data.address || calendarEvent.summary || calendarEvent.location || "") !== key) return;
-      shared.push(...getDeliveryEntries(data));
+      shared.push(...getDeliveryEntries(data).map(stripClearSiteFromDeliveryEntry));
     });
     renderDeliveryRows(mergeDeliveryLists(shared, currentRows));
     sharedDeliveriesLoadedForAddress = key;
@@ -3079,27 +3114,77 @@ function deliverySignature(deliveries) {
   ]));
 }
 
-async function syncDeliveriesAcrossSameAddress(address, deliveries) {
+async function syncDeliveriesAcrossSameAddress(address, deliveries, sourceEventId = "") {
   const key = normalizeAddressKey(address);
   if (!key) return { updated: 0, failed: 0 };
-  const target = mergeDeliveryLists(deliveries);
-  const targetSignature = deliverySignature(target);
+
+  // Delivery is shared by address, but Clear Site is date-specific.
+  // Never copy the yellow Clear Site status to every job at the address.
+  const sourceDeliveries = mergeDeliveryLists(deliveries);
+  const sharedTarget = mergeDeliveryLists(sourceDeliveries.map(stripClearSiteFromDeliveryEntry));
   const all = await fetchAllHistoryEvents(true);
+  const sameAddressEvents = all.filter((calendarEvent) => {
+    if (!calendarEvent?.id) return false;
+    const ownedByApp = calendarEvent?.extendedProperties?.private?.kgCeilingApp === "1"
+      || String(calendarEvent.description || "").includes(APP_MARKER)
+      || String(calendarEvent.description || "").includes(DATA_HEADER);
+    if (!ownedByApp) return false;
+    const data = parseEventData(calendarEvent);
+    return normalizeAddressKey(data.address || calendarEvent.summary || calendarEvent.location || "") === key;
+  });
+
+  // Gather every clear-site date already recorded for this site plus the form's new record.
+  // De-duplicate them, then place each one only on the event that actually includes that date.
+  const clearRecords = [];
+  const clearSeen = new Set();
+  const addClearRecords = (entries) => {
+    clearSiteRecordsFromDeliveries(entries).forEach((record) => {
+      const recordKey = `${record.deliveryKey}|${record.clearDate}|${normalizeSearchText(record.clearVehicle)}`;
+      if (clearSeen.has(recordKey)) return;
+      clearSeen.add(recordKey);
+      clearRecords.push(record);
+    });
+  };
+  sameAddressEvents.forEach((calendarEvent) => addClearRecords(getDeliveryEntries(parseEventData(calendarEvent))));
+  addClearRecords(sourceDeliveries);
+
+  const matchedClearKeys = new Set();
+  sameAddressEvents.forEach((calendarEvent) => {
+    clearRecords.forEach((record) => {
+      if (eventIncludesDate(calendarEvent, record.clearDate)) {
+        matchedClearKeys.add(`${record.deliveryKey}|${record.clearDate}|${normalizeSearchText(record.clearVehicle)}`);
+      }
+    });
+  });
+
   const calendarId = encodeURIComponent(CONFIG.CALENDAR_ID || "primary");
   let updated = 0;
   let failed = 0;
 
-  for (const calendarEvent of all) {
-    if (!calendarEvent?.id) continue;
-    const ownedByApp = calendarEvent?.extendedProperties?.private?.kgCeilingApp === "1"
-      || String(calendarEvent.description || "").includes(APP_MARKER)
-      || String(calendarEvent.description || "").includes(DATA_HEADER);
-    if (!ownedByApp) continue;
+  for (const calendarEvent of sameAddressEvents) {
     const data = parseEventData(calendarEvent);
-    if (normalizeAddressKey(data.address || calendarEvent.summary || calendarEvent.location || "") !== key) continue;
-    if (deliverySignature(getDeliveryEntries(data)) === targetSignature) continue;
+    const eventTarget = sharedTarget.map((item) => ({ ...item }));
 
-    data.deliveries = target.map((item) => ({ ...item }));
+    clearRecords.forEach((record) => {
+      const belongsToThisEvent = eventIncludesDate(calendarEvent, record.clearDate);
+      const recordKey = `${record.deliveryKey}|${record.clearDate}|${normalizeSearchText(record.clearVehicle)}`;
+      const unmatchedButSource = !matchedClearKeys.has(recordKey) && sourceEventId && calendarEvent.id === sourceEventId;
+      if (!belongsToThisEvent && !unmatchedButSource) return;
+
+      let target = eventTarget.find((item) => deliveryEntryKey(item) === record.deliveryKey);
+      if (!target) {
+        target = normalizeDeliveryEntry({ clearSite: true, clearDate: record.clearDate, clearVehicle: record.clearVehicle });
+        eventTarget.push(target);
+      }
+      target.clearSite = true;
+      target.clearDate = record.clearDate;
+      target.clearVehicle = record.clearVehicle || "";
+    });
+
+    const normalizedTarget = mergeDeliveryLists(eventTarget);
+    if (deliverySignature(getDeliveryEntries(data)) === deliverySignature(normalizedTarget)) continue;
+
+    data.deliveries = normalizedTarget.map((item) => ({ ...item }));
     applyDeliveryCompatibility(data);
     const timedData = jobDataWithEventTiming(calendarEvent);
     timedData.deliveries = data.deliveries;
@@ -3128,6 +3213,11 @@ async function syncDeliveriesAcrossSameAddress(address, deliveries) {
 }
 
 function collectJobForm() {
+  const localDeliveries = collectDeliveryRows();
+  const jobDate = el.dateInput.value;
+  localDeliveries.forEach((item) => {
+    if (item.clearSite && !item.clearDate) item.clearDate = jobDate;
+  });
   const data = {
     address: el.addressInput.value.trim(),
     date: el.dateInput.value,
@@ -3149,7 +3239,7 @@ function collectJobForm() {
     amendTimberOther: el.amendTimberOtherInput.checked || Boolean(el.amendTimberOtherDetailInput.value.trim()),
     amendTimberOtherDetail: el.amendTimberOtherDetailInput.value.trim(),
     amendRemark: el.amendRemarkInput.value.trim(),
-    deliveries: collectDeliveryRows(),
+    deliveries: localDeliveries,
     billingNumber: el.billingNumberInput.value.trim(),
     continueJob: el.continueJobInput.checked,
     continueGroupId: el.continueGroupId.value.trim(),
@@ -3300,7 +3390,7 @@ function formatFormTime(data) {
 function buildPrivateProperties(data) {
   const privateProperties = {
     kgCeilingApp: "1",
-    kgCeilingVersion: "1.7.26",
+    kgCeilingVersion: "1.7.28",
     ...(data.continueJob && data.continueGroupId ? {
       kgContinueJob: "1",
       kgContinueGroup: data.continueGroupId,

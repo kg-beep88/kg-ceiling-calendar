@@ -1,12 +1,10 @@
-KG Ceiling Calendar v1.7.27 - Test Report
+KG Ceiling Calendar v1.7.28 - Test Report
 
 PASS
-- JavaScript syntax check: passed (node --check).
-- Duplicate HTML IDs: none.
-- Version text/assets/service-worker cache: v1.7.27.
-- Fixed vehicle list preserved: YN8209T, YP8289B, YQ6498Y, GBE6680Y, GBG8121X, GBF291X, YR2464R.
-- Vehicle dropdown now includes Other / 其他.
-- Choosing Other reveals a manual vehicle-number input.
-- Manual vehicle number is saved as the same vehicle field, so existing Google Calendar sync/search/description logic continues to use it.
-- Existing non-list vehicle values reopen as Other with the saved number restored.
-- Other / manual entry works for both Delivery vehicle and Clear Site vehicle.
+- JavaScript syntax check.
+- Version text/assets/service-worker cache: v1.7.28.
+- Delivery same-address sync remains enabled.
+- Shared delivery load strips Clear Site state from other dates.
+- Clear Site yellow status checks the exact displayed date.
+- Site history has separate Clear Site / 清场 date-only summary.
+- Vehicle data remains stored for Clear Site records.

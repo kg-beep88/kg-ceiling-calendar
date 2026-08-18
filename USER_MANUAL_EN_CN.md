@@ -1,4 +1,4 @@
-# KG Ceiling Calendar v1.7.27 — User Manual / 用户手册
+# KG Ceiling Calendar v1.7.28 — User Manual / 用户手册
 
 ## Day View / 日视图
 
@@ -16,3 +16,12 @@ Phone / 手机：
 
 ## v1.7.27 Vehicle / 车辆
 Vehicle dropdowns now include **Other / 其他**. Choose it to enter a vehicle number manually. The manual vehicle number is saved and synced the same way as the fixed vehicle list.
+
+
+## v1.7.28 Clear Site / 清场
+
+- Delivery / 送货 information continues to sync to the same address. / 送货资料继续同步到相同地址。
+- Clear Site / 清场 only belongs to the clear-site date. / 清场只属于实际清场日期。
+- Yellow 5 mm bar appears only on that date. / 黄色 5 毫米标记只会显示在清场当天。
+- Site history shows the Clear Site date only. / 工地历史的清场记录只显示日期。
+- The Clear Site vehicle is still stored in the job record. / 清场车辆仍会保存在工作记录中。
