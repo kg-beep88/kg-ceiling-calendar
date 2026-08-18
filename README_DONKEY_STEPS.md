@@ -1,6 +1,14 @@
-# KG Ceiling Calendar v1.7.28 — Clear Site Date-Only Status
+# KG Ceiling Calendar v1.7.29 — Clear Site Date-Only Status
 
-## v1.7.28 update
+
+## v1.7.29 Clear Site removal fix
+
+- Untick **Clear Site / 清场** and save to remove that clear-site record.
+- The old clear-site date/vehicle are cleared when the checkbox is unticked.
+- Same-address delivery sync will no longer restore the old Clear Site status from the event being edited.
+- The yellow 5 mm bar disappears after the cleared status is removed.
+
+## v1.7.29 update
 
 - Delivery / 送货 still syncs across all jobs with the same address.
 - Clear Site / 清场 is now date-specific and no longer stays active on every date for the same address.
@@ -16,4 +24,4 @@
 3. Upload/replace the files in the repository root.
 4. Open the KG Calendar website.
 5. Go to Settings / 设置 → Reset Cache / 重置缓存 once.
-6. Confirm the app shows v1.7.28.
+6. Confirm the app shows v1.7.29.

@@ -1,4 +1,11 @@
-# KG Ceiling Calendar v1.7.28 — User Manual / 用户手册
+# KG Ceiling Calendar v1.7.29 — User Manual / 用户手册
+
+
+## Clear Site / 清场 removal
+
+To remove a Clear Site record, edit that job/date, untick **Clear Site / 清场**, and save. The yellow bar will be removed after synchronization.
+
+如需删除清场记录，请编辑该工作/日期，取消勾选 **Clear Site / 清场**，然后保存。同步后黄色状态条会消失。
 
 ## Day View / 日视图
 
@@ -18,7 +25,7 @@ Phone / 手机：
 Vehicle dropdowns now include **Other / 其他**. Choose it to enter a vehicle number manually. The manual vehicle number is saved and synced the same way as the fixed vehicle list.
 
 
-## v1.7.28 Clear Site / 清场
+## v1.7.29 Clear Site / 清场
 
 - Delivery / 送货 information continues to sync to the same address. / 送货资料继续同步到相同地址。
 - Clear Site / 清场 only belongs to the clear-site date. / 清场只属于实际清场日期。

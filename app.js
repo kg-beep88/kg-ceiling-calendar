@@ -2979,10 +2979,38 @@ function bindDeliveryStatusPair(row) {
   });
 }
 
+function bindClearSiteControls(row) {
+  if (!row || row.dataset.clearSiteBound === "1") return;
+  const clearInput = row.querySelector('[data-clear-site]');
+  const dateInput = row.querySelector('[data-clear-site-date]');
+  const vehicleSelect = row.querySelector('[data-clear-site-vehicle]');
+  const vehicleOther = row.querySelector('[data-clear-site-vehicle-other]');
+  if (!clearInput) return;
+
+  row.dataset.clearSiteBound = "1";
+  clearInput.addEventListener("change", () => {
+    if (clearInput.checked) {
+      // Make a new Clear Site record easy to enter: default to this job date.
+      if (dateInput && !dateInput.value) dateInput.value = el.dateInput?.value || selectedDate || "";
+      return;
+    }
+
+    // Untick means DELETE this Clear Site record. Clear the associated
+    // date/vehicle immediately so the user can see that it is really removed.
+    if (dateInput) dateInput.value = "";
+    if (vehicleSelect) vehicleSelect.value = "";
+    if (vehicleOther) {
+      vehicleOther.value = "";
+      vehicleOther.hidden = true;
+    }
+  });
+}
+
 function resetDeliveryRows() {
   el.deliveryDateInput.value = "";
   el.deliveryVehicleInput.value = "";
   const firstDeliveryRow = el.deliveryRows.querySelector('[data-delivery-row]');
+  bindClearSiteControls(firstDeliveryRow);
   const deliveryVehicleOther = firstDeliveryRow?.querySelector('[data-delivery-vehicle-other]');
   if (deliveryVehicleOther) { deliveryVehicleOther.value = ""; deliveryVehicleOther.hidden = true; }
   el.deliveryMaterialsInput.value = "";
@@ -3034,6 +3062,7 @@ function addDeliveryRow(entry = {}) {
   row.querySelector('[data-clear-site-date]').value = item.clearDate;
   populateVehicleSelectsInRow(row, item);
   bindDeliveryStatusPair(row);
+  bindClearSiteControls(row);
   row.querySelector('.deliveryRemoveBtn').addEventListener('click', () => {
     row.remove();
     updateDeliveryRowNumbers();
@@ -3053,7 +3082,10 @@ function renderDeliveryRows(deliveries = []) {
   resetDeliveryRows();
   const items = deliveries.map(normalizeDeliveryEntry).filter(deliveryEntryHasData);
   if (!items.length) {
-    populateVehicleSelectsInRow(el.deliveryRows.querySelector('[data-delivery-row]'));
+    const firstRow = el.deliveryRows.querySelector('[data-delivery-row]');
+    populateVehicleSelectsInRow(firstRow);
+    bindDeliveryStatusPair(firstRow);
+    bindClearSiteControls(firstRow);
     return;
   }
   const first = items[0];
@@ -3066,22 +3098,29 @@ function renderDeliveryRows(deliveries = []) {
   el.clearSiteDateInput.value = first.clearDate;
   populateVehicleSelectsInRow(el.deliveryRows.querySelector('[data-delivery-row]'), first);
   bindDeliveryStatusPair(el.deliveryRows.querySelector('[data-delivery-row]'));
+  bindClearSiteControls(el.deliveryRows.querySelector('[data-delivery-row]'));
   items.slice(1).forEach((item) => addDeliveryRow(item));
   updateDeliveryRowNumbers();
 }
 
 function collectDeliveryRows() {
-  return Array.from(el.deliveryRows.querySelectorAll('[data-delivery-row]')).map((row) => normalizeDeliveryEntry({
-    date: row.querySelector('[data-delivery-date]')?.value || "",
-    vehicle: readVehiclePicker(row, '[data-delivery-vehicle]', '[data-delivery-vehicle-other]'),
-    materials: row.querySelector('[data-delivery-materials]')?.value || "",
-    remark: row.querySelector('[data-delivery-remark]')?.value || "",
-    materialStatus: Boolean(row.querySelector('[data-delivery-material]')?.checked),
-    deliverySent: Boolean(row.querySelector('[data-delivery-sent]')?.checked),
-    clearSite: Boolean(row.querySelector('[data-clear-site]')?.checked),
-    clearDate: row.querySelector('[data-clear-site-date]')?.value || "",
-    clearVehicle: readVehiclePicker(row, '[data-clear-site-vehicle]', '[data-clear-site-vehicle-other]')
-  })).filter(deliveryEntryHasData);
+  return Array.from(el.deliveryRows.querySelectorAll('[data-delivery-row]')).map((row) => {
+    const clearSite = Boolean(row.querySelector('[data-clear-site]')?.checked);
+    return normalizeDeliveryEntry({
+      date: row.querySelector('[data-delivery-date]')?.value || "",
+      vehicle: readVehiclePicker(row, '[data-delivery-vehicle]', '[data-delivery-vehicle-other]'),
+      materials: row.querySelector('[data-delivery-materials]')?.value || "",
+      remark: row.querySelector('[data-delivery-remark]')?.value || "",
+      materialStatus: Boolean(row.querySelector('[data-delivery-material]')?.checked),
+      deliverySent: Boolean(row.querySelector('[data-delivery-sent]')?.checked),
+      clearSite,
+      // Unticking Clear Site means REMOVE the clear-site record completely.
+      // Do not keep an old hidden date/vehicle because that can cause the
+      // yellow status to come back during same-address synchronization.
+      clearDate: clearSite ? (row.querySelector('[data-clear-site-date]')?.value || "") : "",
+      clearVehicle: clearSite ? readVehiclePicker(row, '[data-clear-site-vehicle]', '[data-clear-site-vehicle-other]') : ""
+    });
+  }).filter(deliveryEntryHasData);
 }
 
 async function loadSharedDeliveriesIntoForm(address) {
@@ -3145,7 +3184,13 @@ async function syncDeliveriesAcrossSameAddress(address, deliveries, sourceEventI
       clearRecords.push(record);
     });
   };
-  sameAddressEvents.forEach((calendarEvent) => addClearRecords(getDeliveryEntries(parseEventData(calendarEvent))));
+  // The event currently being saved is authoritative for its own Clear Site
+  // state. Skip its OLD history record, then add only what is currently in the
+  // form. This is what makes unticking Clear Site actually remove it.
+  sameAddressEvents.forEach((calendarEvent) => {
+    if (sourceEventId && calendarEvent.id === sourceEventId) return;
+    addClearRecords(getDeliveryEntries(parseEventData(calendarEvent)));
+  });
   addClearRecords(sourceDeliveries);
 
   const matchedClearKeys = new Set();
@@ -3390,7 +3435,7 @@ function formatFormTime(data) {
 function buildPrivateProperties(data) {
   const privateProperties = {
     kgCeilingApp: "1",
-    kgCeilingVersion: "1.7.28",
+    kgCeilingVersion: "1.7.29",
     ...(data.continueJob && data.continueGroupId ? {
       kgContinueJob: "1",
       kgContinueGroup: data.continueGroupId,
