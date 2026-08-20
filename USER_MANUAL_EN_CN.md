@@ -1,4 +1,4 @@
-# KG Ceiling Calendar v1.7.30 — User Manual / 用户手册
+# KG Ceiling Calendar v1.7.32 — User Manual / 用户手册
 
 
 ## Clear Site / 清场 removal
@@ -25,10 +25,19 @@ Phone / 手机：
 Vehicle dropdowns now include **Other / 其他**. Choose it to enter a vehicle number manually. The manual vehicle number is saved and synced the same way as the fixed vehicle list.
 
 
-## v1.7.30 Clear Site / 清场
+## v1.7.32 Clear Site / 清场
 
-- Delivery / 送货 information continues to sync to the same address. / 送货资料继续同步到相同地址。
+- Delivery / 送货 is saved only on this job. / 送货只保存于当前工作。
+- Clear Site / 清场 is saved only on this job. / 清场只保存于当前工作。
+- Copy / 复制 does not copy Delivery or Clear Site. / 复制工作时不会复制送货或清场资料。
+- Clearing the delivery/clear-site fields and saving keeps them cleared. / 清除送货或清场资料并保存后，不会自动恢复。
 - Clear Site / 清场 only belongs to the clear-site date. / 清场只属于实际清场日期。
 - Yellow 5 mm bar appears only on that date. / 黄色 5 毫米标记只会显示在清场当天。
 - Site history shows the Clear Site date only. / 工地历史的清场记录只显示日期。
 - The Clear Site vehicle is still stored in the job record. / 清场车辆仍会保存在工作记录中。
+
+
+## Same address history / 同地址记录
+When the same address had Delivery or Clear Site before, Add/Edit Job can show the previous date and vehicle. This is only a record and does not copy the Delivery/Clear Site status to the current job.
+
+如果同一个地址以前有送货或清场记录，新增/编辑工作时会显示之前的日期和车辆。这里只是历史记录，不会把送货或清场状态复制到当前工作。

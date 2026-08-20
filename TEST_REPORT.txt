@@ -1,16 +1,10 @@
-KG Ceiling Calendar v1.7.30 - Test Report
+KG Ceiling Calendar v1.7.32 - Test Report
 
-PASS
+Checks:
 - JavaScript syntax check.
 - No duplicate HTML IDs.
-- Version text/assets/service-worker cache: v1.7.30.
-- Clear Site checkbox can be unticked.
-- Unticking Clear Site immediately clears its clear-site date and clear-site vehicle fields.
-- Saving an unticked Clear Site no longer restores the old source-event Clear Site record from history.
-- Clear Site remains date-specific; yellow 5 mm status appears only on its recorded date.
-- Other Clear Site records for other dates at the same address remain preserved.
-- Delivery same-address sync remains enabled.
-- Material / Delivery Sent behavior remains unchanged.
-
-- v1.7.30 regression: removing Clear Site filters stale same-address copies by delivery key + clear date before re-sync.
-- Removal identity intentionally ignores Clear Site vehicle so changing/clearing the vehicle cannot resurrect the record.
+- Same-address Delivery history shows date + vehicle.
+- Same-address Clear Site history shows date + vehicle.
+- Job-specific Delivery/Clear Site status remains isolated.
+- Copy job still starts with Delivery/Clear Site blank.
+- Version text/assets/service-worker cache: v1.7.32.

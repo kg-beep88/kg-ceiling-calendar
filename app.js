@@ -123,8 +123,7 @@ let touchDragGhost = null;
 let touchDragTarget = null;
 let suppressChipClickUntil = 0;
 let pendingHistoryCopyEvent = null;
-let sharedDeliveriesLoadedForAddress = "";
-let sharedDeliveryLoadRequest = 0;
+let sameAddressHistoryRequest = 0;
 
 window.addEventListener("DOMContentLoaded", init);
 
@@ -152,7 +151,7 @@ function cacheElements() {
     "amendCeilingDetailInput", "amendPartitionInput", "amendPartitionDetailInput",
     "amendPelmetInput", "amendPelmetDetailInput", "amendTimberOtherInput", "amendTimberOtherDetailInput", "amendRemarkInput",
     "deliveryRows", "addDeliveryBtn", "deliveryDateInput", "deliveryVehicleInput", "deliveryMaterialsInput", "deliveryRemarkInput", "deliveryMaterialInput", "deliverySentInput",
-    "clearSiteInput", "clearSiteDateInput", "clearSiteVehicleInput", "billingNumberInput",
+    "clearSiteInput", "clearSiteDateInput", "clearSiteVehicleInput", "sameAddressServiceHistory", "billingNumberInput",
     "colourPicker", "deleteJobBtn", "cancelBtn",
     "saveJobBtn", "searchModal", "closeSearchBtn", "historySearchForm",
     "historySearchInput", "historySearchBtn", "historySearchStatus",
@@ -209,9 +208,10 @@ function bindEvents() {
   el.addDeliveryBtn.addEventListener("click", () => addDeliveryRow());
   populateVehicleSelectsInRow(el.deliveryRows.querySelector('[data-delivery-row]'));
   bindDeliveryStatusPair(el.deliveryRows.querySelector('[data-delivery-row]'));
-  el.addressInput.addEventListener("change", () => loadSharedDeliveriesIntoForm(el.addressInput.value));
   el.dateInput.addEventListener("change", handleStartDateChange);
   el.endDateInput.addEventListener("change", handleEndDateChange);
+  el.addressInput.addEventListener("blur", () => refreshSameAddressServiceHistory(el.addressInput.value));
+  el.addressInput.addEventListener("change", () => refreshSameAddressServiceHistory(el.addressInput.value));
   document.addEventListener("pointermove", handleTouchDragMove, { passive: false });
   document.addEventListener("pointerup", handleTouchDragEnd, { passive: false });
   document.addEventListener("pointercancel", cancelTouchDrag, { passive: false });
@@ -1809,10 +1809,10 @@ function buildHistoryGroup(group) {
   const workDates = uniqueDateValues(records.flatMap(({ event }) => eventDateKeys(event)));
   const deliveries = mergeDeliveryLists(records.flatMap(({ data }) => getDeliveryEntries(data)))
     .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
-  const clearSiteDates = uniqueDateValues(records.flatMap(({ data }) =>
+  const clearSiteRecords = dedupeServiceHistory(records.flatMap(({ data }) =>
     getDeliveryEntries(data)
       .filter((item) => item.clearSite && item.clearDate)
-      .map((item) => item.clearDate)
+      .map((item) => ({ date: item.clearDate, vehicle: item.clearVehicle || "" }))
   ));
   const billingNumbers = Array.from(new Set(records.map(({ data }) => data.billingNumber).filter(Boolean)));
   const latestId = records.find(({ data }) => data.idFirm || data.contact || data.idName)?.data || {};
@@ -1847,8 +1847,8 @@ function buildHistoryGroup(group) {
     makeHistorySummary("Work dates / 工作日期", formatDateList(workDates)),
     makeHistorySummary("Installer / 安装人员", installerNames.length ? installerNames.join(", ") : "None / 无"),
     makeHistorySummary("Job Scope / 工作范围", amendments.length ? amendments.join(", ") : "None / 无"),
-    makeHistorySummary("Deliver / 送货", deliveryText),
-    makeHistorySummary("Clear Site / 清场", clearSiteDates.length ? clearSiteDates.map(formatDateShort).join(", ") : "None / 无"),
+    makeHistorySummary("Delivery history / 送货记录", deliveryText),
+    makeHistorySummary("Clear Site history / 清场记录", formatServiceHistory(clearSiteRecords)),
     makeHistorySummary("Billing number / 开单号码", billingNumbers.length ? billingNumbers.join(", ") : "None / 无"),
     makeHistorySummary("ID details / ID 资料", [
       `Firm / 公司: ${latestId.idFirm || "None / 无"}`,
@@ -1911,7 +1911,9 @@ function buildHistoryEventRow(event, data) {
       delivery.remark || ""
     ].filter(Boolean).join(" · ");
     lines.push(`Delivery ${index + 1} / 送货 ${index + 1}: ${detail}`);
-    if (delivery.clearSite && delivery.clearDate) lines.push(`Clear Site / 清场: ${formatDateShort(delivery.clearDate)}`);
+    if (delivery.clearSite && delivery.clearDate) {
+      lines.push(`Clear Site / 清场: ${formatDateShort(delivery.clearDate)}${delivery.clearVehicle ? ` · Vehicle / 车辆: ${delivery.clearVehicle}` : ""}`);
+    }
   });
   if (data.billingNumber) lines.push(`Billing number / 开单号码: ${data.billingNumber}`);
   lines.push(`Colour / 颜色: ${eventColour(event).name}`);
@@ -1990,6 +1992,109 @@ async function editEventFromHistory(event) {
   await refreshEvents(false);
   const freshEvent = events.find((item) => item.id === event.id) || event;
   openJobModal(freshEvent);
+}
+
+function dedupeServiceHistory(records) {
+  const map = new Map();
+  (records || []).forEach((raw) => {
+    const date = String(raw?.date || "").trim();
+    const vehicle = String(raw?.vehicle || "").trim();
+    if (!date) return;
+    const key = `${date}|${vehicle.toUpperCase()}`;
+    if (!map.has(key)) map.set(key, { date, vehicle });
+  });
+  return Array.from(map.values()).sort((a, b) => {
+    const dateCompare = String(b.date).localeCompare(String(a.date));
+    if (dateCompare) return dateCompare;
+    return String(a.vehicle).localeCompare(String(b.vehicle), undefined, { numeric: true, sensitivity: "base" });
+  });
+}
+
+function formatServiceHistory(records) {
+  if (!records?.length) return "None / 无";
+  return records
+    .slice(0, 12)
+    .map((record) => `${formatDateShort(record.date)}${record.vehicle ? ` · ${record.vehicle}` : " · No vehicle / 无车辆"}`)
+    .join("\n");
+}
+
+async function refreshSameAddressServiceHistory(address) {
+  if (!el.sameAddressServiceHistory) return;
+  const requestNumber = ++sameAddressHistoryRequest;
+  const addressKey = normalizeAddress(address);
+  if (!addressKey || !isConnected()) {
+    el.sameAddressServiceHistory.hidden = true;
+    el.sameAddressServiceHistory.innerHTML = "";
+    return;
+  }
+
+  el.sameAddressServiceHistory.hidden = false;
+  el.sameAddressServiceHistory.innerHTML = '<div class="sameAddressHistoryLoading">Checking same-address history… / 正在检查同地址记录……</div>';
+
+  try {
+    const allEvents = await fetchAllHistoryEvents(false);
+    if (requestNumber !== sameAddressHistoryRequest) return;
+    const currentId = String(el.eventId?.value || "").trim();
+    const matches = allEvents.filter((event) => {
+      if (currentId && event.id === currentId) return false;
+      return normalizeAddress(eventSearchAddress(event)) === addressKey;
+    });
+
+    const deliveryHistory = [];
+    const clearSiteHistory = [];
+    matches.forEach((event) => {
+      const data = parseEventData(event);
+      getDeliveryEntries(data).forEach((item) => {
+        if (item.date && (item.materialStatus || item.deliverySent || item.vehicle)) {
+          deliveryHistory.push({ date: item.date, vehicle: item.vehicle || "" });
+        }
+        if (item.clearSite && item.clearDate) {
+          clearSiteHistory.push({ date: item.clearDate, vehicle: item.clearVehicle || "" });
+        }
+      });
+    });
+
+    const deliveries = dedupeServiceHistory(deliveryHistory);
+    const clears = dedupeServiceHistory(clearSiteHistory);
+    if (!deliveries.length && !clears.length) {
+      el.sameAddressServiceHistory.hidden = true;
+      el.sameAddressServiceHistory.innerHTML = "";
+      return;
+    }
+
+    const section = document.createElement("section");
+    section.className = "sameAddressHistoryCard";
+    const title = document.createElement("strong");
+    title.className = "sameAddressHistoryTitle";
+    title.textContent = "Same address history / 同地址记录";
+    section.appendChild(title);
+
+    const grid = document.createElement("div");
+    grid.className = "sameAddressHistoryGrid";
+
+    const makeBlock = (label, records) => {
+      const block = document.createElement("div");
+      block.className = "sameAddressHistoryBlock";
+      const head = document.createElement("b");
+      head.textContent = label;
+      const body = document.createElement("span");
+      body.textContent = formatServiceHistory(records);
+      block.append(head, body);
+      return block;
+    };
+
+    grid.append(
+      makeBlock("Delivery / 送货", deliveries),
+      makeBlock("Clear Site / 清场", clears)
+    );
+    section.appendChild(grid);
+    el.sameAddressServiceHistory.innerHTML = "";
+    el.sameAddressServiceHistory.appendChild(section);
+  } catch (error) {
+    if (requestNumber !== sameAddressHistoryRequest) return;
+    el.sameAddressServiceHistory.hidden = true;
+    el.sameAddressServiceHistory.innerHTML = "";
+  }
 }
 
 function normalizeAddress(value) {
@@ -2345,6 +2450,7 @@ function openJobModal(event = null, asCopy = false) {
   document.body.style.overflow = "hidden";
   updateTimeFieldState();
   updateContinueJobState(false);
+  refreshSameAddressServiceHistory(el.addressInput.value);
   setTimeout(() => el.addressInput.focus(), 80);
 }
 
@@ -2379,7 +2485,10 @@ function resetJobForm() {
   el.amendTimberOtherDetailInput.value = "";
   el.amendRemarkInput.value = "";
   resetDeliveryRows();
-  sharedDeliveriesLoadedForAddress = "";
+  if (el.sameAddressServiceHistory) {
+    el.sameAddressServiceHistory.hidden = true;
+    el.sameAddressServiceHistory.innerHTML = "";
+  }
   el.billingNumberInput.value = "";
   renderColourPicker("default");
   el.saveJobBtn.disabled = false;
@@ -2404,7 +2513,6 @@ function fillJobForm(event, asCopy) {
   el.amendTimberOtherDetailInput.value = data.amendTimberOtherDetail || "";
   el.amendRemarkInput.value = data.amendRemark;
   renderDeliveryRows(getDeliveryEntries(data));
-  sharedDeliveriesLoadedForAddress = "";
   el.billingNumberInput.value = data.billingNumber;
   el.continueJobInput.checked = data.continueJob;
   el.continueGroupId.value = data.continueGroupId;
@@ -2416,9 +2524,11 @@ function fillJobForm(event, asCopy) {
   el.endDateInput.value = asCopy ? addDaysKey(formStartDate, originalDaySpan) : originalRange.end;
   lastFormStartDate = formStartDate;
   if (asCopy) {
+    // Delivery / Material / Delivery Sent / Clear Site are job-specific.
+    // A copied job starts with these fields blank so blue/yellow status bars
+    // never carry over to the duplicate.
     renderDeliveryRows([]);
-    sharedDeliveriesLoadedForAddress = "";
-    el.billingNumberInput.value = "";
+      el.billingNumberInput.value = "";
     el.continueJobInput.checked = false;
     el.continueGroupId.value = "";
     el.continuePeriodsList.innerHTML = "";
@@ -2431,7 +2541,6 @@ function fillJobForm(event, asCopy) {
     if (event.end?.dateTime) el.endTimeInput.value = timeInputValueInCalendarZone(new Date(event.end.dateTime));
   }
   renderColourPicker(String(event.colorId || "default"));
-  if (!asCopy) loadSharedDeliveriesIntoForm(data.address || event.summary || "");
 }
 
 function handleStartDateChange() {
@@ -2603,11 +2712,6 @@ async function saveJob(event) {
     return;
   }
 
-  const enteredAddress = el.addressInput.value.trim();
-  if (enteredAddress && normalizeAddressKey(enteredAddress) !== sharedDeliveriesLoadedForAddress) {
-    await loadSharedDeliveriesIntoForm(enteredAddress);
-  }
-
   const formData = collectJobForm();
   if (!formData.address) {
     showToast("Please enter the address. / 请输入地址。", true);
@@ -2677,24 +2781,10 @@ async function saveJob(event) {
       }
     }
 
-    const originalDeliveries = (eventId && currentModalEvent)
-      ? getDeliveryEntries(parseEventData(currentModalEvent))
-      : [];
-    const removedClearSiteIds = removedClearSiteRecordIds(originalDeliveries, formData.deliveries);
-    const deliverySync = await syncDeliveriesAcrossSameAddress(
-      formData.address,
-      formData.deliveries,
-      savedEventId,
-      removedClearSiteIds
-    );
-
     const message = extraCreated
       ? `Saved with ${extraCreated} continuation period(s). / 已保存，并新增 ${extraCreated} 个继续工作时段。`
       : (eventId ? "Job updated in both calendars. / 工作已在两边更新。" : "Job saved to Google Calendar. / 工作已保存到谷歌日历。");
-    const deliveryMessage = deliverySync.failed
-      ? `${message} Delivery sync missed ${deliverySync.failed} job(s). / ${message} 有 ${deliverySync.failed} 个工作未能同步送货资料。`
-      : (deliverySync.updated ? `${message} Delivery synced to same address. / 送货资料已同步到相同地址。` : message);
-    showToast(deliveryMessage, Boolean(deliverySync.failed));
+    showToast(message, false);
     selectedDate = formData.date;
     monthAnchor = startOfMonth(dateFromKey(formData.date));
     closeJobModal();
@@ -2740,10 +2830,6 @@ function validateContinuePeriods(data) {
     }
     previousEnd = period.end;
   }
-}
-
-function normalizeAddressKey(value) {
-  return normalizeSearchText(value);
 }
 
 function normalizeDeliveryEntry(entry = {}) {
@@ -2798,43 +2884,6 @@ function getDeliveryEntries(data = {}) {
       : { sent: data.deliverySent })
   });
   return deliveryEntryHasData(legacy) ? [legacy] : [];
-}
-
-function stripClearSiteFromDeliveryEntry(rawEntry = {}) {
-  const item = normalizeDeliveryEntry(rawEntry);
-  return { ...item, clearSite: false, clearDate: "", clearVehicle: "" };
-}
-
-function clearSiteRecordIdentity(record = {}) {
-  // Vehicle is deliberately NOT part of the identity. If the user edits or
-  // clears the vehicle while removing Clear Site, it is still the same clear
-  // record: same delivery + same clear date.
-  return `${record.deliveryKey || ""}|${String(record.clearDate || "").trim()}`;
-}
-
-function clearSiteRecordsFromDeliveries(deliveries = []) {
-  const seen = new Set();
-  const records = [];
-  deliveries.map(normalizeDeliveryEntry).forEach((item) => {
-    if (!item.clearSite || !item.clearDate) return;
-    const record = {
-      deliveryKey: deliveryEntryKey(item),
-      clearSite: true,
-      clearDate: item.clearDate,
-      clearVehicle: item.clearVehicle || ""
-    };
-    const key = clearSiteRecordIdentity(record);
-    if (seen.has(key)) return;
-    seen.add(key);
-    records.push(record);
-  });
-  return records;
-}
-
-function removedClearSiteRecordIds(originalDeliveries = [], currentDeliveries = []) {
-  const before = clearSiteRecordsFromDeliveries(originalDeliveries);
-  const afterIds = new Set(clearSiteRecordsFromDeliveries(currentDeliveries).map(clearSiteRecordIdentity));
-  return new Set(before.map(clearSiteRecordIdentity).filter((id) => !afterIds.has(id)));
 }
 
 function eventHasClearSiteOnDate(calendarEvent, dataOrDeliveries = {}, shownDate = "") {
@@ -3018,8 +3067,8 @@ function bindClearSiteControls(row) {
       return;
     }
 
-    // Untick means DELETE this Clear Site record. Clear the associated
-    // date/vehicle immediately so the user can see that it is really removed.
+    // Untick means DELETE this Clear Site record from this job. Clear the
+    // associated date/vehicle immediately so Save/reload stays cleared.
     if (dateInput) dateInput.value = "";
     if (vehicleSelect) vehicleSelect.value = "";
     if (vehicleOther) {
@@ -3129,164 +3178,35 @@ function renderDeliveryRows(deliveries = []) {
 function collectDeliveryRows() {
   return Array.from(el.deliveryRows.querySelectorAll('[data-delivery-row]')).map((row) => {
     const clearSite = Boolean(row.querySelector('[data-clear-site]')?.checked);
+    const date = row.querySelector('[data-delivery-date]')?.value || "";
+    const vehicle = readVehiclePicker(row, '[data-delivery-vehicle]', '[data-delivery-vehicle-other]');
+    const materialStatus = Boolean(row.querySelector('[data-delivery-material]')?.checked);
+    const deliverySent = Boolean(row.querySelector('[data-delivery-sent]')?.checked);
+    const clearDate = clearSite ? (row.querySelector('[data-clear-site-date]')?.value || "") : "";
+    const clearVehicle = clearSite
+      ? readVehiclePicker(row, '[data-clear-site-vehicle]', '[data-clear-site-vehicle-other]')
+      : "";
+
+    // Old versions kept free-text material/remark fields hidden. Preserve those
+    // only while this row still has visible delivery/clear-site data. Once the
+    // user clears every visible field/status, the entire delivery record is
+    // deleted from this job and stays deleted after Save/reload.
+    const hasVisibleData = Boolean(
+      date || vehicle || materialStatus || deliverySent || clearSite || clearDate || clearVehicle
+    );
+
     return normalizeDeliveryEntry({
-      date: row.querySelector('[data-delivery-date]')?.value || "",
-      vehicle: readVehiclePicker(row, '[data-delivery-vehicle]', '[data-delivery-vehicle-other]'),
-      materials: row.querySelector('[data-delivery-materials]')?.value || "",
-      remark: row.querySelector('[data-delivery-remark]')?.value || "",
-      materialStatus: Boolean(row.querySelector('[data-delivery-material]')?.checked),
-      deliverySent: Boolean(row.querySelector('[data-delivery-sent]')?.checked),
+      date,
+      vehicle,
+      materials: hasVisibleData ? (row.querySelector('[data-delivery-materials]')?.value || "") : "",
+      remark: hasVisibleData ? (row.querySelector('[data-delivery-remark]')?.value || "") : "",
+      materialStatus,
+      deliverySent,
       clearSite,
-      // Unticking Clear Site means REMOVE the clear-site record completely.
-      // Do not keep an old hidden date/vehicle because that can cause the
-      // yellow status to come back during same-address synchronization.
-      clearDate: clearSite ? (row.querySelector('[data-clear-site-date]')?.value || "") : "",
-      clearVehicle: clearSite ? readVehiclePicker(row, '[data-clear-site-vehicle]', '[data-clear-site-vehicle-other]') : ""
+      clearDate,
+      clearVehicle
     });
   }).filter(deliveryEntryHasData);
-}
-
-async function loadSharedDeliveriesIntoForm(address) {
-  const key = normalizeAddressKey(address);
-  if (!key || !isConnected()) return;
-  const requestId = ++sharedDeliveryLoadRequest;
-  const canKeepCurrentRows = !sharedDeliveriesLoadedForAddress || sharedDeliveriesLoadedForAddress === key;
-  try {
-    const all = await fetchAllHistoryEvents(false);
-    if (requestId !== sharedDeliveryLoadRequest || normalizeAddressKey(el.addressInput.value) !== key || el.jobModal.hidden) return;
-    const shared = [];
-    all.forEach((calendarEvent) => {
-      const data = parseEventData(calendarEvent);
-      if (normalizeAddressKey(data.address || calendarEvent.summary || calendarEvent.location || "") !== key) return;
-      shared.push(...getDeliveryEntries(data).map(stripClearSiteFromDeliveryEntry));
-    });
-    // Read the form rows NOW, after the history request finishes. This avoids a
-    // slow background history load restoring a Clear Site box the user already
-    // unticked while the request was in flight.
-    const liveRows = canKeepCurrentRows ? collectDeliveryRows() : [];
-    renderDeliveryRows(mergeDeliveryLists(shared, liveRows));
-    sharedDeliveriesLoadedForAddress = key;
-  } catch {
-    // Keep the delivery rows already on screen if history cannot be loaded.
-  }
-}
-
-function deliverySignature(deliveries) {
-  return JSON.stringify(mergeDeliveryLists(deliveries).map((item) => [
-    item.date, item.vehicle, item.materials, item.remark, item.materialStatus, item.deliverySent,
-    item.clearSite, item.clearDate, item.clearVehicle
-  ]));
-}
-
-async function syncDeliveriesAcrossSameAddress(address, deliveries, sourceEventId = "", removedClearSiteIds = new Set()) {
-  const key = normalizeAddressKey(address);
-  if (!key) return { updated: 0, failed: 0 };
-
-  // Delivery is shared by address, but Clear Site is date-specific.
-  // Never copy the yellow Clear Site status to every job at the address.
-  const sourceDeliveries = mergeDeliveryLists(deliveries);
-  const sharedTarget = mergeDeliveryLists(sourceDeliveries.map(stripClearSiteFromDeliveryEntry));
-  const all = await fetchAllHistoryEvents(true);
-  const sameAddressEvents = all.filter((calendarEvent) => {
-    if (!calendarEvent?.id) return false;
-    const ownedByApp = calendarEvent?.extendedProperties?.private?.kgCeilingApp === "1"
-      || String(calendarEvent.description || "").includes(APP_MARKER)
-      || String(calendarEvent.description || "").includes(DATA_HEADER);
-    if (!ownedByApp) return false;
-    const data = parseEventData(calendarEvent);
-    return normalizeAddressKey(data.address || calendarEvent.summary || calendarEvent.location || "") === key;
-  });
-
-  // Gather every clear-site date already recorded for this site plus the form's new record.
-  // De-duplicate them, then place each one only on the event that actually includes that date.
-  const clearRecords = [];
-  const clearSeen = new Set();
-  const removedSet = removedClearSiteIds instanceof Set
-    ? removedClearSiteIds
-    : new Set(Array.isArray(removedClearSiteIds) ? removedClearSiteIds : []);
-  const addClearRecords = (entries) => {
-    clearSiteRecordsFromDeliveries(entries).forEach((record) => {
-      const recordKey = clearSiteRecordIdentity(record);
-      // If the user explicitly unticked this Clear Site record, remove every
-      // stale copy of that same delivery/date from the site's history instead
-      // of letting another same-address event resurrect it.
-      if (removedSet.has(recordKey)) return;
-      if (clearSeen.has(recordKey)) return;
-      clearSeen.add(recordKey);
-      clearRecords.push(record);
-    });
-  };
-  // The event currently being saved is authoritative for its own Clear Site
-  // state. Skip its OLD history record, then add only what is currently in the
-  // form. This is what makes unticking Clear Site actually remove it.
-  sameAddressEvents.forEach((calendarEvent) => {
-    if (sourceEventId && calendarEvent.id === sourceEventId) return;
-    addClearRecords(getDeliveryEntries(parseEventData(calendarEvent)));
-  });
-  addClearRecords(sourceDeliveries);
-
-  const matchedClearKeys = new Set();
-  sameAddressEvents.forEach((calendarEvent) => {
-    clearRecords.forEach((record) => {
-      if (eventIncludesDate(calendarEvent, record.clearDate)) {
-        matchedClearKeys.add(clearSiteRecordIdentity(record));
-      }
-    });
-  });
-
-  const calendarId = encodeURIComponent(CONFIG.CALENDAR_ID || "primary");
-  let updated = 0;
-  let failed = 0;
-
-  for (const calendarEvent of sameAddressEvents) {
-    const data = parseEventData(calendarEvent);
-    const eventTarget = sharedTarget.map((item) => ({ ...item }));
-
-    clearRecords.forEach((record) => {
-      const belongsToThisEvent = eventIncludesDate(calendarEvent, record.clearDate);
-      const recordKey = clearSiteRecordIdentity(record);
-      const unmatchedButSource = !matchedClearKeys.has(recordKey) && sourceEventId && calendarEvent.id === sourceEventId;
-      if (!belongsToThisEvent && !unmatchedButSource) return;
-
-      let target = eventTarget.find((item) => deliveryEntryKey(item) === record.deliveryKey);
-      if (!target) {
-        target = normalizeDeliveryEntry({ clearSite: true, clearDate: record.clearDate, clearVehicle: record.clearVehicle });
-        eventTarget.push(target);
-      }
-      target.clearSite = true;
-      target.clearDate = record.clearDate;
-      target.clearVehicle = record.clearVehicle || "";
-    });
-
-    const normalizedTarget = mergeDeliveryLists(eventTarget);
-    if (deliverySignature(getDeliveryEntries(data)) === deliverySignature(normalizedTarget)) continue;
-
-    data.deliveries = normalizedTarget.map((item) => ({ ...item }));
-    applyDeliveryCompatibility(data);
-    const timedData = jobDataWithEventTiming(calendarEvent);
-    timedData.deliveries = data.deliveries;
-    applyDeliveryCompatibility(timedData);
-    const privateProperties = {
-      ...(calendarEvent.extendedProperties?.private || {}),
-      ...buildPrivateProperties(timedData)
-    };
-    const description = buildDescription(timedData);
-    try {
-      await apiFetch(`/calendars/${calendarId}/events/${encodeURIComponent(calendarEvent.id)}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ description, extendedProperties: { private: privateProperties } })
-      });
-      calendarEvent.description = description;
-      calendarEvent.extendedProperties = calendarEvent.extendedProperties || {};
-      calendarEvent.extendedProperties.private = privateProperties;
-      updated += 1;
-    } catch {
-      failed += 1;
-    }
-  }
-  invalidateHistoryCache();
-  return { updated, failed };
 }
 
 function collectJobForm() {
@@ -3467,7 +3387,7 @@ function formatFormTime(data) {
 function buildPrivateProperties(data) {
   const privateProperties = {
     kgCeilingApp: "1",
-    kgCeilingVersion: "1.7.30",
+    kgCeilingVersion: "1.7.32",
     ...(data.continueJob && data.continueGroupId ? {
       kgContinueJob: "1",
       kgContinueGroup: data.continueGroupId,

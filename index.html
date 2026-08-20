@@ -9,7 +9,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=1.7.30">
+  <link rel="stylesheet" href="styles.css?v=1.7.31">
 </head>
 <body>
   <noscript>
@@ -21,7 +21,7 @@
       <div class="brandMark" aria-hidden="true">KG</div>
       <div>
         <h1>KG Ceiling Work Calendar</h1>
-        <p>KG 天花工作日历 · v1.7.30</p>
+        <p>KG 天花工作日历 · v1.7.32</p>
       </div>
     </div>
 
@@ -277,7 +277,8 @@
 
           <div class="formSection deliverySection">
             <h3>4. Deliver / 送货</h3>
-            <p class="deliverySyncHint">Same address = same delivery list on every work date. / 相同地址的所有工作日期会显示同一份送货记录。</p>
+            <p class="deliverySyncHint">Delivery and Clear Site are saved for this job only. Copies start blank. / 送货和清场只保存于此工作，复制工作时不会带过去。</p>
+            <div id="sameAddressServiceHistory" class="sameAddressServiceHistory" hidden aria-live="polite"></div>
             <div id="deliveryRows" class="deliveryRows">
               <div class="deliveryRow" data-delivery-row>
                 <div class="deliveryRowHead">
@@ -475,8 +476,8 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="config.js?v=1.7.30"></script>
+  <script src="config.js?v=1.7.31"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="app.js?v=1.7.30" defer></script>
+  <script src="app.js?v=1.7.31" defer></script>
 </body>
 </html>

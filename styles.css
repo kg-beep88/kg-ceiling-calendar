@@ -1652,3 +1652,23 @@ body.dayFitMode .searchCard {
   box-sizing: border-box;
 }
 .vehicleOtherInput[hidden] { display: none !important; }
+
+
+/* v1.7.32 — same-address delivery / clear-site history is read-only history.
+   It never copies blue/yellow status onto the current or duplicated job. */
+.sameAddressServiceHistory { margin: 0 0 10px; }
+.sameAddressHistoryCard {
+  padding: 10px;
+  border: 1px solid #cfe1dc;
+  border-radius: 10px;
+  background: #f8fbfa;
+}
+.sameAddressHistoryTitle { display: block; margin-bottom: 8px; font-size: 13px; color: #1f4d45; }
+.sameAddressHistoryGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.sameAddressHistoryBlock { min-width: 0; padding: 8px 9px; border-radius: 8px; background: #fff; border: 1px solid #e0e9e6; }
+.sameAddressHistoryBlock b { display: block; margin-bottom: 4px; font-size: 12px; color: #315b70; }
+.sameAddressHistoryBlock span { display: block; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; line-height: 1.4; color: #40534f; }
+.sameAddressHistoryLoading { padding: 8px 10px; border-radius: 8px; background: #f8fbfa; color: #657975; font-size: 12px; font-weight: 700; }
+@media (max-width: 640px) {
+  .sameAddressHistoryGrid { grid-template-columns: 1fr; }
+}
