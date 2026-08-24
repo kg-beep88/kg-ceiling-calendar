@@ -38,18 +38,18 @@ const OTHER_VEHICLE_VALUE = "__OTHER__";
 
 // Day View colour layout uses the actual Google Calendar event colour IDs.
 // Left column = Calendar default (no event colorId).
-// Right column = Tangerine, Basil, Grape first, then the remaining Google colours.
+// Right column = Tangerine, Basil, Graphite, Grape first, then the remaining Google colours.
 const DAY_LEFT_COLOUR_ID = "default";
 const DAY_RIGHT_COLOUR_PRIORITY = new Map([
   ["6", 0],   // Tangerine / 橙色
   ["10", 1],  // Basil / 深绿色
-  ["3", 2],   // Grape / 葡萄紫
-  ["1", 3],   // Lavender / 淡紫
-  ["2", 4],   // Sage / 鼠尾草绿
-  ["4", 5],   // Flamingo / 粉红
-  ["5", 6],   // Banana / 香蕉黄
-  ["7", 7],   // Peacock / 蓝绿
-  ["8", 8],   // Graphite / 灰色
+  ["8", 2],   // Graphite / 灰色 — directly under Basil in Day View
+  ["3", 3],   // Grape / 葡萄紫
+  ["1", 4],   // Lavender / 淡紫
+  ["2", 5],   // Sage / 鼠尾草绿
+  ["4", 6],   // Flamingo / 粉红
+  ["5", 7],   // Banana / 香蕉黄
+  ["7", 8],   // Peacock / 蓝绿
   ["9", 9],   // Blueberry / 蓝色
   ["11", 10]  // Tomato / 红色
 ]);
@@ -3387,7 +3387,7 @@ function formatFormTime(data) {
 function buildPrivateProperties(data) {
   const privateProperties = {
     kgCeilingApp: "1",
-    kgCeilingVersion: "1.7.32",
+    kgCeilingVersion: "1.7.33",
     ...(data.continueJob && data.continueGroupId ? {
       kgContinueJob: "1",
       kgContinueGroup: data.continueGroupId,

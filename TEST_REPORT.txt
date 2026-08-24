@@ -1,4 +1,4 @@
-KG Ceiling Calendar v1.7.32 - Test Report
+KG Ceiling Calendar v1.7.33 - Test Report
 
 Checks:
 - JavaScript syntax check.
@@ -7,4 +7,6 @@ Checks:
 - Same-address Clear Site history shows date + vehicle.
 - Job-specific Delivery/Clear Site status remains isolated.
 - Copy job still starts with Delivery/Clear Site blank.
-- Version text/assets/service-worker cache: v1.7.32.
+- Version text/assets/service-worker cache: v1.7.33.
+
+- Day View Google colour priority checked: Calendar default left; Tangerine > Basil > Graphite > Grape on right.

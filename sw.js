@@ -1,4 +1,4 @@
-const CACHE_NAME = "kg-ceiling-calendar-v1.7.32-same-address-service-history";
+const CACHE_NAME = "kg-ceiling-calendar-v1.7.33-graphite-under-basil";
 const APP_FILES = [
   "./",
   "./index.html",
