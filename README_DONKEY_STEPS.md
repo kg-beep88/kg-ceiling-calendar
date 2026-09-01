@@ -1,6 +1,14 @@
-# KG Ceiling Calendar v1.7.33 — Job-Only Delivery & Clear Site
+# KG Ceiling Calendar v1.7.34 — Job-Only Delivery & Clear Site
 
-## v1.7.33 Delivery / Clear Site rule
+## v1.7.34 Strict job-only rule
+
+- Delivery / 送货 and Clear Site / 清场 belong only to the exact Google Calendar job/event where they are entered.
+- Same-address history is read-only only. It never writes Delivery/Clear Site into the current job.
+- Copy / Duplicate starts blank for Delivery and Clear Site.
+- Continue Job extra periods are separate Google events and now also start blank for Delivery and Clear Site.
+- Blue/dark-blue/yellow bars therefore never appear just because another job has the same address.
+
+## v1.7.34 Delivery / Clear Site rule
 
 - Delivery / 送货 is saved only on the job being edited.
 - Clear Site / 清场 is saved only on the job being edited.
@@ -11,20 +19,20 @@
 
 
 
-## v1.7.33 Clear Site hard fix
+## v1.7.34 Clear Site hard fix
 
 - Unticking **Clear Site / 清场** removes it from the current job and it stays removed after Save/reload.
 - Other jobs are no longer changed when this job is saved.
 - The yellow 5 mm bar stays date-specific and disappears after the cleared record is removed.
 
-## v1.7.33 Clear Site removal fix
+## v1.7.34 Clear Site removal fix
 
 - Untick **Clear Site / 清场** and save to remove that clear-site record.
 - The old clear-site date/vehicle are cleared when the checkbox is unticked.
-- There is no same-address Delivery/Clear Site synchronization in v1.7.33.
+- There is no same-address Delivery/Clear Site synchronization in v1.7.34.
 - The yellow 5 mm bar disappears after the cleared status is removed.
 
-## v1.7.33 update
+## v1.7.34 update
 
 - Delivery / 送货 is job-specific and does not sync to other jobs with the same address.
 - Clear Site / 清场 is job-specific and only affects the job where it is saved.
@@ -40,10 +48,10 @@
 3. Upload/replace the files in the repository root.
 4. Open the KG Calendar website.
 5. Go to Settings / 设置 → Reset Cache / 重置缓存 once.
-6. Confirm the app shows v1.7.33.
+6. Confirm the app shows v1.7.34.
 
 
-## v1.7.33 Same-address history
+## v1.7.34 Same-address history
 - Delivery and Clear Site remain job-specific only.
 - The Add/Edit Job form can show previous Delivery and Clear Site records for the same address.
 - History shows the date and vehicle used.

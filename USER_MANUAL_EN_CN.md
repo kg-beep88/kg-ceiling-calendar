@@ -1,5 +1,11 @@
-# KG Ceiling Calendar v1.7.33 — User Manual / 用户手册
+# KG Ceiling Calendar v1.7.34 — User Manual / 用户手册
 
+
+## Strict job-only Delivery / Clear Site / 送货与清场只属于当前工作
+
+Delivery / 送货 and Clear Site / 清场 are stored only on the exact job where you enter them. Same-address history is only for viewing previous date/vehicle records. It never copies the status to another job. Copy/Duplicate and extra Continue Job periods start blank for Delivery/Clear Site.
+
+送货和清场只会保存在您输入资料的那一个工作记录。相同地址的历史只用于查看之前的日期和车辆，不会把状态复制到其他工作。复制工作和额外的继续工作时段，送货/清场都会保持空白。
 
 ## Clear Site / 清场 removal
 
@@ -25,7 +31,7 @@ Phone / 手机：
 Vehicle dropdowns now include **Other / 其他**. Choose it to enter a vehicle number manually. The manual vehicle number is saved and synced the same way as the fixed vehicle list.
 
 
-## v1.7.33 Clear Site / 清场
+## v1.7.34 Clear Site / 清场
 
 - Delivery / 送货 is saved only on this job. / 送货只保存于当前工作。
 - Clear Site / 清场 is saved only on this job. / 清场只保存于当前工作。

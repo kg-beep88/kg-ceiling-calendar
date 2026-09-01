@@ -2665,7 +2665,10 @@ function continuationData(baseData, period, sequence) {
     endDate: period.end || period.start,
     continueJob: true,
     continueSequence: sequence,
-    deliveries: getDeliveryEntries(baseData),
+    // Delivery / Material / Delivery Sent / Clear Site belong only to the exact
+    // Google Calendar event where the user entered them. A continuation period
+    // is a new event, so it must start blank just like Copy / Duplicate.
+    deliveries: [],
     billingNumber: ""
   };
 }
@@ -3387,7 +3390,7 @@ function formatFormTime(data) {
 function buildPrivateProperties(data) {
   const privateProperties = {
     kgCeilingApp: "1",
-    kgCeilingVersion: "1.7.33",
+    kgCeilingVersion: "1.7.34",
     ...(data.continueJob && data.continueGroupId ? {
       kgContinueJob: "1",
       kgContinueGroup: data.continueGroupId,
