@@ -1,17 +1,10 @@
-KG Ceiling Calendar v1.7.34 - Test Report
+KG Ceiling Calendar v1.7.36 test report
 
-Checks:
-- JavaScript syntax check.
-- No duplicate HTML IDs.
-- Same-address Delivery history shows date + vehicle.
-- Same-address Clear Site history shows date + vehicle.
-- Job-specific Delivery/Clear Site status remains isolated.
-- Copy job still starts with Delivery/Clear Site blank.
-- Version text/assets/service-worker cache: v1.7.34.
-
-- Day View Google colour priority checked: Calendar default left; Tangerine > Basil > Graphite > Grape on right.
-
-Additional v1.7.34 checks:
-- Continue Job extra periods start with deliveries: [] (no inherited Material/Delivery Sent/Clear Site).
-- Same-address code path is read-only history only; no same-address save/update call exists.
-- Copy job still explicitly clears Delivery/Clear Site.
+PASS: JavaScript syntax check (node --check app.js)
+PASS: No duplicate HTML IDs
+PASS: Day/Month status rails use currentDeliveryDisplayStatus(data), not selected-date matching
+PASS: eventsForDate returns only real work events; no status-only rows are created on delivery/clear-site dates
+PASS: Latest Delivery row controls light-blue/dark-blue status
+PASS: Delivery Sent suppresses Material for the same latest Delivery row
+PASS: Any Clear Site saved on the job shows the yellow rail on the original work job regardless of clear date
+PASS: Version/cache bumped to v1.7.36

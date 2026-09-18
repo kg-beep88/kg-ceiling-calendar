@@ -1,4 +1,9 @@
-# KG Ceiling Calendar v1.7.34 — User Manual / 用户手册
+# KG Ceiling Calendar v1.7.36 — User Manual / 用户手册
+
+## Delivery and Clear Site status / 送货及清场状态
+
+If a job is on 09/09/2026 and Clear Site is entered as 12/09/2026, the **09/09 work job itself** shows the yellow Clear Site bar. The app does not create another status-only job on 12/09. Material and Delivery Sent work the same way: their status bars stay on the original work job even when their service date is different. / 如果工作日期是 09/09/2026，而清场日期填写为 12/09/2026，**09/09 的原工作本身**会显示黄色清场状态条，不会另外在 12/09 建立状态工作。料单和已送货也是一样，即使服务日期不同，状态条仍显示在原工作上。
+
 
 
 ## Strict job-only Delivery / Clear Site / 送货与清场只属于当前工作
@@ -31,14 +36,14 @@ Phone / 手机：
 Vehicle dropdowns now include **Other / 其他**. Choose it to enter a vehicle number manually. The manual vehicle number is saved and synced the same way as the fixed vehicle list.
 
 
-## v1.7.34 Clear Site / 清场
+## v1.7.36 Clear Site / 清场
 
 - Delivery / 送货 is saved only on this job. / 送货只保存于当前工作。
 - Clear Site / 清场 is saved only on this job. / 清场只保存于当前工作。
 - Copy / 复制 does not copy Delivery or Clear Site. / 复制工作时不会复制送货或清场资料。
 - Clearing the delivery/clear-site fields and saving keeps them cleared. / 清除送货或清场资料并保存后，不会自动恢复。
-- Clear Site / 清场 only belongs to the clear-site date. / 清场只属于实际清场日期。
-- Yellow 5 mm bar appears only on that date. / 黄色 5 毫米标记只会显示在清场当天。
+- Clear Site / 清场 stays attached to the original work job. / 清场状态保留在原工作记录。
+- Yellow 5 mm bar stays visible on that work job even when the clear-site date is different. / 即使清场日期不同，黄色 5 毫米标记仍显示在原工作上。
 - Site history shows the Clear Site date only. / 工地历史的清场记录只显示日期。
 - The Clear Site vehicle is still stored in the job record. / 清场车辆仍会保存在工作记录中。
 

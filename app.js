@@ -753,24 +753,26 @@ function renderCalendar() {
     stack.className = "eventStack";
     const dayEvents = eventsForDate(key);
     dayEvents.slice(0, 4).forEach((calendarEvent) => {
+      const sourceEvent = sourceCalendarEvent(calendarEvent);
+      const statusAppearance = isServiceStatusAppearance(calendarEvent);
       const chip = document.createElement("button");
       chip.type = "button";
       chip.className = "eventChip";
-      chip.dataset.eventId = calendarEvent.id || "";
+      chip.dataset.eventId = sourceEvent.id || "";
       chip.dataset.sourceDate = key;
-      chip.draggable = isConnected();
-      const colour = eventColour(calendarEvent);
+      chip.draggable = isConnected() && !statusAppearance;
+      const colour = eventColour(sourceEvent);
       chip.style.background = colour.background;
       chip.style.color = colour.foreground;
       chip.textContent = eventChipLabel(calendarEvent, key);
 
-      // Month View delivery indicators: keep the address bar clean and show
-      // status only as the same 5 mm light/dark blue rails used in Day View.
-      const chipData = parseEventData(calendarEvent);
+      // Delivery/Clear Site rails belong to this work job, even when their
+      // recorded service dates are different from the work date.
+      const chipData = parseEventData(sourceEvent);
       const chipDeliveryStatus = currentDeliveryDisplayStatus(chipData);
       const chipHasMaterial = chipDeliveryStatus.materialStatus;
       const chipHasDeliverySent = chipDeliveryStatus.deliverySent;
-      const chipHasClearSite = eventHasClearSiteOnDate(calendarEvent, chipData, key);
+      const chipHasClearSite = chipDeliveryStatus.clearSite;
       if (chipHasMaterial) chip.classList.add("monthEventMaterialStatus");
       if (chipHasDeliverySent) chip.classList.add("monthEventDeliverySent");
       if (chipHasClearSite) chip.classList.add("monthEventClearSite");
@@ -784,11 +786,13 @@ function renderCalendar() {
       chip.addEventListener("click", (clickEvent) => {
         clickEvent.stopPropagation();
         if (Date.now() < suppressChipClickUntil) return;
-        openJobModal(calendarEvent);
+        openJobModal(sourceEvent);
       });
-      chip.addEventListener("dragstart", (dragEvent) => beginNativeDrag(dragEvent, calendarEvent.id, key));
-      chip.addEventListener("dragend", finishNativeDrag);
-      chip.addEventListener("pointerdown", (pointerEvent) => beginTouchDrag(pointerEvent, calendarEvent.id, key, chip));
+      if (!statusAppearance) {
+        chip.addEventListener("dragstart", (dragEvent) => beginNativeDrag(dragEvent, sourceEvent.id, key));
+        chip.addEventListener("dragend", finishNativeDrag);
+        chip.addEventListener("pointerdown", (pointerEvent) => beginTouchDrag(pointerEvent, sourceEvent.id, key, chip));
+      }
       stack.appendChild(chip);
     });
     if (dayEvents.length > 4) {
@@ -924,7 +928,8 @@ function buildDayColourSplit(items, buildRow, getEvent = (item) => item) {
 }
 
 function buildDayCompactJobRow(calendarEvent, segment = null) {
-  const data = parseEventData(calendarEvent);
+  const sourceEvent = sourceCalendarEvent(calendarEvent);
+  const data = parseEventData(sourceEvent);
   const row = document.createElement("div");
   row.className = "dayCompactJobRow";
 
@@ -951,7 +956,7 @@ function buildDayCompactJobRow(calendarEvent, segment = null) {
       installer.blur();
     }
   });
-  installer.addEventListener("blur", () => saveInlineInstaller(calendarEvent, installer));
+  installer.addEventListener("blur", () => saveInlineInstaller(sourceEvent, installer));
   installerLabel.append(installerText, installer);
   meta.append(installerLabel);
 
@@ -964,7 +969,7 @@ function buildDayCompactJobRow(calendarEvent, segment = null) {
   const address = document.createElement("button");
   address.type = "button";
   address.className = "dayCompactAddress";
-  const colour = eventColour(calendarEvent);
+  const colour = eventColour(sourceEvent);
   address.style.background = colour.background;
   address.style.color = colour.foreground;
   address.textContent = data.address || calendarEvent.summary || "Job / 工作";
@@ -972,12 +977,12 @@ function buildDayCompactJobRow(calendarEvent, segment = null) {
     ? `${address.textContent} • ${formatMinutes12Hour(segment.start)}–${formatMinutes12Hour(segment.end)}`
     : address.textContent;
   address.disabled = !isConnected();
-  address.addEventListener("click", () => openJobModal(calendarEvent));
+  address.addEventListener("click", () => openJobModal(sourceEvent));
 
   const deliveryDisplayStatus = currentDeliveryDisplayStatus(data);
   const hasMaterialStatus = deliveryDisplayStatus.materialStatus;
   const hasDeliverySent = deliveryDisplayStatus.deliverySent;
-  const hasClearSite = eventHasClearSiteOnDate(calendarEvent, data, selectedDate);
+  const hasClearSite = deliveryDisplayStatus.clearSite;
   if (hasMaterialStatus) address.classList.add("dayAddressMaterialStatus");
   if (hasDeliverySent) address.classList.add("dayAddressDeliverySent");
   if (hasClearSite) address.classList.add("dayAddressClearSite");
@@ -996,7 +1001,7 @@ function buildDayCompactJobRow(calendarEvent, segment = null) {
   whatsAppBtn.innerHTML = "<strong>WhatsApp Copy</strong><small>复制单个工地</small>";
   whatsAppBtn.addEventListener("click", (event) => {
     event.stopPropagation();
-    shareSiteToWhatsApp(calendarEvent);
+    shareSiteToWhatsApp(sourceEvent);
   });
 
   const idName = document.createElement("div");
@@ -1329,8 +1334,9 @@ function shiftedEventTimes(event, newStartDate) {
 function renderDayJobs() {
   el.dayJobs.innerHTML = "";
   const dayEvents = eventsForDate(selectedDate);
-  el.whatsAppDayBtn.disabled = !isConnected() || dayEvents.length === 0;
-  el.dayWhatsAppDayBtn.disabled = !isConnected() || dayEvents.length === 0;
+  const actualWorkEvents = dayEvents.filter((event) => !isServiceStatusAppearance(event));
+  el.whatsAppDayBtn.disabled = !isConnected() || actualWorkEvents.length === 0;
+  el.dayWhatsAppDayBtn.disabled = !isConnected() || actualWorkEvents.length === 0;
   el.dayAddJobBtn.disabled = !isConnected();
   if (!dayEvents.length) {
     const empty = document.createElement("div");
@@ -1344,7 +1350,8 @@ function renderDayJobs() {
   }
 
   dayEvents.forEach((event) => {
-    const data = parseEventData(event);
+    const sourceEvent = sourceCalendarEvent(event);
+    const data = parseEventData(sourceEvent);
     const card = document.createElement("article");
     card.className = "jobCard jobCardAddressOnly";
 
@@ -1363,7 +1370,7 @@ function renderDayJobs() {
     const deliveryDisplayStatus = currentDeliveryDisplayStatus(data);
     const hasMaterialStatus = deliveryDisplayStatus.materialStatus;
     const hasDeliverySent = deliveryDisplayStatus.deliverySent;
-    const hasClearSite = eventHasClearSiteOnDate(event, data, selectedDate);
+    const hasClearSite = deliveryDisplayStatus.clearSite;
     if (hasMaterialStatus) card.classList.add("monthCardMaterialStatus");
     if (hasDeliverySent) card.classList.add("monthCardDeliverySent");
     if (hasClearSite) card.classList.add("monthCardClearSite");
@@ -1384,7 +1391,7 @@ function renderDayJobs() {
     editBtn.setAttribute("aria-label", "Edit / 编辑");
     editBtn.innerHTML = "✎ <span>Edit<br><small>编辑</small></span>";
     editBtn.disabled = !isConnected();
-    editBtn.addEventListener("click", () => openJobModal(event));
+    editBtn.addEventListener("click", () => openJobModal(sourceEvent));
 
     const copyBtn = document.createElement("button");
     copyBtn.type = "button";
@@ -1393,7 +1400,7 @@ function renderDayJobs() {
     copyBtn.setAttribute("aria-label", "Copy / 复制");
     copyBtn.innerHTML = "⧉ <span>Copy<br><small>复制</small></span>";
     copyBtn.disabled = !isConnected();
-    copyBtn.addEventListener("click", () => openJobModal(event, true));
+    copyBtn.addEventListener("click", () => openJobModal(sourceEvent, true));
 
     const whatsAppBtn = document.createElement("button");
     whatsAppBtn.type = "button";
@@ -1401,7 +1408,7 @@ function renderDayJobs() {
     whatsAppBtn.title = "WhatsApp Copy Site / 复制单个工地";
     whatsAppBtn.setAttribute("aria-label", "WhatsApp Copy Site / 复制单个工地");
     whatsAppBtn.innerHTML = "⧉ <span>WhatsApp Copy<br><small>复制单个工地</small></span>";
-    whatsAppBtn.addEventListener("click", () => shareSiteToWhatsApp(event));
+    whatsAppBtn.addEventListener("click", () => shareSiteToWhatsApp(sourceEvent));
 
     const deleteBtn = document.createElement("button");
     deleteBtn.type = "button";
@@ -1409,8 +1416,8 @@ function renderDayJobs() {
     deleteBtn.title = "Delete / 删除";
     deleteBtn.setAttribute("aria-label", "Delete / 删除");
     deleteBtn.innerHTML = "🗑 <span>Delete<br><small>删除</small></span>";
-    deleteBtn.disabled = !isConnected();
-    deleteBtn.addEventListener("click", () => deleteEventFromCard(event));
+    deleteBtn.disabled = !isConnected() || isServiceStatusAppearance(event);
+    deleteBtn.addEventListener("click", () => deleteEventFromCard(sourceEvent));
 
     actions.append(editBtn, copyBtn, whatsAppBtn, deleteBtn);
     card.append(strip, info, actions);
@@ -1478,7 +1485,7 @@ function shareSiteToWhatsApp(event) {
 }
 
 function shareSelectedDayToWhatsApp() {
-  const dayEvents = eventsForDate(selectedDate);
+  const dayEvents = eventsForDate(selectedDate).filter((event) => !isServiceStatusAppearance(event));
   if (!dayEvents.length) {
     showToast("No jobs on this date. / 这个日期没有工作。", true);
     return;
@@ -2226,9 +2233,31 @@ function visibleCalendarRange() {
 }
 
 function eventsForDate(key) {
+  // Show only the real work events that belong to this date. Delivery, Material
+  // and Clear Site remain attached to their original work job and are displayed
+  // as 5 mm rails on that job even when the service date is different.
   return events
     .filter((event) => eventIncludesDate(event, key))
     .sort((a, b) => compareEvents(a, b, key));
+}
+
+function sourceCalendarEvent(event) {
+  return event?.__kgSourceEvent || event;
+}
+
+function isServiceStatusAppearance(event) {
+  return Boolean(event?.__kgServiceStatusAppearance);
+}
+
+function makeServiceStatusAppearance(event, key) {
+  return {
+    ...event,
+    start: { date: key },
+    end: { date: addDaysKey(key, 1) },
+    __kgServiceStatusAppearance: true,
+    __kgServiceStatusDate: key,
+    __kgSourceEvent: event
+  };
 }
 
 
@@ -2889,12 +2918,31 @@ function getDeliveryEntries(data = {}) {
   return deliveryEntryHasData(legacy) ? [legacy] : [];
 }
 
-function eventHasClearSiteOnDate(calendarEvent, dataOrDeliveries = {}, shownDate = "") {
-  if (!shownDate || !calendarEvent) return false;
+function deliveryStatusForDate(calendarEvent, dataOrDeliveries = {}, shownDate = "") {
+  if (!shownDate || !calendarEvent) {
+    return { materialStatus: false, deliverySent: false, clearSite: false, deliveryNumber: 0 };
+  }
   const deliveries = Array.isArray(dataOrDeliveries)
-    ? dataOrDeliveries.map(normalizeDeliveryEntry)
+    ? dataOrDeliveries.map(normalizeDeliveryEntry).filter(deliveryEntryHasData)
     : getDeliveryEntries(dataOrDeliveries);
-  return deliveries.some((item) => item.clearSite && item.clearDate === shownDate && eventIncludesDate(calendarEvent, shownDate));
+
+  // If more than one delivery uses the same date, the later Delivery row is the
+  // active delivery status for that date. Delivery Sent already replaces Material
+  // within the same row. Clear Site is independent and can show beside it.
+  const dated = deliveries.filter((item) => item.date === shownDate);
+  const current = dated.length ? normalizeDeliveryEntry(dated[dated.length - 1]) : null;
+  const clearSite = deliveries.some((item) => item.clearSite && item.clearDate === shownDate);
+
+  return {
+    materialStatus: Boolean(current?.materialStatus && !current?.deliverySent),
+    deliverySent: Boolean(current?.deliverySent),
+    clearSite,
+    deliveryNumber: current ? deliveries.indexOf(dated[dated.length - 1]) + 1 : 0
+  };
+}
+
+function eventHasClearSiteOnDate(calendarEvent, dataOrDeliveries = {}, shownDate = "") {
+  return deliveryStatusForDate(calendarEvent, dataOrDeliveries, shownDate).clearSite;
 }
 
 function currentDeliveryDisplayStatus(dataOrDeliveries = {}) {
@@ -2903,9 +2951,13 @@ function currentDeliveryDisplayStatus(dataOrDeliveries = {}) {
     : getDeliveryEntries(dataOrDeliveries);
   const current = deliveries.length ? normalizeDeliveryEntry(deliveries[deliveries.length - 1]) : null;
   return {
-    materialStatus: Boolean(current?.materialStatus),
+    // Only the latest delivery row controls the blue status, matching the
+    // Delivery 1 / Delivery 2 rule. Delivery Sent replaces Material.
+    materialStatus: Boolean(current?.materialStatus && !current?.deliverySent),
     deliverySent: Boolean(current?.deliverySent),
-    clearSite: false,
+    // Clear Site is independent. If this job has a Clear Site booking/record,
+    // keep the yellow rail on the work job regardless of its clear-site date.
+    clearSite: deliveries.some((item) => Boolean(item.clearSite)),
     deliveryNumber: deliveries.length
   };
 }
@@ -3390,7 +3442,7 @@ function formatFormTime(data) {
 function buildPrivateProperties(data) {
   const privateProperties = {
     kgCeilingApp: "1",
-    kgCeilingVersion: "1.7.34",
+    kgCeilingVersion: "1.7.36",
     ...(data.continueJob && data.continueGroupId ? {
       kgContinueJob: "1",
       kgContinueGroup: data.continueGroupId,
