@@ -1,4 +1,4 @@
-KG Ceiling Calendar v1.7.36 test report
+KG Ceiling Calendar v1.7.37 test report
 
 PASS: JavaScript syntax check (node --check app.js)
 PASS: No duplicate HTML IDs
@@ -7,4 +7,5 @@ PASS: eventsForDate returns only real work events; no status-only rows are creat
 PASS: Latest Delivery row controls light-blue/dark-blue status
 PASS: Delivery Sent suppresses Material for the same latest Delivery row
 PASS: Any Clear Site saved on the job shows the yellow rail on the original work job regardless of clear date
-PASS: Version/cache bumped to v1.7.36
+PASS: Version/cache bumped to v1.7.37
+PASS: Vehicle dropdown contains YQ6653R

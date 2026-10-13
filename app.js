@@ -29,10 +29,10 @@ const VEHICLE_OPTIONS = [
   "YN8209T",
   "YP8289B",
   "YQ6498Y",
+  "YQ6653R",
   "GBE6680Y",
   "GBG8121X",
   "GBF291X",
-  "YQ6653R",
   "YR2464R"
 ];
 const OTHER_VEHICLE_VALUE = "__OTHER__";
@@ -3443,7 +3443,7 @@ function formatFormTime(data) {
 function buildPrivateProperties(data) {
   const privateProperties = {
     kgCeilingApp: "1",
-    kgCeilingVersion: "1.7.36",
+    kgCeilingVersion: "1.7.37",
     ...(data.continueJob && data.continueGroupId ? {
       kgContinueJob: "1",
       kgContinueGroup: data.continueGroupId,

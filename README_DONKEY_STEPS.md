@@ -1,6 +1,6 @@
-# KG Ceiling Calendar v1.7.36 — Job Shows Delivery/Clear Site Status
+# KG Ceiling Calendar v1.7.37 — Add Lorry YQ6653R
 
-## v1.7.36 important fix
+## v1.7.37 update
 
 - Delivery / 送货 and Clear Site / 清场 stay attached to the original work job.
 - Their 5 mm status bars show on that work job even when the delivery/clear-site date is different from the work date.
@@ -19,12 +19,16 @@
 3. Upload/replace the files in the repository root.
 4. Open the KG Calendar website.
 5. Go to Settings / 设置 → Reset Cache / 重置缓存 once.
-6. Confirm the app shows v1.7.36.
+6. Confirm the app shows v1.7.37.
 
 
-## v1.7.36 Same-address history
+## Same-address history
 - Delivery and Clear Site remain job-specific only.
 - The Add/Edit Job form can show previous Delivery and Clear Site records for the same address.
 - History shows the date and vehicle used.
 - This history is read-only and does not copy blue/yellow bars to the current job.
 - Search/Site History also shows the Clear Site vehicle beside the Clear Site date.
+
+
+## v1.7.37 Vehicle update
+Added **YQ6653R** to the fixed Vehicle / 车辆 dropdown list.

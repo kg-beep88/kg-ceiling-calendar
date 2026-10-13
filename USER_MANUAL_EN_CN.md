@@ -1,4 +1,4 @@
-# KG Ceiling Calendar v1.7.36 — User Manual / 用户手册
+# KG Ceiling Calendar v1.7.37 — User Manual / 用户手册
 
 ## Delivery and Clear Site status / 送货及清场状态
 
@@ -36,7 +36,7 @@ Phone / 手机：
 Vehicle dropdowns now include **Other / 其他**. Choose it to enter a vehicle number manually. The manual vehicle number is saved and synced the same way as the fixed vehicle list.
 
 
-## v1.7.36 Clear Site / 清场
+## v1.7.37 Clear Site / 清场
 
 - Delivery / 送货 is saved only on this job. / 送货只保存于当前工作。
 - Clear Site / 清场 is saved only on this job. / 清场只保存于当前工作。
@@ -52,3 +52,7 @@ Vehicle dropdowns now include **Other / 其他**. Choose it to enter a vehicle n
 When the same address had Delivery or Clear Site before, Add/Edit Job can show the previous date and vehicle. This is only a record and does not copy the Delivery/Clear Site status to the current job.
 
 如果同一个地址以前有送货或清场记录，新增/编辑工作时会显示之前的日期和车辆。这里只是历史记录，不会把送货或清场状态复制到当前工作。
+
+
+## v1.7.37 Vehicle list update / 车辆列表更新
+Added **YQ6653R** to the fixed Vehicle / 车辆 dropdown. / 已把 **YQ6653R** 加入固定车辆下拉列表。
