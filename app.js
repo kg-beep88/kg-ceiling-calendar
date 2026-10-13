@@ -32,6 +32,7 @@ const VEHICLE_OPTIONS = [
   "GBE6680Y",
   "GBG8121X",
   "GBF291X",
+  "YQ6653R",
   "YR2464R"
 ];
 const OTHER_VEHICLE_VALUE = "__OTHER__";
