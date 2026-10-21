@@ -1,6 +1,12 @@
-# KG Ceiling Calendar v1.7.37 — Add Lorry YQ6653R
+# KG Ceiling Calendar v1.7.38 — Print Colour Fix
 
-## v1.7.37 update
+## v1.7.38 Print colour fix
+
+- Google Calendar event colours are forced to print in Month and Day views.
+- Material light-blue, Delivery Sent dark-blue, and Clear Site yellow 5 mm bars are forced to print.
+- For Chrome/Edge, if the printer preview still removes backgrounds, open **More settings** and tick **Background graphics**.
+
+## v1.7.38 update
 
 - Delivery / 送货 and Clear Site / 清场 stay attached to the original work job.
 - Their 5 mm status bars show on that work job even when the delivery/clear-site date is different from the work date.
@@ -19,7 +25,7 @@
 3. Upload/replace the files in the repository root.
 4. Open the KG Calendar website.
 5. Go to Settings / 设置 → Reset Cache / 重置缓存 once.
-6. Confirm the app shows v1.7.37.
+6. Confirm the app shows v1.7.38.
 
 
 ## Same-address history
@@ -30,5 +36,5 @@
 - Search/Site History also shows the Clear Site vehicle beside the Clear Site date.
 
 
-## v1.7.37 Vehicle update
+## v1.7.38 Vehicle update
 Added **YQ6653R** to the fixed Vehicle / 车辆 dropdown list.

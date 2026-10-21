@@ -3443,7 +3443,7 @@ function formatFormTime(data) {
 function buildPrivateProperties(data) {
   const privateProperties = {
     kgCeilingApp: "1",
-    kgCeilingVersion: "1.7.37",
+    kgCeilingVersion: "1.7.38",
     ...(data.continueJob && data.continueGroupId ? {
       kgContinueJob: "1",
       kgContinueGroup: data.continueGroupId,

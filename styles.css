@@ -1672,3 +1672,45 @@ body.dayFitMode .searchCard {
 @media (max-width: 640px) {
   .sameAddressHistoryGrid { grid-template-columns: 1fr; }
 }
+
+
+/* v1.7.38 — preserve Google Calendar + status colours when printing. */
+@media print {
+  html,
+  body,
+  *,
+  *::before,
+  *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  /* Google event colour fills in Month + Day views. */
+  .eventChip,
+  .dayCompactAddress,
+  .colourDot,
+  .eventColourStrip,
+  .jobColourStrip,
+  .colourSwatch {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Keep the 5 mm service-status rails visible on paper/PDF. */
+  .dayCompactAddress.dayAddressMaterialStatus::after,
+  .eventChip.monthEventMaterialStatus::after,
+  .jobCard.monthCardMaterialStatus::after {
+    background: #8fd7f4 !important;
+  }
+  .dayCompactAddress.dayAddressDeliverySent::after,
+  .eventChip.monthEventDeliverySent::after,
+  .jobCard.monthCardDeliverySent::after {
+    background: #174f9b !important;
+  }
+  .dayCompactAddress.dayAddressClearSite::before,
+  .eventChip.monthEventClearSite::before,
+  .jobCard.monthCardClearSite::before {
+    background: #f2c94c !important;
+  }
+}
