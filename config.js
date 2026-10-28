@@ -23,5 +23,9 @@ window.KG_CONFIG = {
   // Address-history search range. Change only when you need older or later records.
   // 地址历史搜索范围。只有需要更早或更后的记录时才更改。
   HISTORY_START: "2026-01-01",
-  HISTORY_END: "2051-01-01"
+  HISTORY_END: "2051-01-01",
+
+  // Delete confirmation password. Used only to prevent accidental deletion.
+  // This value is visible in the public GitHub Pages source, so it is not a security control.
+  DELETE_PASSWORD: "KG2026"
 };

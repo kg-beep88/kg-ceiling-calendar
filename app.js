@@ -8,7 +8,9 @@ const BUILT_IN_CONFIG = {
   TIME_ZONE: "Asia/Singapore",
   UTC_OFFSET: "+08:00",
   HISTORY_START: "2026-01-01",
-  HISTORY_END: "2051-01-01"
+  HISTORY_END: "2051-01-01",
+  // Simple anti-accidental-delete password. This is not a security boundary because the app is public browser code.
+  DELETE_PASSWORD: "KG2026"
 };
 
 const RAW_CONFIG = window.KG_CONFIG || {};
@@ -1492,55 +1494,88 @@ function shareSelectedDayToWhatsApp() {
     return;
   }
 
-  const headingDate = formatDateLongBilingual(selectedDate);
+  const headingDate = formatDateShort(selectedDate);
   const blocks = dayEvents.map((event, index) => buildWhatsAppSiteMessage(event, index + 1, true));
   const text = [
-    `*KG CEILING DAILY WORK / KG 天花每日工作*`,
-    `*Date / 日期:* ${headingDate}`,
-    `*Total sites / 工地数量:* ${dayEvents.length}`,
+    `*KG CEILING DAILY WORK*`,
+    `*Date:* ${headingDate}`,
+    `*Total sites:* ${dayEvents.length}`,
     "",
     blocks.join("\n\n------------------------------\n\n")
   ].join("\n");
   openWhatsAppPreview(text, "Daily message / 当天全部信息");
 }
 
+function amendmentLabelsEnglish(data) {
+  const labels = [];
+  const add = (enabled, label, detail) => {
+    const cleanDetail = String(detail || "").trim();
+    if (!enabled && !cleanDetail) return;
+    labels.push(cleanDetail ? `${label}: ${cleanDetail}` : label);
+  };
+  add(data.amendCeiling, "Ceiling", data.amendCeilingDetail);
+  add(data.amendPartition, "Partition", data.amendPartitionDetail);
+  add(data.amendPelmet, "Pelmet / Box Up / L Box", data.amendPelmetDetail);
+  add(data.amendTimberOther, "Add Timber Support / Other", data.amendTimberOtherDetail);
+  return labels;
+}
+
+function eventTimeLabelEnglish(event) {
+  const range = eventDateRange(event);
+  const multiDay = range.start && range.start !== range.end;
+  if (event.start?.date) {
+    return multiDay
+      ? `${formatDateShort(range.start)}–${formatDateShort(range.end)} • All day`
+      : "All day";
+  }
+  if (!event.start?.dateTime) return "Time not set";
+  const startDateTime = new Date(event.start.dateTime);
+  const start = timeInputValueInCalendarZone(startDateTime);
+  const endDateTime = event.end?.dateTime ? new Date(event.end.dateTime) : null;
+  const end = endDateTime ? timeInputValueInCalendarZone(endDateTime) : "";
+  if (multiDay && endDateTime) {
+    return `${formatDateShort(range.start)} ${start} – ${formatDateShort(range.end)} ${end}`;
+  }
+  return end ? `${start}–${end}` : start;
+}
+
 function buildWhatsAppSiteMessage(event, number = 0, compactHeading = false) {
   const data = parseEventData(event);
   const range = eventDateRange(event);
   const lines = [];
-  const address = data.address || event.summary || event.location || "No address / 没有地址";
+  const address = data.address || event.summary || event.location || "No address";
 
   if (number) lines.push(`*${number}. ${address}*`);
   else {
-    lines.push(`*KG CEILING SITE DETAIL / KG 天花工地资料*`);
-    lines.push(`*Address / 地址:* ${address}`);
+    lines.push(`*KG CEILING SITE DETAIL*`);
+    lines.push(`*Address:* ${address}`);
   }
 
   const dateText = range.start === range.end
-    ? formatDateLongBilingual(range.start)
-    : `${formatDateLongBilingual(range.start)} → ${formatDateLongBilingual(range.end)}`;
-  lines.push(`*Work date / 工作日期:* ${dateText}`);
-  lines.push(`*Time / 时间:* ${eventTimeLabel(event)}`);
+    ? formatDateShort(range.start)
+    : `${formatDateShort(range.start)} → ${formatDateShort(range.end)}`;
+  lines.push(`*Work date:* ${dateText}`);
+  lines.push(`*Time:* ${eventTimeLabelEnglish(event)}`);
 
   if (data.continueJob) {
-    lines.push(`*Continue job / 继续工作:* Yes / 是${data.continueSequence > 1 ? ` (#${data.continueSequence})` : ""}`);
+    lines.push(`*Continue job:* Yes${data.continueSequence > 1 ? ` (#${data.continueSequence})` : ""}`);
   }
-  if (data.contact) lines.push(`*ID Name / ID 联系人姓名:* ${data.contact}`);
-  if (data.lock) lines.push(`*Lock / 门锁:* ${data.lock}`);
-  if (data.idFirm) lines.push(`*ID Firm / ID 公司:* ${data.idFirm}`);
+  if (data.contact) lines.push(`*ID Name:* ${data.contact}`);
+  if (data.lock) lines.push(`*Lock:* ${data.lock}`);
+  if (data.idFirm) lines.push(`*ID Firm:* ${data.idFirm}`);
   if (data.idName) {
-    lines.push(`*Sales Person / 销售人员:* ${data.idName}`);
+    lines.push(`*Sales Person:* ${data.idName}`);
     lines.push("");
   }
-  if (data.installerName) lines.push(`*Installer / 安装人员:* ${data.installerName}`);
+  if (data.installerName) lines.push(`*Installer:* ${data.installerName}`);
 
-  const amendments = amendmentLabels(data);
+  const amendments = amendmentLabelsEnglish(data);
   if (amendments.length) {
-    lines.push(`*Job Scope / 工作范围:*`);
+    lines.push(`*Job Scope:*`);
     amendments.forEach((item) => lines.push(`- ${item}`));
   }
   if (data.amendRemark) {
-    lines.push(`*Remark / 备注:* ${data.amendRemark}`);
+    lines.push(`*Remark:* ${data.amendRemark}`);
     lines.push("");
   }
 
@@ -3443,7 +3478,7 @@ function formatFormTime(data) {
 function buildPrivateProperties(data) {
   const privateProperties = {
     kgCeilingApp: "1",
-    kgCeilingVersion: "1.7.38",
+    kgCeilingVersion: "1.7.39",
     ...(data.continueJob && data.continueGroupId ? {
       kgContinueJob: "1",
       kgContinueGroup: data.continueGroupId,
@@ -3788,8 +3823,20 @@ function parseYesNo(value) {
   return /^(yes|true|1|是|已|done|billed)/i.test(String(value || "").trim());
 }
 
+function verifyDeletePassword() {
+  const expected = String(CONFIG.DELETE_PASSWORD || "KG2026");
+  const entered = window.prompt("Enter delete password to continue:\n请输入删除密码：");
+  if (entered === null) return false;
+  if (entered !== expected) {
+    showToast("Wrong delete password. Job was not deleted. / 删除密码错误，工作未删除。", true);
+    return false;
+  }
+  return true;
+}
+
 async function deleteEventFromCard(event) {
   if (!event?.id) return;
+  if (!verifyDeletePassword()) return;
   const data = parseEventData(event);
   const address = data.address || event.summary || "this job / 此工作";
   const ok = window.confirm(`Delete ${address} from the app and Google Calendar?\n从应用和谷歌日历删除 ${address}？`);
@@ -3800,6 +3847,7 @@ async function deleteEventFromCard(event) {
 async function deleteCurrentJob() {
   const eventId = el.eventId.value;
   if (!eventId) return;
+  if (!verifyDeletePassword()) return;
   const ok = window.confirm("Delete this job from the app and Google Calendar?\n从应用和谷歌日历删除此工作？");
   if (!ok) return;
   el.deleteJobBtn.disabled = true;

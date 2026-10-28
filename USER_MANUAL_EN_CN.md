@@ -1,4 +1,9 @@
-# KG Ceiling Calendar v1.7.38 — User Manual / 用户手册
+# v1.7.39 Delete / WhatsApp update
+
+- Delete requires the delete password before confirmation. Default: `KG2026`.
+- WhatsApp Copy output uses English headings only.
+
+# KG Ceiling Calendar v1.7.39 — User Manual / 用户手册
 
 ## Delivery and Clear Site status / 送货及清场状态
 

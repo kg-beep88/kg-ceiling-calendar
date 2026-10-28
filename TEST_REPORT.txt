@@ -1,14 +1,9 @@
-KG Ceiling Calendar v1.7.38 test report
+KG Ceiling Calendar v1.7.39 test report
 
-PASS: JavaScript syntax check (node --check app.js)
-PASS: No duplicate HTML IDs
-PASS: Day/Month status rails use currentDeliveryDisplayStatus(data), not selected-date matching
-PASS: eventsForDate returns only real work events; no status-only rows are created on delivery/clear-site dates
-PASS: Latest Delivery row controls light-blue/dark-blue status
-PASS: Delivery Sent suppresses Material for the same latest Delivery row
-PASS: Any Clear Site saved on the job shows the yellow rail on the original work job regardless of clear date
-PASS: Version/cache bumped to v1.7.38
-PASS: Vehicle dropdown contains YQ6653R
-
-PASS: Print CSS preserves Google event backgrounds and service status rails
-PASS: Service worker cache name changed for print-colour release
+PASS: JavaScript syntax check
+PASS: Version/cache bumped to v1.7.39
+PASS: Delete password helper protects card Delete and editor Delete
+PASS: Wrong password exits before delete API call
+PASS: WhatsApp site headings are English only
+PASS: WhatsApp day headings are English only
+PASS: Existing Google Calendar description remains bilingual
