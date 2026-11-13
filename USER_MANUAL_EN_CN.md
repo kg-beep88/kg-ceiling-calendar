@@ -1,16 +1,16 @@
-# v1.7.40 update
+# v1.7.41 update
 
 - Day View now shows a small Billing column after the Address.
 - It reads the existing Billing number / 开单号码 field.
 - Blank billing number shows —.
 - Month View and all sorting/grouping are unchanged.
 
-# v1.7.40 Delete / WhatsApp update
+# v1.7.41 Delete / WhatsApp update
 
 - Delete requires the delete password before confirmation. Default: `KG2026`.
 - WhatsApp Copy output uses English headings only.
 
-# KG Ceiling Calendar v1.7.40 — User Manual / 用户手册
+# KG Ceiling Calendar v1.7.41 — User Manual / 用户手册
 
 ## Delivery and Clear Site status / 送货及清场状态
 
@@ -72,3 +72,9 @@ Added **YQ6653R** to the fixed Vehicle / 车辆 dropdown. / 已把 **YQ6653R** �
 ## Printing colours / 打印颜色
 
 The calendar now asks the browser to print Google Calendar colours and the Material / Delivery Sent / Clear Site colour bars exactly. If Chrome or Edge print preview still removes colours, open **More settings / 更多设置** and enable **Background graphics / 背景图形**.
+
+
+## Day View Billing / 日视图开单号码
+- You can type the Billing number directly in the small Billing column.
+- Press Enter or tap/click outside to save.
+- 可直接在日视图的小开单栏输入开单号码，按 Enter 或点到外面即可保存。

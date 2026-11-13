@@ -1,11 +1,12 @@
-KG Ceiling Calendar v1.7.40 test report
+KG Ceiling Calendar v1.7.41 — Test Report
 
-PASS - JavaScript syntax check (node --check app.js)
-PASS - No duplicate HTML IDs
-PASS - Day View billing value reads existing data.billingNumber
-PASS - Blank billing number displays —
-PASS - Day View row order: Installer -> ID detail -> Address -> Billing -> WhatsApp Copy
-PASS - Day View colour / Installer / Address sorting code unchanged
-PASS - Month View rendering code unchanged
-PASS - Billing entry remains Add/Edit Job -> Billing / 开单 -> Billing number / 开单号码
-PASS - Asset/cache version bumped to v1.7.40
+PASS: JavaScript syntax (node --check)
+PASS: No duplicate HTML IDs
+PASS: Day View billing column is editable
+PASS: Enter blurs/saves billing field
+PASS: Blur saves Billing number to same Google Calendar event via PATCH
+PASS: Billing update rebuilds description + private extended properties
+PASS: Existing Installer inline editing remains unchanged
+PASS: Month View markup/rendering unchanged by this update
+PASS: Day View sorting logic unchanged by this update
+PASS: Asset/service-worker version bumped to v1.7.41

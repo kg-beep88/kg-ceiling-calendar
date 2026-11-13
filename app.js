@@ -1015,12 +1015,24 @@ function buildDayCompactJobRow(calendarEvent, segment = null) {
 
   const billing = document.createElement("div");
   billing.className = "dayCompactBillingBeside";
-  billing.title = data.billingNumber
-    ? `Billing number / 开单号码: ${data.billingNumber}`
-    : "Billing number / 开单号码: —";
-  const billingValue = document.createElement("strong");
-  billingValue.textContent = data.billingNumber || "—";
-  billing.append(billingValue);
+  billing.title = "Billing number / 开单号码";
+  const billingInput = document.createElement("input");
+  billingInput.type = "text";
+  billingInput.className = "dayBillingInput";
+  billingInput.placeholder = "—";
+  billingInput.value = data.billingNumber || "";
+  billingInput.dataset.original = billingInput.value;
+  billingInput.disabled = !isConnected();
+  billingInput.setAttribute("aria-label", "Billing number / 开单号码");
+  billingInput.addEventListener("click", (event) => event.stopPropagation());
+  billingInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      billingInput.blur();
+    }
+  });
+  billingInput.addEventListener("blur", () => saveInlineBilling(sourceEvent, billingInput));
+  billing.append(billingInput);
 
   // Day View order: Installer → ID detail → Address → Billing → WhatsApp Copy.
   // Billing is read from the existing Billing number / 开单号码 field only.
@@ -1066,6 +1078,44 @@ async function saveInlineInstaller(calendarEvent, input) {
   } catch (error) {
     input.value = original;
     showToast(`Installer save failed: ${error.message} / 安装人员保存失败：${error.message}`, true);
+  } finally {
+    input.disabled = !isConnected();
+    input.classList.remove("saving");
+  }
+}
+
+async function saveInlineBilling(calendarEvent, input) {
+  if (!calendarEvent?.id || !isConnected()) return;
+  const nextValue = input.value.trim();
+  const original = input.dataset.original || "";
+  if (nextValue === original) return;
+
+  input.disabled = true;
+  input.classList.add("saving");
+  try {
+    const data = jobDataWithEventTiming(calendarEvent);
+    data.billingNumber = nextValue;
+    const description = buildDescription(data);
+    const privateProperties = {
+      ...(calendarEvent.extendedProperties?.private || {}),
+      ...buildPrivateProperties(data)
+    };
+    const calendarId = encodeURIComponent(CONFIG.CALENDAR_ID || "primary");
+    await apiFetch(`/calendars/${calendarId}/events/${encodeURIComponent(calendarEvent.id)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ description, extendedProperties: { private: privateProperties } })
+    });
+    calendarEvent.description = description;
+    calendarEvent.extendedProperties = calendarEvent.extendedProperties || {};
+    calendarEvent.extendedProperties.private = privateProperties;
+    input.dataset.original = nextValue;
+    invalidateHistoryCache();
+    saveCachedEvents();
+    showToast("Billing number saved and synced. / 开单号码已保存并同步。", false);
+  } catch (error) {
+    input.value = original;
+    showToast(`Billing save failed: ${error.message} / 开单号码保存失败：${error.message}`, true);
   } finally {
     input.disabled = !isConnected();
     input.classList.remove("saving");
@@ -3487,7 +3537,7 @@ function formatFormTime(data) {
 function buildPrivateProperties(data) {
   const privateProperties = {
     kgCeilingApp: "1",
-    kgCeilingVersion: "1.7.40",
+    kgCeilingVersion: "1.7.41",
     ...(data.continueJob && data.continueGroupId ? {
       kgContinueJob: "1",
       kgContinueGroup: data.continueGroupId,

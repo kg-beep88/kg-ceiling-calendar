@@ -1773,3 +1773,32 @@ body.dayFitMode .searchCard {
 
 /* v1.7.40 — Day View billing column.
    Existing Billing number / 开单号码 is shown after Address. Month View and sorting are unchanged. */
+
+
+/* v1.7.41 — editable Billing number directly in Day View. */
+.dayBillingInput {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #183d36;
+  font: inherit;
+  font-weight: 800;
+  line-height: 1.15;
+  padding: 0;
+}
+.dayBillingInput::placeholder { color: #7b8e89; opacity: 1; }
+.dayBillingInput:focus {
+  background: #fff;
+  box-shadow: inset 0 0 0 2px rgba(8,116,67,.2);
+  border-radius: 4px;
+  padding: 1px 2px;
+}
+.dayBillingInput.saving { opacity: .6; }
+@media (min-width: 768px) {
+  body.dayFitMode .dayBillingInput { font-size: 8.5px; }
+  body.dayFitDense .dayBillingInput { font-size: 8px; }
+  body.dayFitUltra .dayBillingInput { font-size: 7.5px; }
+}
