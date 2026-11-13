@@ -1013,10 +1013,19 @@ function buildDayCompactJobRow(calendarEvent, segment = null) {
   idValue.textContent = data.contact || "—";
   idName.append(idValue);
 
-  // Day View order: Installer → ID detail only → Address → WhatsApp Copy.
-  // Delivery dates/status text are intentionally not printed below the address;
-  // Material and Delivery Sent remain visible through the 5 mm address rails.
-  addressLine.append(idName, address, whatsAppBtn);
+  const billing = document.createElement("div");
+  billing.className = "dayCompactBillingBeside";
+  billing.title = data.billingNumber
+    ? `Billing number / 开单号码: ${data.billingNumber}`
+    : "Billing number / 开单号码: —";
+  const billingValue = document.createElement("strong");
+  billingValue.textContent = data.billingNumber || "—";
+  billing.append(billingValue);
+
+  // Day View order: Installer → ID detail → Address → Billing → WhatsApp Copy.
+  // Billing is read from the existing Billing number / 开单号码 field only.
+  // Month View and Day View sorting are intentionally unchanged.
+  addressLine.append(idName, address, billing, whatsAppBtn);
   main.appendChild(addressLine);
 
   row.append(meta, main);
@@ -3478,7 +3487,7 @@ function formatFormTime(data) {
 function buildPrivateProperties(data) {
   const privateProperties = {
     kgCeilingApp: "1",
-    kgCeilingVersion: "1.7.39",
+    kgCeilingVersion: "1.7.40",
     ...(data.continueJob && data.continueGroupId ? {
       kgContinueJob: "1",
       kgContinueGroup: data.continueGroupId,

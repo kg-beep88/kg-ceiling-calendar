@@ -1,4 +1,4 @@
-const CACHE_NAME = "kg-ceiling-calendar-v1.7.39-delete-password-whatsapp-english";
+const CACHE_NAME = "kg-ceiling-calendar-v1.7.40-day-billing-column";
 const APP_FILES = [
   "./",
   "./index.html",

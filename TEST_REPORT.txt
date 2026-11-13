@@ -1,9 +1,11 @@
-KG Ceiling Calendar v1.7.39 test report
+KG Ceiling Calendar v1.7.40 test report
 
-PASS: JavaScript syntax check
-PASS: Version/cache bumped to v1.7.39
-PASS: Delete password helper protects card Delete and editor Delete
-PASS: Wrong password exits before delete API call
-PASS: WhatsApp site headings are English only
-PASS: WhatsApp day headings are English only
-PASS: Existing Google Calendar description remains bilingual
+PASS - JavaScript syntax check (node --check app.js)
+PASS - No duplicate HTML IDs
+PASS - Day View billing value reads existing data.billingNumber
+PASS - Blank billing number displays —
+PASS - Day View row order: Installer -> ID detail -> Address -> Billing -> WhatsApp Copy
+PASS - Day View colour / Installer / Address sorting code unchanged
+PASS - Month View rendering code unchanged
+PASS - Billing entry remains Add/Edit Job -> Billing / 开单 -> Billing number / 开单号码
+PASS - Asset/cache version bumped to v1.7.40

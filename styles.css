@@ -795,7 +795,7 @@ body.dayFitMode .dayPanelHead {
 }
 .dayCompactAddressLine {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(175px, 235px);
+  grid-template-columns: minmax(0, 1fr) auto minmax(70px, 92px) minmax(175px, 235px);
   gap: 7px;
   min-width: 0;
   align-items: stretch;
@@ -841,6 +841,23 @@ body.dayFitMode .dayPanelHead {
   color: #183d36;
   font-size: 13px;
   line-height: 1.2;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.dayCompactBillingBeside {
+  display: grid;
+  align-content: center;
+  min-width: 0;
+  padding: 7px 9px;
+  border: 1px solid #d7e3e0;
+  border-radius: 9px;
+  background: #f9fbfa;
+}
+.dayCompactBillingBeside strong {
+  color: #183d36;
+  font-size: 12px;
+  line-height: 1.15;
   white-space: normal;
   overflow-wrap: anywhere;
 }
@@ -1198,7 +1215,7 @@ body.dayFitMode .dayTimeline {
     line-height: 1;
   }
   body.dayFitMode .dayCompactAddressLine {
-    grid-template-columns: minmax(78px, 96px) minmax(0, 1fr) auto;
+    grid-template-columns: minmax(78px, 96px) minmax(0, 1fr) minmax(68px, 82px) auto;
     gap: 4px;
   }
   body.dayFitMode .dayCompactIdBeside {
@@ -1212,12 +1229,19 @@ body.dayFitMode .dayTimeline {
     font-size: 9px;
     line-height: 1.05;
   }
+  body.dayFitMode .dayCompactBillingBeside {
+    padding: 2px 4px;
+  }
+  body.dayFitMode .dayCompactBillingBeside strong {
+    font-size: 9px;
+    line-height: 1.05;
+  }
 
   body.dayFitDense .dayCompactJobRow {
     grid-template-columns: minmax(70px, 82px) minmax(0, 1fr);
   }
   body.dayFitDense .dayCompactAddressLine {
-    grid-template-columns: minmax(70px, 86px) minmax(0, 1fr) auto;
+    grid-template-columns: minmax(70px, 86px) minmax(0, 1fr) minmax(62px, 74px) auto;
     gap: 3px;
   }
 
@@ -1225,7 +1249,7 @@ body.dayFitMode .dayTimeline {
     grid-template-columns: minmax(64px, 76px) minmax(0, 1fr);
   }
   body.dayFitUltra .dayCompactAddressLine {
-    grid-template-columns: minmax(64px, 78px) minmax(0, 1fr) auto;
+    grid-template-columns: minmax(64px, 78px) minmax(0, 1fr) minmax(58px, 68px) auto;
     gap: 2px;
   }
 }
@@ -1259,7 +1283,7 @@ body.dayFitMode .dayTimeline {
   }
   body.dayFitMode .dayCompactAddressLine {
     width: min(100%, 620px);
-    grid-template-columns: minmax(70px, 82px) minmax(0, 1fr) 92px;
+    grid-template-columns: minmax(70px, 82px) minmax(0, 1fr) 72px 92px;
     justify-content: start;
     gap: 4px;
   }
@@ -1269,6 +1293,14 @@ body.dayFitMode .dayTimeline {
   body.dayFitMode .dayCompactIdBeside strong {
     font-size: 9px;
     line-height: 1.05;
+  }
+  body.dayFitMode .dayCompactBillingBeside {
+    padding: 2px 4px;
+  }
+  body.dayFitMode .dayCompactBillingBeside strong {
+    font-size: 8.5px;
+    line-height: 1.05;
+    overflow-wrap: anywhere;
   }
   body.dayFitMode .dayCompactAddress {
     width: 100%;
@@ -1294,7 +1326,7 @@ body.dayFitMode .dayTimeline {
     max-width: 560px;
   }
   body.dayFitDense .dayCompactAddressLine {
-    grid-template-columns: minmax(62px, 72px) minmax(0, 1fr) 82px;
+    grid-template-columns: minmax(62px, 72px) minmax(0, 1fr) 66px 82px;
   }
   body.dayFitDense .dayCompactWhatsAppBtn {
     width: 82px;
@@ -1312,7 +1344,7 @@ body.dayFitMode .dayTimeline {
     max-width: 510px;
   }
   body.dayFitUltra .dayCompactAddressLine {
-    grid-template-columns: minmax(56px, 66px) minmax(0, 1fr) 76px;
+    grid-template-columns: minmax(56px, 66px) minmax(0, 1fr) 60px 76px;
     gap: 2px;
   }
   body.dayFitUltra .dayCompactWhatsAppBtn {
@@ -1361,12 +1393,13 @@ body.dayFitMode .dayTimeline {
   }
   .dayCompactAddressLine {
     display: grid;
-    grid-template-columns: minmax(52px, 62px) minmax(0, 1fr) 68px;
+    grid-template-columns: minmax(52px, 62px) minmax(0, 1fr) 48px 68px;
     gap: 3px;
     align-items: stretch;
   }
   .dayCompactIdBeside,
   .dayCompactAddress,
+  .dayCompactBillingBeside,
   .dayCompactWhatsAppBtn {
     order: initial;
     min-width: 0;
@@ -1377,6 +1410,15 @@ body.dayFitMode .dayTimeline {
   }
   .dayCompactIdBeside strong {
     font-size: 7.5px;
+    line-height: 1.05;
+    overflow-wrap: anywhere;
+  }
+  .dayCompactBillingBeside {
+    padding: 2px 3px;
+    border-radius: 5px;
+  }
+  .dayCompactBillingBeside strong {
+    font-size: 7px;
     line-height: 1.05;
     overflow-wrap: anywhere;
   }
@@ -1615,8 +1657,21 @@ body.dayFitMode .searchCard {
   body.dayFitMode .dayCompactAddressLine,
   body.dayFitDense .dayCompactAddressLine,
   body.dayFitUltra .dayCompactAddressLine {
-    grid-template-columns: minmax(50px, 66px) minmax(0, 1fr) 72px !important;
+    grid-template-columns: minmax(50px, 66px) minmax(0, 1fr) 54px 72px !important;
     gap: 3px;
+  }
+  body.dayFitMode .dayCompactBillingBeside,
+  body.dayFitDense .dayCompactBillingBeside,
+  body.dayFitUltra .dayCompactBillingBeside {
+    min-width: 0;
+    padding: 2px 3px;
+    border-radius: 5px;
+  }
+  body.dayFitMode .dayCompactBillingBeside strong,
+  body.dayFitDense .dayCompactBillingBeside strong,
+  body.dayFitUltra .dayCompactBillingBeside strong {
+    font-size: 7.5px;
+    line-height: 1.05;
   }
   body.dayFitMode .dayCompactWhatsAppBtn,
   body.dayFitDense .dayCompactWhatsAppBtn,
@@ -1714,3 +1769,7 @@ body.dayFitMode .searchCard {
     background: #f2c94c !important;
   }
 }
+
+
+/* v1.7.40 — Day View billing column.
+   Existing Billing number / 开单号码 is shown after Address. Month View and sorting are unchanged. */
