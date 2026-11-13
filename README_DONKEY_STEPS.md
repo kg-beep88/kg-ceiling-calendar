@@ -1,18 +1,24 @@
-# v1.7.41 update
+# v1.7.42 update
+
+- Day View Billing field is now a compact fixed-size box, similar to the small time field.
+- Long billing numbers stay inside the input and do not widen or disturb the Day View row layout.
+- Month View and all sorting/grouping are unchanged.
+
+# v1.7.42 update
 
 - Day View now shows a small Billing column after the Address.
 - It reads the existing Billing number / 开单号码 field.
 - Blank billing number shows —.
 - Month View and all sorting/grouping are unchanged.
 
-# v1.7.41 update
+# v1.7.42 update
 
 - Delete Job now asks for password `KG2026` before the normal delete confirmation.
 - Change the password in `config.js` under `DELETE_PASSWORD` if required.
 - This password is only to prevent accidental deletion; GitHub Pages source is public.
 - WhatsApp exported headings are English only.
 
-# KG Ceiling Calendar v1.7.41 — Delete Password + English WhatsApp Export
+# KG Ceiling Calendar v1.7.42 — Delete Password + English WhatsApp Export
 
 ## v1.7.38 Print colour fix
 
@@ -39,7 +45,7 @@
 3. Upload/replace the files in the repository root.
 4. Open the KG Calendar website.
 5. Go to Settings / 设置 → Reset Cache / 重置缓存 once.
-6. Confirm the app shows v1.7.41.
+6. Confirm the app shows v1.7.42.
 
 
 ## Same-address history
@@ -54,7 +60,7 @@
 Added **YQ6653R** to the fixed Vehicle / 车辆 dropdown list.
 
 
-## v1.7.41 — Editable billing in Day View
+## v1.7.42 — Editable billing in Day View
 - Billing number can be typed directly in the Day View billing column.
 - Press Enter or click outside the field to save and sync to the same Google Calendar job.
 - Month View is unchanged.

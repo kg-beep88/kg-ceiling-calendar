@@ -1,4 +1,4 @@
-KG Ceiling Calendar v1.7.41 — Test Report
+KG Ceiling Calendar v1.7.42 — Test Report
 
 PASS: JavaScript syntax (node --check)
 PASS: No duplicate HTML IDs
@@ -9,4 +9,4 @@ PASS: Billing update rebuilds description + private extended properties
 PASS: Existing Installer inline editing remains unchanged
 PASS: Month View markup/rendering unchanged by this update
 PASS: Day View sorting logic unchanged by this update
-PASS: Asset/service-worker version bumped to v1.7.41
+PASS: Asset/service-worker version bumped to v1.7.42

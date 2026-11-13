@@ -1,16 +1,22 @@
-# v1.7.41 update
+# v1.7.42 update
+
+- Day View Billing field is now a compact fixed-size box, similar to the small time field.
+- Long billing numbers stay inside the input and do not widen or disturb the Day View row layout.
+- Month View and all sorting/grouping are unchanged.
+
+# v1.7.42 update
 
 - Day View now shows a small Billing column after the Address.
 - It reads the existing Billing number / 开单号码 field.
 - Blank billing number shows —.
 - Month View and all sorting/grouping are unchanged.
 
-# v1.7.41 Delete / WhatsApp update
+# v1.7.42 Delete / WhatsApp update
 
 - Delete requires the delete password before confirmation. Default: `KG2026`.
 - WhatsApp Copy output uses English headings only.
 
-# KG Ceiling Calendar v1.7.41 — User Manual / 用户手册
+# KG Ceiling Calendar v1.7.42 — User Manual / 用户手册
 
 ## Delivery and Clear Site status / 送货及清场状态
 
