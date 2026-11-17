@@ -9,7 +9,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=1.7.44">
+  <link rel="stylesheet" href="styles.css?v=1.7.45">
 </head>
 <body>
   <noscript>
@@ -21,7 +21,7 @@
       <div class="brandMark" aria-hidden="true">KG</div>
       <div>
         <h1>KG Ceiling Work Calendar</h1>
-        <p>KG 天花工作日历 · v1.7.44</p>
+        <p>KG 天花工作日历 · v1.7.45</p>
       </div>
     </div>
 
@@ -348,7 +348,10 @@
         </div>
 
         <footer class="modalFoot">
-          <button id="deleteJobBtn" class="btn btnDanger" type="button" hidden>Delete / 删除</button>
+          <div class="modalFootLeft">
+            <button id="deleteJobBtn" class="btn btnDanger" type="button" hidden>Delete / 删除</button>
+            <button id="copyJobBtn" class="btn btnSecondary" type="button" hidden>Copy Job / 复制工作</button>
+          </div>
           <div class="modalFootRight">
             <button id="cancelBtn" class="btn btnSecondary" type="button">Cancel / 取消</button>
             <button id="saveJobBtn" class="btn btnPrimary btnSave" type="submit">
@@ -476,8 +479,8 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="config.js?v=1.7.44"></script>
+  <script src="config.js?v=1.7.45"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="app.js?v=1.7.44" defer></script>
+  <script src="app.js?v=1.7.45" defer></script>
 </body>
 </html>

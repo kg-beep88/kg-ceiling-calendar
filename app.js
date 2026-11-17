@@ -155,7 +155,7 @@ function cacheElements() {
     "amendPelmetInput", "amendPelmetDetailInput", "amendTimberOtherInput", "amendTimberOtherDetailInput", "amendRemarkInput",
     "deliveryRows", "addDeliveryBtn", "deliveryDateInput", "deliveryVehicleInput", "deliveryMaterialsInput", "deliveryRemarkInput", "deliveryMaterialInput", "deliverySentInput",
     "clearSiteInput", "clearSiteDateInput", "clearSiteVehicleInput", "sameAddressServiceHistory", "billingNumberInput",
-    "colourPicker", "deleteJobBtn", "cancelBtn",
+    "colourPicker", "deleteJobBtn", "copyJobBtn", "cancelBtn",
     "saveJobBtn", "searchModal", "closeSearchBtn", "historySearchForm",
     "historySearchInput", "historySearchBtn", "historySearchStatus",
     "historySearchResults", "doneSearchBtn", "copyDateModal", "copyDateInput", "closeCopyDateBtn",
@@ -205,6 +205,7 @@ function bindEvents() {
   el.cancelBtn.addEventListener("click", closeJobModal);
   el.jobForm.addEventListener("submit", saveJob);
   el.deleteJobBtn.addEventListener("click", deleteCurrentJob);
+  el.copyJobBtn.addEventListener("click", openEditJobCopyDate);
   el.allDayInput.addEventListener("change", updateTimeFieldState);
   el.continueJobInput.addEventListener("change", () => updateContinueJobState(true));
   el.addContinuePeriodBtn.addEventListener("click", () => addContinuePeriodRow());
@@ -239,8 +240,8 @@ function bindEvents() {
   el.resetCacheBtn.addEventListener("click", resetAppCache);
   document.addEventListener("keydown", (event) => {
     if (event.key !== "Escape") return;
-    if (!el.jobModal.hidden) closeJobModal();
-    else if (!el.copyDateModal.hidden) closeCopyDateModal();
+    if (!el.copyDateModal.hidden) closeCopyDateModal();
+    else if (!el.jobModal.hidden) closeJobModal();
     else if (!el.searchModal.hidden) closeSearchModal();
     else if (!el.whatsAppPreviewModal.hidden) closeWhatsAppPreview();
     else if (!el.settingsModal.hidden) closeSettings();
@@ -2045,6 +2046,19 @@ function buildHistoryEventRow(event, data) {
   return row;
 }
 
+function openEditJobCopyDate() {
+  if (!currentModalEvent || !el.eventId.value) {
+    showToast("Save this job first before copying. / 请先保存此工作再复制。", true);
+    return;
+  }
+  pendingHistoryCopyEvent = currentModalEvent;
+  const range = eventDateRange(currentModalEvent);
+  el.copyDateInput.value = range.start || selectedDate || dateKey(new Date());
+  el.copyDateModal.hidden = false;
+  document.body.style.overflow = "hidden";
+  setTimeout(() => el.copyDateInput.focus(), 50);
+}
+
 function openHistoryCopyDate(event) {
   pendingHistoryCopyEvent = event;
   el.copyDateInput.value = selectedDate || dateKey(new Date());
@@ -2570,6 +2584,7 @@ function openJobModal(event = null, asCopy = false) {
     ? (asCopy ? "Copy Job / 复制工作" : "Edit Job / 编辑工作")
     : "Add Job / 新增工作";
   el.deleteJobBtn.hidden = !(event && !asCopy);
+  el.copyJobBtn.hidden = !(event && !asCopy);
   el.jobModal.hidden = false;
   document.body.style.overflow = "hidden";
   updateTimeFieldState();
@@ -3537,7 +3552,7 @@ function formatFormTime(data) {
 function buildPrivateProperties(data) {
   const privateProperties = {
     kgCeilingApp: "1",
-    kgCeilingVersion: "1.7.44",
+    kgCeilingVersion: "1.7.45",
     ...(data.continueJob && data.continueGroupId ? {
       kgContinueJob: "1",
       kgContinueGroup: data.continueGroupId,

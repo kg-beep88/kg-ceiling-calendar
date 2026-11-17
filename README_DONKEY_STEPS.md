@@ -1,3 +1,11 @@
+# v1.7.45 update
+
+- Edit Job / 编辑工作 now has **Copy Job / 复制工作** beside Delete.
+- Choose the target start date in the copy-date dialog.
+- Multi-day duration is preserved.
+- The copied job opens for review before saving.
+- Delivery / Clear Site / Billing stay blank on the copied job, following the existing copy rule.
+
 # v1.7.44 update
 
 - Day View Billing box now matches the compact time field in both total width and total height.

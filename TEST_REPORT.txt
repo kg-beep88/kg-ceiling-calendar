@@ -1,16 +1,11 @@
-KG Ceiling Calendar v1.7.44 — Test Report
+KG Ceiling Calendar v1.7.45 — Test Report
 
-PASS: JavaScript syntax (node --check)
-PASS: No duplicate HTML IDs
-PASS: Day View billing column is editable
-PASS: Enter blurs/saves billing field
-PASS: Blur saves Billing number to same Google Calendar event via PATCH
-PASS: Billing update rebuilds description + private extended properties
-PASS: Existing Installer inline editing remains unchanged
-PASS: Month View markup/rendering unchanged by this update
-PASS: Day View sorting logic unchanged by this update
-PASS: Asset/service-worker version bumped to v1.7.44
-
-PASS: Day View Billing total column width fixed to time-sized compact field; address remains flexible.
-
-PASS: Day View Billing total width and total height fixed to compact time-field size.
+PASS: JavaScript syntax check (node --check).
+PASS: No duplicate HTML IDs.
+PASS: Edit Job shows Copy Job / 复制工作 only for an existing saved event.
+PASS: Copy Job opens the existing Choose Copy Date dialog.
+PASS: Confirming copy clears the Google event ID before save, so POST creates a new event instead of overwriting the original.
+PASS: Multi-day duration is preserved by the existing safe copy path.
+PASS: Delivery / Material / Delivery Sent / Clear Site / Billing start blank on the copied job under the existing copy rule.
+PASS: Cancel/Escape from the copy-date dialog returns to Edit Job without closing the underlying editor.
+PASS: Asset/service-worker version bumped to v1.7.45.
